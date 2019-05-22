@@ -1,3 +1,6 @@
 # Object files and binary
 *.o
 src/main
+
+# vim temporary files
+*.swp
