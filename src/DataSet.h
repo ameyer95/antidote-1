@@ -4,29 +4,29 @@
 
 // Everything is currently hard-coded for binary classification and boolean features.
 
-class Input;
-class DataRow;
-class DataSet;
 class Predicate;
-class PredicateSet;
 
-
-class Input {
-private:
-
-public:
+struct BitVector {
+    bool *bits;
+    int num_bits;
 };
 
-class DataRow {
-private:
+typedef BitVector Input;
 
-public:
-};
 
 class DataSet {
 private:
+    BitVector data;
+    int num_rows, row_size; // How many rows and how many bools per row
 
+    int rowOffset(int row_index);
 public:
+    DataSet(bool *bits, int num_bits, int row_size);
+    // TODO who should handle deallocation?
+
+    bool classificationBit(int row_index);
+    int countOnes();
+
     bool isPure();
     void filter(Predicate phi, bool mode);
     double summary();
