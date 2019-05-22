@@ -43,7 +43,6 @@ ASTNode* ASTNode::buildTree(int depth) {
  * Various constructors
  **/
 
-
 SequenceNode::SequenceNode(ASTNode **children, int num_children) {
     this->children = children;
     this->num_children = num_children;
@@ -73,7 +72,6 @@ ReturnNode::ReturnNode() {}
  * Visitor accept methods
  **/
 
-
 void SequenceNode::accept(Visitor &v) { v.visit(*this); }
 void ITEImpurityNode::accept(Visitor &v) { v.visit(*this); }
 void ITEModelsNode::accept(Visitor &v) { v.visit(*this); }
@@ -86,7 +84,6 @@ void ReturnNode::accept(Visitor &v) { v.visit(*this); }
 /**
  * Other
  **/
-
 
 void ITENode::set_children(ASTNode *then_child, ASTNode *else_child) {
     this->then_child = then_child;
