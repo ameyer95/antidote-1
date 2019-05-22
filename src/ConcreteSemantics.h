@@ -7,11 +7,11 @@
 // Everything is currently hard-coded for binary classification and boolean features.
 
 
-//XXX ensure training_set etc are appropriately passed around by reference / as pointers
+//TODO ensure training_set etc are appropriately passed around by reference / as pointers
 class ConcreteSemantics : public Visitor {
 private:
     Input test_input;
-    DataSet training_set;
+    DataSet *training_set;
     double posterior;
     Predicate phi;
     PredicateSet predicates;
@@ -21,7 +21,7 @@ private:
 public:
     ConcreteSemantics();
 
-    double execute(Input test_input, DataSet training_set, PredicateSet predicates, ASTNode *program);
+    double execute(Input test_input, DataSet *training_set, PredicateSet predicates, ASTNode *program);
 
     void visit(SequenceNode &node);
     void visit(ITEImpurityNode &node);
