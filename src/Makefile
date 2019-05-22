@@ -12,5 +12,11 @@ ASTNode.o: ASTNode.cpp ASTNode.h
 PrettyPrinter.o: PrettyPrinter.cpp PrettyPrinter.h ASTNode.h
 	g++ -c PrettyPrinter.cpp
 
+ConcreteSemantics.o: ConcreteSemantics.cpp ConcreteSemantics.h ASTNode.h DataSet.h
+	g++ -c ConcreteSemantics.cpp
+
+DataSet.o: DataSet.cpp DataSet.h
+	g++ -c DataSet.cpp
+
 clean:
-	rm -f main main.o ASTNode.o PrettyPrinter.o
+	rm -f main *.o
