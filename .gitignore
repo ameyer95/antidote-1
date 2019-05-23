@@ -1,6 +1,6 @@
-# Object files and binary
-*.o
-src/main
+# Object files and binaries
+build/
+bin/
 
 # vim temporary files
 *.swp
