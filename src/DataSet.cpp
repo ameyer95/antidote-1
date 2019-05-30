@@ -26,10 +26,6 @@ DataSet::DataSet(bool *bits, int num_bits, int row_size) {
     }
 }
 
-inline bool DataSet::classificationBit(int row_index) {
-    return data[row_index].second;
-}
-
 int DataSet::countOnes() {
     int count = 0;
     for(int i = 0; i < data.size(); i++) {

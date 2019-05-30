@@ -21,7 +21,10 @@ private:
 public:
     DataSet(bool *bits, int num_bits, int row_size);
 
-    bool classificationBit(int row_index);
+    DataRow getRow(int row_index) { return data[row_index]; }
+    int size() { return data.size(); }
+
+    bool classificationBit(int row_index) { return data[row_index].second; }
     int countOnes();
 
     bool isPure();
