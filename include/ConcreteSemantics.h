@@ -13,7 +13,7 @@ private:
     Input test_input;
     DataSet *training_set;
     double posterior;
-    Predicate phi;
+    Predicate *phi;
     PredicateSet predicates;
     double return_value; // Largely a proxy for posterior
     bool halt; // Controls whether we've hit a return statement

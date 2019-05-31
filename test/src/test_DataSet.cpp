@@ -31,4 +31,9 @@ TEST_CASE("DataSet object basics") {
         REQUIRE(d1.isPure() == false);
         REQUIRE(d2.isPure() == true);
     }
+
+    SECTION("DataSet::summary sanity check") {
+        REQUIRE(d1.summary() == (double)2/3);
+        REQUIRE(d2.summary() == 0);
+    }
 }

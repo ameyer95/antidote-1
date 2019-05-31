@@ -28,22 +28,26 @@ public:
     int countOnes();
 
     bool isPure();
-    void filter(Predicate phi, bool mode);
+    void filter(Predicate &phi, bool mode);
     double summary();
 };
 
+
 class Predicate {
 private:
+    int bit_index;
 
 public:
+    Predicate(int bit_index) { this->bit_index = bit_index; }
     bool evaluate(Input x);
 };
+
 
 class PredicateSet {
 private:
 
 public:
-    Predicate bestSplit(DataSet &training_set);
+    Predicate* bestSplit(DataSet &training_set);
 };
 
 

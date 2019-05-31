@@ -41,18 +41,26 @@ bool DataSet::isPure() {
     return count == 0 || count == data.size();
 }
 
-void DataSet::filter(Predicate phi, bool mode) {
-    //TODO
+void DataSet::filter(Predicate &phi, bool mode) {
+    bool remove, result;
+    // XXX this iterative removal is potentially very inefficient; consider a linked list
+    for(vector<DataRow>::iterator i = data.begin(); i != data.end(); i++) {
+        result = phi.evaluate(i->first);
+        remove = mode ? result : !result;
+        if(remove) {
+            data.erase(i--); // Decrement iterator after passing, but before execution
+        }
+    }
 }
 
 double DataSet::summary() {
-    //TODO
+    return (double)countOnes() / data.size();
 }
 
 bool Predicate::evaluate(Input x) {
-    //TODO
+    return x[bit_index];
 }
 
-Predicate PredicateSet::bestSplit(DataSet &training_set) {
+Predicate* PredicateSet::bestSplit(DataSet &training_set) {
     //TODO
 }

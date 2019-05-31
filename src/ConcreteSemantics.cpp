@@ -33,7 +33,7 @@ void ConcreteSemantics::visit(ITEImpurityNode &node) {
 
 void ConcreteSemantics::visit(ITEModelsNode &node) {
     if(halt) return;
-    if(phi.evaluate(test_input)) {
+    if(phi->evaluate(test_input)) {
         node.get_then_child()->accept(*this);
     } else {
         node.get_else_child()->accept(*this);
@@ -47,7 +47,7 @@ void ConcreteSemantics::visit(BestSplitNode &node) {
 
 void ConcreteSemantics::visit(FilterNode &node) {
     if(halt) return;
-    training_set->filter(phi, node.get_mode());
+    training_set->filter(*phi, node.get_mode());
 }
 
 void ConcreteSemantics::visit(SummaryNode &node) {
