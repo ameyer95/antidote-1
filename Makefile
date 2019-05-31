@@ -12,11 +12,11 @@ DEPS=$(OBJS:.o=.d)
 TARGET=$(BINDIR)/main
 
 $(TARGET): $(OBJS)
-	mkdir -p $(BINDIR)
+	@mkdir -p $(BINDIR)
 	$(CXX) -o $@ $(OBJS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
-	mkdir -p $(BUILDDIR)
+	@mkdir -p $(BUILDDIR)
 	$(CXX) -I $(INCLUDEDIR) -MMD -c -o $@ $<
 
 
@@ -35,11 +35,11 @@ TEST_TARGET=$(TEST_BINDIR)/tester
 MAIN_OBJ=$(BUILDDIR)/main.o
 
 $(TEST_TARGET): $(OBJS) $(TEST_OBJS)
-	mkdir -p $(TEST_BINDIR)
+	@mkdir -p $(TEST_BINDIR)
 	$(CXX) -o $@ $(OBJS:$(MAIN_OBJ)=) $(TEST_OBJS)
 
 $(TEST_BUILDDIR)/%.o: $(TEST_SRCDIR)/%.cpp
-	mkdir -p $(TEST_BUILDDIR)
+	@mkdir -p $(TEST_BUILDDIR)
 	$(CXX) -I $(INCLUDEDIR) -I $(TEST_CATCHDIR) -MMD -c -o $@ $<
 
 
