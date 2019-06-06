@@ -20,6 +20,7 @@ private:
 
 public:
     DataSet(bool *bits, int num_bits, int row_size);
+    DataSet(vector<DataRow> &data);
 
     DataRow getRow(int row_index) { return data[row_index]; }
     int size() { return data.size(); }
@@ -30,6 +31,9 @@ public:
     bool isPure();
     void filter(Predicate &phi, bool mode);
     double summary();
+
+    double impurity();
+    pair<DataSet*, DataSet*> split(Predicate &phi);
 };
 
 
@@ -45,8 +49,12 @@ public:
 
 class PredicateSet {
 private:
+    vector<Predicate> *predicates;
+
+    double informationGain(Predicate &phi, DataSet &training_set);
 
 public:
+    PredicateSet(vector<Predicate> *predicates) { this->predicates = predicates; }
     Predicate* bestSplit(DataSet &training_set);
 };
 

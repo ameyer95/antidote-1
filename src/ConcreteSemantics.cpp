@@ -6,7 +6,7 @@ ConcreteSemantics::ConcreteSemantics() {
     //TODO
 }
 
-double ConcreteSemantics::execute(Input test_input, DataSet *training_set, PredicateSet predicates, ASTNode *program) {
+double ConcreteSemantics::execute(Input test_input, DataSet *training_set, PredicateSet *predicates, ASTNode *program) {
     this->test_input = test_input;
     this->training_set = training_set;
     this->predicates = predicates;
@@ -42,7 +42,7 @@ void ConcreteSemantics::visit(ITEModelsNode &node) {
 
 void ConcreteSemantics::visit(BestSplitNode &node) {
     if(halt) return;
-    phi = predicates.bestSplit(*training_set);
+    phi = predicates->bestSplit(*training_set);
 }
 
 void ConcreteSemantics::visit(FilterNode &node) {

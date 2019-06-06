@@ -14,14 +14,14 @@ private:
     DataSet *training_set;
     double posterior;
     Predicate *phi;
-    PredicateSet predicates;
+    PredicateSet *predicates;
     double return_value; // Largely a proxy for posterior
     bool halt; // Controls whether we've hit a return statement
 
 public:
     ConcreteSemantics();
 
-    double execute(Input test_input, DataSet *training_set, PredicateSet predicates, ASTNode *program);
+    double execute(Input test_input, DataSet *training_set, PredicateSet *predicates, ASTNode *program);
 
     void visit(SequenceNode &node);
     void visit(ITEImpurityNode &node);
