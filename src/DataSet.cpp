@@ -22,7 +22,7 @@ DataSet::DataSet(bool *bits, int num_bits, int row_size) {
     int num_rows = num_bits / row_size;
     data.reserve(num_rows);
     for(int i = 0; i < num_rows; i++) {
-        data.push_back(buildRow(bits + i, row_size));
+        data.push_back(buildRow(bits + i*row_size, row_size));
     }
 }
 
