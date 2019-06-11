@@ -90,7 +90,7 @@ Predicate* PredicateSet::bestSplit(DataSet &training_set) {
         current_score = this->informationGain(*i, training_set);
         if(best_predicate == NULL || best_score < current_score) {
             best_score = current_score;
-            best_predicate = &(*i);
+            best_predicate = &(*i); // Need the address of the iterator's current element
         }
     }
     return best_predicate;
