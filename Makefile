@@ -5,7 +5,7 @@ BUILDDIR=build
 BINDIR=bin
 INCLUDEDIR=include
 
-SRCS=$(shell find $(SRCDIR) -name *.cpp)
+SRCS=$(shell find $(SRCDIR) -name "*.cpp")
 OBJS=$(SRCS:$(SRCDIR)/%.cpp=$(BUILDDIR)/%.o)
 DEPS=$(OBJS:.o=.d)
 
