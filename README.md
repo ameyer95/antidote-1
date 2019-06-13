@@ -10,6 +10,10 @@ Source is still under active development.
 The top-level Makefile handles everything; simply run `make`.
 This creates the main binary, written to `bin/`.
 
+To run the experiments that use the [MNIST dataset](http://yann.lecun.com/exdb/mnist/),
+the dataset must first be downloaded (and unzipped).
+This is scripted: run `data/fetch-mnist.sh`.
+
 Unit tests (the [test/](test/) directory) can be built and run using `make test`.
 Testing uses the open source [Catch](https://github.com/catchorg/Catch2) framework
 whose license permits including its source in this repository
