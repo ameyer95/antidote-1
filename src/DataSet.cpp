@@ -102,8 +102,11 @@ Predicate* PredicateSet::bestSplit(DataSet &training_set) {
 
 double PredicateSet::informationGain(Predicate &phi, DataSet &training_set) {
     pair<DataSet*, DataSet*> split = training_set.split(phi);
-    return training_set.impurity() - (
-            split.first->size() * split.first->impurity() +
-            split.second->size() * split.second->impurity()
-            ) / training_set.size();
+    double ret = training_set.impurity() -
+                 (split.first->size() * split.first->impurity() +
+                 split.second->size() * split.second->impurity())
+                 / training_set.size();
+    delete split.first;
+    delete split.second;
+    return ret;
 }
