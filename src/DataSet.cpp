@@ -1,6 +1,7 @@
 #include "DataSet.h"
 #include <vector>
 #include <utility>
+#include <math.h> // For isnan
 using namespace std;
 
 
@@ -88,7 +89,10 @@ Predicate* PredicateSet::bestSplit(DataSet &training_set) {
     Predicate *best_predicate = NULL;
     for(vector<Predicate>::iterator i = predicates->begin(); i != predicates->end(); i++) {
         current_score = this->informationGain(*i, training_set);
-        if(best_predicate == NULL || best_score < current_score) {
+        //XXX the semantics of this conditional,
+        // and what to do when all splits are trivial or provide no gain,
+        // are corner cases that really need more careful consideration
+        if(best_predicate == NULL || isnan(best_score) || best_score < current_score) {
             best_score = current_score;
             best_predicate = &(*i); // Need the address of the iterator's current element
         }
