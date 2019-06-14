@@ -4,6 +4,7 @@
 #include <utility>
 #include <cstdlib> // For exit, EXIT_FAILURE
 #include <iostream>
+#include <vector>
 using namespace std;
 
 void outputAndQuit(const string message) {
@@ -76,4 +77,34 @@ pair<LabelFile, ImageFile> MNIST_readTrainingSet(const string prefix) {
 pair<LabelFile, ImageFile> MNIST_readTestSet(const string prefix) {
     return make_pair(readLabelFile(prefix + MNIST_TEST_LABEL_FILE),
                      readImageFile(prefix + MNIST_TEST_IMAGE_FILE));
+}
+
+
+DataSet* MNIST_to_DataSet(pair<LabelFile, ImageFile> &mnist) {
+    vector<DataRow> data;
+    vector<bool> image(mnist.second.num_rows * mnist.second.num_columns);
+    if(mnist.first.num_items != mnist.second.num_items) {
+        outputAndQuit("Image and Label files have mismatched num items");
+    }
+    for(int i = 0; i < mnist.first.num_items; i++) {
+        if(mnist.first.labels[i] == 1 || mnist.first.labels[i] == 7) {
+            for(int offset = 0; offset < mnist.second.num_rows * mnist.second.num_columns; offset++) {
+                image[offset] = mnist.second.pixels[i * mnist.second.num_rows * mnist.second.num_columns + offset] > 128;
+            }
+            data.push_back(make_pair(image, mnist.first.labels[i] == 7));
+        }
+    }
+    return new DataSet(data);
+}
+
+pair<DataSet*, DataSet*> MNIST_readAsDataSet(const string prefix) {
+    pair<LabelFile, ImageFile> training = MNIST_readTrainingSet(prefix);
+    pair<LabelFile, ImageFile> test = MNIST_readTestSet(prefix);
+    DataSet *ret_training = MNIST_to_DataSet(training);
+    DataSet *ret_test = MNIST_to_DataSet(test);
+    delete[] training.first.labels;
+    delete[] training.second.pixels;
+    delete[] test.first.labels;
+    delete[] test.second.pixels;
+    return make_pair(ret_training, ret_test);
 }

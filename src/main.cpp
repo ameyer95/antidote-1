@@ -1,6 +1,6 @@
 #include "ASTNode.h"
 #include "PrettyPrinter.h"
-#include "MNISTReader.h"
+#include "Experiment.h"
 #include <iostream>
 #include <utility>
 using namespace std;
@@ -20,14 +20,15 @@ void test_build_asts() {
     }
 }
 
-void test_load_MNIST() {
-    pair<LabelFile, ImageFile> training, test;
-    training = MNIST_readTrainingSet("data/");
-    test = MNIST_readTestSet("data/");
+void test_MNIST() {
+    Experiment e("data/");
+    cout << "running a depth-1 experiment on test 0" << endl;
+    double ret = e.run(1, 0);
+    cout << "result: " << ret << endl;
 }
 
 int main() {
     test_build_asts();
-    test_load_MNIST();
+    test_MNIST();
     return 0;
 }

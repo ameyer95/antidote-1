@@ -1,6 +1,7 @@
 #ifndef MNISTREADER_H
 #define MNISTREADER_H
 
+#include "DataSet.h"
 #include <cstdint>
 #include <utility>
 #include <string>
@@ -30,5 +31,7 @@ struct ImageFile {
 
 pair<LabelFile, ImageFile> MNIST_readTrainingSet(const string prefix);
 pair<LabelFile, ImageFile> MNIST_readTestSet(const string prefix);
+
+pair<DataSet*, DataSet*> MNIST_readAsDataSet(const string prefix);
 
 #endif
