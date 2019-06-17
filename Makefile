@@ -44,7 +44,9 @@ $(TEST_BUILDDIR)/%.o: $(TEST_SRCDIR)/%.cpp
 	$(CXX) -I $(INCLUDEDIR) -I $(TEST_CATCHDIR) -MMD -c -o $@ $<
 
 
-.PHONY: clean test
+.PHONY: clean test all
+
+all: $(TARGET) $(TEST_TARGET)
 
 clean:
 	rm -rf $(BUILDDIR) $(BINDIR) $(TEST_BUILDDIR) $(TEST_BINDIR)
