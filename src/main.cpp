@@ -12,7 +12,7 @@ void test_build_ast(int depth) {
     PrettyPrinter p = PrettyPrinter();
     cout << "Depth " << depth << endl;
     root->accept(p);
-    cout << endl;
+    cout << p.getString() << endl;
 }
 
 void test_build_asts() {

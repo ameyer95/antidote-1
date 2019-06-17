@@ -1,17 +1,27 @@
 #include "PrettyPrinter.h"
 #include "ASTNode.h"
-#include <iostream>
+#include <string>
 using namespace std;
 
 
 void PrettyPrinter::printIndent() {
     for(int i = 0; i < indent; i++) {
-        cout << "  ";
+        code_string += "  ";
     }
 }
 
+void PrettyPrinter::printLine(string s) {
+    printIndent();
+    code_string += s + "\n";
+}
+
 PrettyPrinter::PrettyPrinter() {
+    reset();
+}
+
+void PrettyPrinter::reset() {
     indent = 0;
+    code_string = "";
 }
 
 void PrettyPrinter::visit(SequenceNode &node){
@@ -21,51 +31,42 @@ void PrettyPrinter::visit(SequenceNode &node){
 }
 
 void PrettyPrinter::visit(ITEImpurityNode &node){
-    printIndent();
-    cout << "if(impurity(T) = 0) {" << endl;
+    printLine("if(impurity(T) = 0) {");
     indent++;
     node.get_then_child()->accept(*this);
     indent--;
-    printIndent();
-    cout << "} else {" << endl;
+    printLine("} else {");
     indent++;
     node.get_else_child()->accept(*this);
     indent--;
-    printIndent();
-    cout << "}" << endl;
+    printLine("}");
 }
 
 void PrettyPrinter::visit(ITEModelsNode &node){
-    printIndent();
-    cout << "if(x models phi) {" << endl;
+    printLine("if(x models phi) {");
     indent++;
     node.get_then_child()->accept(*this);
     indent--;
-    printIndent();
-    cout << "} else {" << endl;
+    printLine("} else {");
     indent++;
     node.get_else_child()->accept(*this);
     indent--;
-    printIndent();
-    cout << "}" << endl;
+    printLine("}");
 }
 
 void PrettyPrinter::visit(BestSplitNode &node){
-    printIndent();
-    cout << "phi <- bestsplit(T);" << endl;
+    printLine("phi <- bestsplit(T);");
 }
 
 void PrettyPrinter::visit(FilterNode &node){
-    printIndent();
-    cout << "T <- filter(T, " << (node.get_mode() ? "" : "not ") << "phi);" << endl;
+    string mode = (node.get_mode() ? "" : "not ");
+    printLine("T <- filter(T, " + mode + "phi);");
 }
 
 void PrettyPrinter::visit(SummaryNode &node){
-    printIndent();
-    cout << "p <- summary(T);" << endl;
+    printLine("p <- summary(T);");
 }
 
 void PrettyPrinter::visit(ReturnNode &node){
-    printIndent();
-    cout << "return p;" << endl;
+    printLine("return p;");
 }
