@@ -1,4 +1,5 @@
 CXX=g++
+CXXFLAGS=-O3
 
 SRCDIR=src
 BUILDDIR=build
@@ -13,11 +14,11 @@ TARGET=$(BINDIR)/main
 
 $(TARGET): $(OBJS)
 	@mkdir -p $(BINDIR)
-	$(CXX) -o $@ $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(BUILDDIR)
-	$(CXX) -I $(INCLUDEDIR) -MMD -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -I $(INCLUDEDIR) -MMD -c -o $@ $<
 
 
 TEST_SRCDIR=test/src
