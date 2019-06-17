@@ -16,16 +16,16 @@ typedef pair<Input, bool> DataRow;
 
 class DataSet {
 private:
-    vector<DataRow> data;
+    vector<DataRow> *data;
 
 public:
     DataSet(bool *bits, int num_bits, int row_size);
-    DataSet(vector<DataRow> &data);
+    DataSet(vector<DataRow> *data);
 
-    DataRow getRow(int row_index) { return data[row_index]; }
-    int size() { return data.size(); }
+    DataRow getRow(int row_index) { return (*data)[row_index]; }
+    int size() { return data->size(); }
 
-    bool classificationBit(int row_index) { return data[row_index].second; }
+    bool classificationBit(int row_index) { return (*data)[row_index].second; }
     int countOnes();
 
     bool isPure();

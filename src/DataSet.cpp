@@ -21,19 +21,20 @@ DataRow buildRow(bool *bits, int row_size) {
 // bits should be some array of bools -- the flattened two-dimension structure
 DataSet::DataSet(bool *bits, int num_bits, int row_size) {
     int num_rows = num_bits / row_size;
-    data.reserve(num_rows);
+    data = new vector<DataRow>();
+    data->reserve(num_rows);
     for(int i = 0; i < num_rows; i++) {
-        data.push_back(buildRow(bits + i*row_size, row_size));
+        data->push_back(buildRow(bits + i*row_size, row_size));
     }
 }
 
-DataSet::DataSet(vector<DataRow> &data) {
-    this->data = data; // XXX large copy
+DataSet::DataSet(vector<DataRow> *data) {
+    this->data = data;
 }
 
 int DataSet::countOnes() {
     int count = 0;
-    for(int i = 0; i < data.size(); i++) {
+    for(int i = 0; i < data->size(); i++) {
         if(classificationBit(i)) {
             count++;
         }
@@ -43,23 +44,23 @@ int DataSet::countOnes() {
 
 bool DataSet::isPure() {
     int count = countOnes();
-    return count == 0 || count == data.size();
+    return count == 0 || count == data->size();
 }
 
 void DataSet::filter(Predicate &phi, bool mode) {
     bool remove, result;
     // XXX this iterative removal is potentially very inefficient; consider a linked list
-    for(vector<DataRow>::iterator i = data.begin(); i != data.end(); i++) {
+    for(vector<DataRow>::iterator i = data->begin(); i != data->end(); i++) {
         result = phi.evaluate(i->first);
         remove = mode ? result : !result;
         if(remove) {
-            data.erase(i--); // Decrement iterator after passing, but before execution
+            data->erase(i--); // Decrement iterator after passing, but before execution
         }
     }
 }
 
 double DataSet::summary() {
-    return (double)countOnes() / data.size();
+    return (double)countOnes() / data->size();
 }
 
 double DataSet::impurity() {
@@ -68,13 +69,13 @@ double DataSet::impurity() {
 }
 
 pair<DataSet*, DataSet*> DataSet::split(Predicate &phi) {
-    // XXX both this and the constructor copy a vector
-    vector<DataRow> pos, neg;
-    for(vector<DataRow>::iterator i = data.begin(); i != data.end(); i++) {
+    vector<DataRow> *pos = new vector<DataRow>();
+    vector<DataRow> *neg = new vector<DataRow>();
+    for(vector<DataRow>::iterator i = data->begin(); i != data->end(); i++) {
         if(phi.evaluate(i->first)) {
-            pos.push_back(*i);
+            pos->push_back(*i);
         } else {
-            neg.push_back(*i);
+            neg->push_back(*i);
         }
     }
     return make_pair(new DataSet(pos), new DataSet(neg));

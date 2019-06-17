@@ -81,7 +81,7 @@ pair<LabelFile, ImageFile> MNIST_readTestSet(const string prefix) {
 
 
 DataSet* MNIST_to_DataSet(pair<LabelFile, ImageFile> &mnist) {
-    vector<DataRow> data;
+    vector<DataRow> *data = new vector<DataRow>();
     vector<bool> image(mnist.second.num_rows * mnist.second.num_columns);
     if(mnist.first.num_items != mnist.second.num_items) {
         outputAndQuit("Image and Label files have mismatched num items");
@@ -91,7 +91,7 @@ DataSet* MNIST_to_DataSet(pair<LabelFile, ImageFile> &mnist) {
             for(int offset = 0; offset < mnist.second.num_rows * mnist.second.num_columns; offset++) {
                 image[offset] = mnist.second.pixels[i * mnist.second.num_rows * mnist.second.num_columns + offset] > 128;
             }
-            data.push_back(make_pair(image, mnist.first.labels[i] == 7));
+            data->push_back(make_pair(image, mnist.first.labels[i] == 7));
         }
     }
     return new DataSet(data);
