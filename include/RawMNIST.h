@@ -13,6 +13,7 @@ enum class MNISTMode { TRAINING, TEST };
 typedef uint8_t* Image;
 typedef uint8_t Label;
 
+
 class RawMNIST : public RawData<Image,Label> {
 private:
     ImageFile image_file;
@@ -24,5 +25,6 @@ public:
     const pair<const Image, const Label> operator [](unsigned int i) const;
     unsigned int size() const;
 };
+
 
 #endif
