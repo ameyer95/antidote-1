@@ -1,27 +1,26 @@
 #include "Experiment.h"
-#include "MNISTReader.h"
-#include "DataSet.h"
 #include "ASTNode.h"
+#include "ConcreteSemantics.h"
+#include "MNISTReader.h"
 #include <string>
 #include <utility>
 #include <iostream>
 using namespace std;
 
 Experiment::Experiment(string mnistPrefix) {
-    vector<Predicate> *phis = new vector<Predicate>();
-    loadMNIST(mnistPrefix);
-    for(int i = 0; i < training->getRow(0).first.size(); i++) {
-        phis->push_back(Predicate(i));
+    predicates = new vector<BitVectorPredicate>();
+    for(int i = 0; i < MNIST_IMAGE_SCALE * MNIST_IMAGE_SCALE; i++) {
+        predicates->push_back(BitVectorPredicate(i));
     }
-    predicates = new PredicateSet(phis);
+    loadMNIST(mnistPrefix);
 }
 
 void Experiment::loadMNIST(string mnistPrefix) {
-    pair<DataSet*, DataSet*> mnist;//XXX = MNIST_readAsDataSet(mnistPrefix);
+    pair<BooleanDataSet*, BooleanDataSet*> mnist;//XXX
     training = mnist.first;
     test = mnist.second;
-    cout << "training set size: " << training->size() << " summary: " << training->summary() << endl;
-    cout << "test set size: " << test->size() << " summary: " << test->summary() << endl;
+    //cout << "training set size: " << training->size() << " summary: " << training->summary() << endl;
+    //cout << "test set size: " << test->size() << " summary: " << test->summary() << endl;
 }
 
 

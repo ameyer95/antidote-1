@@ -1,12 +1,16 @@
 #include "ConcreteSemantics.h"
-#include "DataSet.h"
-
+#include "ASTNode.h"
+#include "ConcreteCommon.h"
+#include "DataCommon.h"
+#include <utility>
+#include <vector>
+using namespace std;
 
 ConcreteSemantics::ConcreteSemantics() {
     //TODO
 }
 
-double ConcreteSemantics::execute(Input test_input, DataSet *training_set, PredicateSet *predicates, ASTNode *program) {
+double ConcreteSemantics::execute(Input test_input, BooleanDataSet *training_set, vector<BitVectorPredicate> *predicates, ASTNode *program) {
     this->test_input = test_input;
     this->training_set = training_set;
     this->predicates = predicates;
@@ -42,7 +46,7 @@ void ConcreteSemantics::visit(ITEModelsNode &node) {
 
 void ConcreteSemantics::visit(BestSplitNode &node) {
     if(halt) return;
-    phi = predicates->bestSplit(*training_set);
+    phi = training_set->bestSplit(predicates);
 }
 
 void ConcreteSemantics::visit(FilterNode &node) {

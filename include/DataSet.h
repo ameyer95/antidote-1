@@ -8,6 +8,8 @@ using namespace std;
 
 // Everything is currently hard-coded for binary classification and boolean features.
 
+// TODO remove this file, incorporating its details into ConcreteSemantics.h, ConcreteCommon.h, etc
+
 class Predicate;
 
 typedef vector<bool> Input;
