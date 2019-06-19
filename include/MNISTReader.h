@@ -1,7 +1,6 @@
 #ifndef MNISTREADER_H
 #define MNISTREADER_H
 
-#include "DataSet.h"
 #include <cstdint>
 #include <utility>
 #include <string>
@@ -14,6 +13,8 @@ const string MNIST_TEST_IMAGE_FILE = "t10k-images-idx3-ubyte";
 
 const int32_t MNIST_LABEL_MAGIC_NUMBER = 0x00000801;
 const int32_t MNIST_IMAGE_MAGIC_NUMBER = 0x00000803;
+
+const int32_t MNIST_IMAGE_SCALE = 28;
 
 struct LabelFile {
     int32_t magic_number;
@@ -31,7 +32,5 @@ struct ImageFile {
 
 pair<LabelFile, ImageFile> MNIST_readTrainingSet(const string prefix);
 pair<LabelFile, ImageFile> MNIST_readTestSet(const string prefix);
-
-pair<DataSet*, DataSet*> MNIST_readAsDataSet(const string prefix);
 
 #endif

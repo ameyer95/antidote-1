@@ -17,7 +17,7 @@ Experiment::Experiment(string mnistPrefix) {
 }
 
 void Experiment::loadMNIST(string mnistPrefix) {
-    pair<DataSet*, DataSet*> mnist = MNIST_readAsDataSet(mnistPrefix);
+    pair<DataSet*, DataSet*> mnist;//XXX = MNIST_readAsDataSet(mnistPrefix);
     training = mnist.first;
     test = mnist.second;
     cout << "training set size: " << training->size() << " summary: " << training->summary() << endl;
