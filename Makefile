@@ -26,7 +26,7 @@ TEST_BUILDDIR=test/build
 TEST_BINDIR=test/bin
 TEST_CATCHDIR=test/catch2
 
-TEST_SRCS=$(shell find $(TEST_SRCDIR) -name *.cpp)
+TEST_SRCS=$(shell find $(TEST_SRCDIR) -name "*.cpp")
 TEST_OBJS=$(TEST_SRCS:$(TEST_SRCDIR)/%.cpp=$(TEST_BUILDDIR)/%.o)
 TEST_DEPS=$(TEST_OBJS:.o=.d)
 
