@@ -1,6 +1,6 @@
 #include "ASTNode.h"
 #include "MNISTExperiment.h"
-#include "MNISTReader.h"
+#include "MNIST.h"
 #include "PrettyPrinter.h"
 #include <iostream>
 #include <utility>

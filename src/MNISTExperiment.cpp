@@ -1,7 +1,7 @@
 #include "MNISTExperiment.h"
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
-#include "MNISTReader.h"
+#include "MNIST.h"
 #include <string>
 #include <utility>
 #include <iostream>

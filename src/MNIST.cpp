@@ -1,10 +1,9 @@
-#include "MNISTReader.h"
+#include "MNIST.h"
 #include <cstdint>
-#include <fstream>
-#include <utility>
 #include <cstdlib> // For exit, EXIT_FAILURE
+#include <fstream>
 #include <iostream>
-#include <vector>
+#include <utility>
 using namespace std;
 
 void outputAndQuit(const string message) {
@@ -81,3 +80,32 @@ pair<LabelFile, ImageFile> MNIST_readTestSet(const string prefix) {
     return make_pair(readLabelFile(prefix + MNIST_TEST_LABEL_FILE),
                      readImageFile(prefix + MNIST_TEST_IMAGE_FILE));
 }
+
+RawMNIST::RawMNIST(MNISTMode mode, const string prefix) {
+    pair<LabelFile, ImageFile> files;
+    if(mode == MNISTMode::TRAINING) {
+        files = MNIST_readTrainingSet(prefix);
+    } else {
+        files = MNIST_readTestSet(prefix);
+    }
+    image_file = files.second;
+    label_file = files.first;
+}
+
+const Image RawMNIST::getImage(unsigned int i) const {
+    int offset = i * image_file.num_rows * image_file.num_columns * sizeof(uint8_t);
+    return image_file.pixels + offset;
+}
+
+const Label RawMNIST::getLabel(unsigned int i) const {
+    int offset = i * label_file.num_items * sizeof(uint8_t);
+    return *(label_file.labels + offset);
+}
+
+const pair<const Image, const Label> RawMNIST::operator [](unsigned int i) const {
+    return make_pair(getImage(i), getLabel(i));
+};
+
+unsigned int RawMNIST::size() const {
+    return image_file.num_items;
+};
