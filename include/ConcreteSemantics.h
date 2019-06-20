@@ -19,7 +19,7 @@ private:
 
 public:
     BitVectorPredicate(int index) { this->index = index; }
-    bool evaluate(const Input &input) { return input[index]; }
+    const bool evaluate(const Input &input) const { return input[index]; }
 };
 
 
@@ -27,14 +27,17 @@ class BooleanDataSet : public DataSetInterface<BitVectorPredicate, vector<BitVec
 private:
     DataReferences<DataRow> *data;
 
+    bool classificationBit(int row_index) { return (*data)[row_index].second; }
+    int countOnes();
+    pair<pair<int, int>, pair<int, int>> splitCounts(BitVectorPredicate *phi);
+
 public:
-    //TODO implement these
     bool isPure();
     void filter(const BitVectorPredicate &phi, bool mode);
     double summary();
     BitVectorPredicate* bestSplit(vector<BitVectorPredicate> *predicates);
 
-    const DataRow& getRow(int index) { return (*data)[index]; }
+    const DataRow& getRow(int row_index) const { return (*data)[row_index]; }
 };
 
 

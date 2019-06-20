@@ -7,7 +7,7 @@ template <typename X, typename L=bool>
 class Predicate {
 private:
 public:
-    virtual L evaluate(const X &input) = 0;
+    virtual const L evaluate(const X &input) const = 0;
 };
 
 
