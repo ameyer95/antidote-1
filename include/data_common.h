@@ -9,11 +9,11 @@ using namespace std;
 template <typename T>
 class DataReferences {
 private:
-    vector<T> *data;
+    const vector<T> *data;
     vector<int> indices;
 
 public:
-    DataReferences(vector<T> *data);
+    DataReferences(const vector<T> *data);
 
     const T& operator [](unsigned int i) const { return (*data)[indices[i]]; }
     void remove(int index) { indices.erase(indices.begin() + index); }
@@ -22,7 +22,7 @@ public:
 
 
 template <typename T>
-DataReferences<T>::DataReferences(vector<T> *data) {
+DataReferences<T>::DataReferences(const vector<T> *data) {
     this->data = data;
     indices.reserve(data->size());
     for(int i = 0; i < data->size(); i++) {
