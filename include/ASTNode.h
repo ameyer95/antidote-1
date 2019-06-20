@@ -37,7 +37,7 @@ class Visitor;
 
 class ASTNode {
 public:
-    static ASTNode* buildTree(int depth);
+    static ASTNode* buildTree(int depth); // XXX heap is never deallocated
     virtual void accept(Visitor &v) = 0;
 };
 
