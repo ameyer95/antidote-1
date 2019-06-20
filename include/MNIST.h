@@ -16,6 +16,7 @@ const int32_t MNIST_LABEL_MAGIC_NUMBER = 0x00000801;
 const int32_t MNIST_IMAGE_MAGIC_NUMBER = 0x00000803;
 
 const int32_t MNIST_IMAGE_SCALE = 28;
+const int32_t MNIST_IMAGE_SIZE = MNIST_IMAGE_SCALE * MNIST_IMAGE_SCALE;
 
 struct LabelFile {
     int32_t magic_number;
