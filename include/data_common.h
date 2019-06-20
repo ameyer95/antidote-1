@@ -1,5 +1,5 @@
-#ifndef DATACOMMON_H
-#define DATACOMMON_H
+#ifndef DATA_COMMON_H
+#define DATA_COMMON_H
 
 #include <vector>
 using namespace std;

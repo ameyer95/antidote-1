@@ -2,8 +2,8 @@
 #define CONCRETESEMANTICS_H
 
 #include "ASTNode.h"
-#include "ConcreteCommon.h"
-#include "DataCommon.h"
+#include "concrete_common.h"
+#include "data_common.h"
 #include <utility>
 #include <vector>
 using namespace std;

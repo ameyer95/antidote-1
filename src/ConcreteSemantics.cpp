@@ -1,7 +1,7 @@
 #include "ConcreteSemantics.h"
 #include "ASTNode.h"
-#include "ConcreteCommon.h"
-#include "DataCommon.h"
+#include "concrete_common.h"
+#include "data_common.h"
 #include "information_math.h"
 #include <math.h> // for isnan
 #include <utility>

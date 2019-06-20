@@ -1,5 +1,5 @@
-#ifndef CONCRETECOMMON_H
-#define CONCRETECOMMON_H
+#ifndef CONCRETE_COMMON_H
+#define CONCRETE_COMMON_H
 
 
 // You can control the return type of evaluate(X) to support 3-valued logic
