@@ -1,4 +1,4 @@
-#include "Experiment.h"
+#include "MNISTExperiment.h"
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
 #include "MNISTReader.h"
@@ -7,7 +7,7 @@
 #include <iostream>
 using namespace std;
 
-Experiment::Experiment(string mnistPrefix) {
+MNISTExperiment::MNISTExperiment(string mnistPrefix) {
     predicates = new vector<BitVectorPredicate>();
     for(int i = 0; i < MNIST_IMAGE_SCALE * MNIST_IMAGE_SCALE; i++) {
         predicates->push_back(BitVectorPredicate(i));
@@ -15,7 +15,7 @@ Experiment::Experiment(string mnistPrefix) {
     loadMNIST(mnistPrefix);
 }
 
-void Experiment::loadMNIST(string mnistPrefix) {
+void MNISTExperiment::loadMNIST(string mnistPrefix) {
     pair<BooleanDataSet*, BooleanDataSet*> mnist;//XXX
     training = mnist.first;
     test = mnist.second;
@@ -24,7 +24,7 @@ void Experiment::loadMNIST(string mnistPrefix) {
 }
 
 
-double Experiment::run(int depth, int test_index) {
+double MNISTExperiment::run(int depth, int test_index) {
     ASTNode* program = ASTNode::buildTree(depth);
     ConcreteSemantics sem;
     return sem.execute(test->getRow(test_index).first, training, predicates, program);

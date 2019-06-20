@@ -1,5 +1,5 @@
-#ifndef EXPERIMENT_H
-#define EXPERIMENT_H
+#ifndef MNISTEXPERIMENT_H
+#define MNISTEXPERIMENT_H
 
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
@@ -8,7 +8,7 @@
 using namespace std;
 
 
-class Experiment {
+class MNISTExperiment {
 private:
     BooleanDataSet *training, *test;
     vector<BitVectorPredicate> *predicates;
@@ -16,7 +16,7 @@ private:
     void loadMNIST(string mnistPrefix);
 
 public:
-    Experiment(string mnistPrefix);
+    MNISTExperiment(string mnistPrefix);
     double run(int depth, int test_index);
 };
 

@@ -1,5 +1,5 @@
 #include "ASTNode.h"
-#include "Experiment.h"
+#include "MNISTExperiment.h"
 #include "MNISTReader.h"
 #include "PrettyPrinter.h"
 #include <iostream>
@@ -44,7 +44,7 @@ void test_load_MNIST() {
 }
 
 void test_MNIST() {
-    Experiment e("data/");
+    MNISTExperiment e("data/");
     cout << "running a depth-1 experiment on test 0" << endl;
     double ret = e.run(1, 0);
     cout << "result: " << ret << endl;
