@@ -32,6 +32,8 @@ private:
     pair<pair<int, int>, pair<int, int>> splitCounts(BitVectorPredicate *phi);
 
 public:
+    BooleanDataSet(DataReferences<DataRow> *data) { this->data = data; }
+
     bool isPure();
     void filter(const BitVectorPredicate &phi, bool mode);
     double summary();

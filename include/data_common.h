@@ -11,11 +11,23 @@ class DataReferences {
 private:
     vector<T> *data;
     vector<int> indices;
+
 public:
+    DataReferences(vector<T> *data);
+
     const T& operator [](unsigned int i) const { return (*data)[indices[i]]; }
     void remove(int index) { indices.erase(indices.begin() + index); }
     const unsigned int size() { return indices.size(); }
 };
 
+
+template <typename T>
+DataReferences<T>::DataReferences(vector<T> *data) {
+    this->data = data;
+    indices.reserve(data->size());
+    for(int i = 0; i < data->size(); i++) {
+        indices.push_back(i);
+    }
+}
 
 #endif
