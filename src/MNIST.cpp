@@ -98,7 +98,7 @@ const Image RawMNIST::getImage(unsigned int i) const {
 }
 
 const Label RawMNIST::getLabel(unsigned int i) const {
-    int offset = i * label_file.num_items * sizeof(uint8_t);
+    int offset = i * sizeof(uint8_t);
     return *(label_file.labels + offset);
 }
 
