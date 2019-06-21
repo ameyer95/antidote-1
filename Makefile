@@ -37,11 +37,11 @@ MAIN_OBJ=$(BUILDDIR)/main.o
 
 $(TEST_TARGET): $(OBJS) $(TEST_OBJS)
 	@mkdir -p $(TEST_BINDIR)
-	$(CXX) -o $@ $(TEST_OBJS) $(filter-out $(MAIN_OBJ), $(OBJS))
+	$(CXX) $(CXXFLAGS) -o $@ $(TEST_OBJS) $(filter-out $(MAIN_OBJ), $(OBJS))
 
 $(TEST_BUILDDIR)/%.o: $(TEST_SRCDIR)/%.cpp
 	@mkdir -p $(TEST_BUILDDIR)
-	$(CXX) -I $(INCLUDEDIR) -I $(TEST_CATCHDIR) -MMD -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -I $(INCLUDEDIR) -I $(TEST_CATCHDIR) -MMD -c -o $@ $<
 
 
 .PHONY: clean test all
