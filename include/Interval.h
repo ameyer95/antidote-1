@@ -6,14 +6,11 @@
 // Cannot 'using namespace std' since there is some namespace collision
 // with the operator+ overload.
 
-// We have to forward declare templated friend functions
+// We "must" forward declare templated friend functions
 // (and, in turn, the template class)
-// so that, e.g., to_string(int &x) is not a friend to Interval<double>
+// so that, e.g., operator-(Interval<int>) is not a friend to Interval<double>
 template <typename T>
 class Interval;
-
-template <typename T>
-std::string to_string(const Interval<T>& interval);
 
 template <typename T>
 Interval<T> operator- (const Interval<T>& interval);
@@ -48,7 +45,8 @@ public:
     Interval(const T& single_value);
     Interval(const T& lower_bound, const T& upper_bound);
 
-    friend std::string to_string<T>(const Interval<T>& interval);
+    T get_lower_bound() const { return lower_bound; }
+    T get_upper_bound() const { return upper_bound; }
 
     friend Interval<T> operator- <T> (const Interval<T>& interval);
     friend Interval<T> operator+ <T> (const Interval<T>& left, const Interval<T>& right);
@@ -76,9 +74,13 @@ Interval<T>::Interval(const T& lower_bound, const T& upper_bound) {
 
 template <typename T>
 std::string to_string(const Interval<T>& interval) {
-    return "[" + std::to_string((T)interval.lower_bound) + ", " +
-                 std::to_string((T)interval.upper_bound) + "]";
+    return "[" + std::to_string((T)interval.get_lower_bound()) + ", " +
+                 std::to_string((T)interval.get_upper_bound()) + "]";
 }
+
+/**
+ * Friend functions below
+ */
 
 template <typename T>
 Interval<T> operator- (const Interval<T>& interval) {
