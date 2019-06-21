@@ -1,6 +1,7 @@
 #include "PrettyPrinter.h"
 #include "ASTNode.h"
 #include <string>
+#include <vector>
 using namespace std;
 
 
@@ -25,8 +26,9 @@ void PrettyPrinter::reset() {
 }
 
 void PrettyPrinter::visit(const SequenceNode &node){
-    for(int i = 0; i < node.get_num_children(); i++) {
-        node.get_child(i)->accept(*this);
+    vector<ASTNode*> children = node.get_children();
+    for(vector<ASTNode*>::iterator i = children.begin(); i != children.end(); i++) {
+        (*i)->accept(*this);
     }
 }
 

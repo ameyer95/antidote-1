@@ -1,6 +1,8 @@
 #ifndef ASTNODE_H
 #define ASTNODE_H
 
+#include<vector>
+using namespace std;
 
 /**
  * The AST class hierarchy here looks like the following:
@@ -45,47 +47,46 @@ public:
 
 class SequenceNode : public ASTNode {
 private:
-    ASTNode **children;
-    int num_children;
+    vector<ASTNode*> children;
 
 public:
-    SequenceNode(ASTNode **children, int num_children);
+    SequenceNode(const vector<ASTNode*> &children);
     void accept(Visitor &v) const;
 
-    ASTNode** get_children() const { return children; }
-    int get_num_children() const { return num_children; }
-    ASTNode* get_child(int index) const { return children[index]; }
+    const vector<ASTNode*>& get_children() const { return children; }
 };
 
 
 class ITENode : public ASTNode {
 protected:
-    ASTNode *then_child, *else_child;
+    const ASTNode *then_child, *else_child;
 
 public:
+    ITENode(const ASTNode *then_child, const ASTNode *else_child);
     const ASTNode* get_then_child() const { return then_child; }
     const ASTNode* get_else_child() const { return else_child; }
-    void set_children(ASTNode *then_child, ASTNode *else_child);
 };
 
 
 class ITEImpurityNode : public ITENode {
 public:
-    ITEImpurityNode();
+    ITEImpurityNode(const ASTNode *then_child, const ASTNode *else_child)
+        : ITENode(then_child, else_child) {};
     void accept(Visitor &v) const;
 };
 
 
 class ITEModelsNode : public ITENode {
 public:
-    ITEModelsNode(bool populate);
+    ITEModelsNode(const ASTNode *then_child, const ASTNode *else_child)
+        : ITENode(then_child, else_child) {};
     void accept(Visitor &v) const;
 };
 
 
 class BestSplitNode : public ASTNode {
 public:
-    BestSplitNode();
+    BestSplitNode() {};
     void accept(Visitor &v) const;
 };
 
@@ -104,14 +105,14 @@ public:
 
 class SummaryNode : public ASTNode {
 public:
-    SummaryNode();
+    SummaryNode() {};
     void accept(Visitor &v) const;
 };
 
 
 class ReturnNode : public ASTNode {
 public:
-    ReturnNode();
+    ReturnNode() {};
     void accept(Visitor &v) const;
 };
 

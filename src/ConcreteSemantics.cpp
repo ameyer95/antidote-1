@@ -23,8 +23,9 @@ double ConcreteSemantics::execute(const Input test_input, BooleanDataSet *traini
 
 void ConcreteSemantics::visit(const SequenceNode &node) {
     if(halt) return;
-    for(int i = 0; i < node.get_num_children(); i++) {
-        node.get_child(i)->accept(*this);
+    vector<ASTNode*> children = node.get_children();
+    for(vector<ASTNode*>::iterator i = children.begin(); i != children.end(); i++) {
+        (*i)->accept(*this);
     }
 }
 
