@@ -15,6 +15,6 @@ the dataset must first be downloaded (and unzipped).
 This is scripted: run `data/fetch-mnist.sh`.
 
 Unit tests (the [test/](test/) directory) can be built and run using `make test`.
-Testing uses the open source [Catch](https://github.com/catchorg/Catch2) framework
+Testing uses the open source [Catch2](https://github.com/catchorg/Catch2) framework
 whose license permits including its source in this repository
-(as the single header file [test/catch2/catch.hpp](test/catch2/catch.hpp)).
+(as the single&mdash;but rather large&mdash;header file [test/catch2/](test/catch2/)catch.hpp).
