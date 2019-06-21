@@ -28,22 +28,32 @@ vector<DataRow>* simplified(const RawMNIST &mnist, pair<int, int> classes = make
 }
 
 MNISTExperiment::MNISTExperiment(string mnistPrefix) {
-    predicates = new vector<BitVectorPredicate>();
-    for(int i = 0; i < MNIST_IMAGE_SIZE; i++) {
-        predicates->push_back(BitVectorPredicate(i));
-    }
     loadMNIST(mnistPrefix);
+    predicates = createPredicates();
+}
+
+vector<BitVectorPredicate>* MNISTExperiment::createPredicates() {
+    vector<BitVectorPredicate> *ret = new vector<BitVectorPredicate>();
+    ret->reserve(MNIST_IMAGE_SIZE);
+    for(int i = 0; i < MNIST_IMAGE_SIZE; i++) {
+        ret->push_back(BitVectorPredicate(i));
+    }
+    return ret;
 }
 
 void MNISTExperiment::loadMNIST(string mnistPrefix) {
-    RawMNIST mnist_training(MNISTMode::TRAINING, mnistPrefix);
-    RawMNIST mnist_test(MNISTMode::TEST, mnistPrefix);
-    training = new BooleanDataSet(new DataReferences<DataRow>(simplified(mnist_training)));
-    test = new DataReferences<DataRow>(simplified(mnist_test));
+    RawMNIST raw_mnist_training(MNISTMode::TRAINING, mnistPrefix);
+    RawMNIST raw_mnist_test(MNISTMode::TEST, mnistPrefix);
+    mnist_training = simplified(raw_mnist_training);
+    mnist_test = simplified(raw_mnist_test);
 }
 
 double MNISTExperiment::run(int depth, int test_index) {
     ASTNode* program = ASTNode::buildTree(depth);
     ConcreteSemantics sem;
-    return sem.execute((*test)[test_index].first, training, predicates, program);
+    BooleanDataSet *training_set = new BooleanDataSet(new DataReferences<DataRow>(mnist_training));
+    double ret = sem.execute((*mnist_test)[test_index].first, training_set, predicates, program);
+    delete training_set;
+    delete program;
+    return ret;
 }

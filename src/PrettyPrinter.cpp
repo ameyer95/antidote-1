@@ -24,13 +24,13 @@ void PrettyPrinter::reset() {
     code_string = "";
 }
 
-void PrettyPrinter::visit(SequenceNode &node){
+void PrettyPrinter::visit(const SequenceNode &node){
     for(int i = 0; i < node.get_num_children(); i++) {
         node.get_child(i)->accept(*this);
     }
 }
 
-void PrettyPrinter::visit(ITEImpurityNode &node){
+void PrettyPrinter::visit(const ITEImpurityNode &node){
     printLine("if(impurity(T) = 0) {");
     indent++;
     node.get_then_child()->accept(*this);
@@ -42,7 +42,7 @@ void PrettyPrinter::visit(ITEImpurityNode &node){
     printLine("}");
 }
 
-void PrettyPrinter::visit(ITEModelsNode &node){
+void PrettyPrinter::visit(const ITEModelsNode &node){
     printLine("if(x models phi) {");
     indent++;
     node.get_then_child()->accept(*this);
@@ -54,19 +54,19 @@ void PrettyPrinter::visit(ITEModelsNode &node){
     printLine("}");
 }
 
-void PrettyPrinter::visit(BestSplitNode &node){
+void PrettyPrinter::visit(const BestSplitNode &node){
     printLine("phi <- bestsplit(T);");
 }
 
-void PrettyPrinter::visit(FilterNode &node){
+void PrettyPrinter::visit(const FilterNode &node){
     string mode = (node.get_mode() ? "" : "not ");
     printLine("T <- filter(T, " + mode + "phi);");
 }
 
-void PrettyPrinter::visit(SummaryNode &node){
+void PrettyPrinter::visit(const SummaryNode &node){
     printLine("p <- summary(T);");
 }
 
-void PrettyPrinter::visit(ReturnNode &node){
+void PrettyPrinter::visit(const ReturnNode &node){
     printLine("return p;");
 }

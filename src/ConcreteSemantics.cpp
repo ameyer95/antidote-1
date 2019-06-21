@@ -12,7 +12,7 @@ ConcreteSemantics::ConcreteSemantics() {
     //TODO
 }
 
-double ConcreteSemantics::execute(Input test_input, BooleanDataSet *training_set, vector<BitVectorPredicate> *predicates, ASTNode *program) {
+double ConcreteSemantics::execute(const Input test_input, BooleanDataSet *training_set, const vector<BitVectorPredicate> *predicates, const ASTNode *program) {
     this->test_input = test_input;
     this->training_set = training_set;
     this->predicates = predicates;
@@ -21,14 +21,14 @@ double ConcreteSemantics::execute(Input test_input, BooleanDataSet *training_set
     return return_value;
 }
 
-void ConcreteSemantics::visit(SequenceNode &node) {
+void ConcreteSemantics::visit(const SequenceNode &node) {
     if(halt) return;
     for(int i = 0; i < node.get_num_children(); i++) {
         node.get_child(i)->accept(*this);
     }
 }
 
-void ConcreteSemantics::visit(ITEImpurityNode &node) {
+void ConcreteSemantics::visit(const ITEImpurityNode &node) {
     if(halt) return;
     if(training_set->isPure()) {
         node.get_then_child()->accept(*this);
@@ -37,7 +37,7 @@ void ConcreteSemantics::visit(ITEImpurityNode &node) {
     }
 }
 
-void ConcreteSemantics::visit(ITEModelsNode &node) {
+void ConcreteSemantics::visit(const ITEModelsNode &node) {
     if(halt) return;
     if(phi->evaluate(test_input)) {
         node.get_then_child()->accept(*this);
@@ -46,22 +46,22 @@ void ConcreteSemantics::visit(ITEModelsNode &node) {
     }
 }
 
-void ConcreteSemantics::visit(BestSplitNode &node) {
+void ConcreteSemantics::visit(const BestSplitNode &node) {
     if(halt) return;
     phi = training_set->bestSplit(predicates);
 }
 
-void ConcreteSemantics::visit(FilterNode &node) {
+void ConcreteSemantics::visit(const FilterNode &node) {
     if(halt) return;
     training_set->filter(*phi, node.get_mode());
 }
 
-void ConcreteSemantics::visit(SummaryNode &node) {
+void ConcreteSemantics::visit(const SummaryNode &node) {
     if(halt) return;
     posterior = training_set->summary();
 }
 
-void ConcreteSemantics::visit(ReturnNode &node) {
+void ConcreteSemantics::visit(const ReturnNode &node) {
     if(halt) return;
     return_value = posterior;
     halt = true;
@@ -77,7 +77,7 @@ int BooleanDataSet::countOnes() {
     return count;
 }
 
-pair<pair<int, int>, pair<int, int>> BooleanDataSet::splitCounts(BitVectorPredicate *phi) {
+pair<pair<int, int>, pair<int, int>> BooleanDataSet::splitCounts(const BitVectorPredicate *phi) {
     pair<pair<int, int>, pair<int, int>> ret(make_pair(0, 0), make_pair(0, 0));
     pair<int, int> *pair_ptr;
     int *count_ptr;
@@ -111,11 +111,11 @@ double BooleanDataSet::summary() {
     return (double)countOnes() / data->size();
 }
 
-BitVectorPredicate* BooleanDataSet::bestSplit(vector<BitVectorPredicate> *predicates) {
+const BitVectorPredicate* BooleanDataSet::bestSplit(const vector<BitVectorPredicate> *predicates) {
     double best_score, current_score;
-    BitVectorPredicate *best_predicate = NULL;
+    const BitVectorPredicate *best_predicate = NULL;
     pair<pair<int, int>, pair<int, int>> counts;
-    for(vector<BitVectorPredicate>::iterator i = predicates->begin(); i != predicates->end(); i++) {
+    for(vector<BitVectorPredicate>::const_iterator i = predicates->begin(); i != predicates->end(); i++) {
         counts = splitCounts(&(*i));
         current_score = informationGain(counts.first, counts.second);
         //XXX the semantics of this conditional,

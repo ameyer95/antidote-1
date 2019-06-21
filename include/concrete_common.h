@@ -22,7 +22,7 @@ public:
     virtual bool isPure() = 0;
     virtual void filter(const P &phi, bool mode) = 0;
     virtual D summary() = 0;
-    virtual P* bestSplit(PS *predicates) = 0;
+    virtual const P* bestSplit(const PS *predicates) = 0;
 };
 
 

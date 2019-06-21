@@ -38,7 +38,8 @@ class Visitor;
 class ASTNode {
 public:
     static ASTNode* buildTree(int depth); // XXX heap is never deallocated
-    virtual void accept(Visitor &v) = 0;
+    virtual void accept(Visitor &v) const = 0;
+    //TODO implement destructor
 };
 
 
@@ -49,11 +50,11 @@ private:
 
 public:
     SequenceNode(ASTNode **children, int num_children);
-    void accept(Visitor &v);
+    void accept(Visitor &v) const;
 
-    ASTNode** get_children() { return children; }
-    int get_num_children() { return num_children; }
-    ASTNode* get_child(int index) { return children[index]; }
+    ASTNode** get_children() const { return children; }
+    int get_num_children() const { return num_children; }
+    ASTNode* get_child(int index) const { return children[index]; }
 };
 
 
@@ -62,8 +63,8 @@ protected:
     ASTNode *then_child, *else_child;
 
 public:
-    ASTNode* get_then_child() { return then_child; }
-    ASTNode* get_else_child() { return else_child; }
+    const ASTNode* get_then_child() const { return then_child; }
+    const ASTNode* get_else_child() const { return else_child; }
     void set_children(ASTNode *then_child, ASTNode *else_child);
 };
 
@@ -71,21 +72,21 @@ public:
 class ITEImpurityNode : public ITENode {
 public:
     ITEImpurityNode();
-    void accept(Visitor &v);
+    void accept(Visitor &v) const;
 };
 
 
 class ITEModelsNode : public ITENode {
 public:
     ITEModelsNode(bool populate);
-    void accept(Visitor &v);
+    void accept(Visitor &v) const;
 };
 
 
 class BestSplitNode : public ASTNode {
 public:
     BestSplitNode();
-    void accept(Visitor &v);
+    void accept(Visitor &v) const;
 };
 
 
@@ -95,35 +96,35 @@ private:
 
 public:
     FilterNode(bool mode);
-    void accept(Visitor &v);
+    void accept(Visitor &v) const;
 
-    bool get_mode() { return mode; }
+    bool get_mode() const { return mode; }
 };
 
 
 class SummaryNode : public ASTNode {
 public:
     SummaryNode();
-    void accept(Visitor &v);
+    void accept(Visitor &v) const;
 };
 
 
 class ReturnNode : public ASTNode {
 public:
     ReturnNode();
-    void accept(Visitor &v);
+    void accept(Visitor &v) const;
 };
 
 
 class Visitor {
 public:
-    virtual void visit(SequenceNode &node) = 0;
-    virtual void visit(ITEImpurityNode &node) = 0;
-    virtual void visit(ITEModelsNode &node) = 0;
-    virtual void visit(BestSplitNode &node) = 0;
-    virtual void visit(FilterNode &node) = 0;
-    virtual void visit(SummaryNode &node) = 0;
-    virtual void visit(ReturnNode &node) = 0;
+    virtual void visit(const SequenceNode &node) = 0;
+    virtual void visit(const ITEImpurityNode &node) = 0;
+    virtual void visit(const ITEModelsNode &node) = 0;
+    virtual void visit(const BestSplitNode &node) = 0;
+    virtual void visit(const FilterNode &node) = 0;
+    virtual void visit(const SummaryNode &node) = 0;
+    virtual void visit(const ReturnNode &node) = 0;
 };
 
 

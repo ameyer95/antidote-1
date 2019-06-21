@@ -72,13 +72,13 @@ ReturnNode::ReturnNode() {}
  * Visitor accept methods
  **/
 
-void SequenceNode::accept(Visitor &v) { v.visit(*this); }
-void ITEImpurityNode::accept(Visitor &v) { v.visit(*this); }
-void ITEModelsNode::accept(Visitor &v) { v.visit(*this); }
-void BestSplitNode::accept(Visitor &v) { v.visit(*this); }
-void FilterNode::accept(Visitor &v) { v.visit(*this); }
-void SummaryNode::accept(Visitor &v) { v.visit(*this); }
-void ReturnNode::accept(Visitor &v) { v.visit(*this); }
+void SequenceNode::accept(Visitor &v) const { v.visit(*this); }
+void ITEImpurityNode::accept(Visitor &v) const { v.visit(*this); }
+void ITEModelsNode::accept(Visitor &v) const { v.visit(*this); }
+void BestSplitNode::accept(Visitor &v) const { v.visit(*this); }
+void FilterNode::accept(Visitor &v) const { v.visit(*this); }
+void SummaryNode::accept(Visitor &v) const { v.visit(*this); }
+void ReturnNode::accept(Visitor &v) const { v.visit(*this); }
 
 
 /**

@@ -30,15 +30,16 @@ private:
     const DataRow& getRow(int row_index) const { return (*data)[row_index]; }
     bool classificationBit(int row_index) { return (*data)[row_index].second; }
     int countOnes();
-    pair<pair<int, int>, pair<int, int>> splitCounts(BitVectorPredicate *phi);
+    pair<pair<int, int>, pair<int, int>> splitCounts(const BitVectorPredicate *phi);
 
 public:
     BooleanDataSet(DataReferences<DataRow> *data) { this->data = data; }
+    // TODO implement destructor
 
     bool isPure();
     void filter(const BitVectorPredicate &phi, bool mode);
     double summary();
-    BitVectorPredicate* bestSplit(vector<BitVectorPredicate> *predicates);
+    const BitVectorPredicate* bestSplit(const vector<BitVectorPredicate> *predicates);
 };
 
 
@@ -48,23 +49,23 @@ private:
     Input test_input;
     BooleanDataSet *training_set;
     double posterior;
-    BitVectorPredicate *phi;
-    vector<BitVectorPredicate> *predicates;
+    const BitVectorPredicate *phi;
+    const vector<BitVectorPredicate> *predicates;
     double return_value; // Largely a proxy for posterior
     bool halt; // Controls whether we've hit a return statement
 
 public:
     ConcreteSemantics();
 
-    double execute(Input test_input, BooleanDataSet *training_set, vector<BitVectorPredicate> *predicates, ASTNode *program);
+    double execute(const Input test_input, BooleanDataSet *training_set, const vector<BitVectorPredicate> *predicates, const ASTNode *program);
 
-    void visit(SequenceNode &node);
-    void visit(ITEImpurityNode &node);
-    void visit(ITEModelsNode &node);
-    void visit(BestSplitNode &node);
-    void visit(FilterNode &node);
-    void visit(SummaryNode &node);
-    void visit(ReturnNode &node);
+    void visit(const SequenceNode &node);
+    void visit(const ITEImpurityNode &node);
+    void visit(const ITEModelsNode &node);
+    void visit(const BestSplitNode &node);
+    void visit(const FilterNode &node);
+    void visit(const SummaryNode &node);
+    void visit(const ReturnNode &node);
 };
 
 

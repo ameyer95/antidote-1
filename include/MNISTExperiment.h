@@ -10,11 +10,12 @@ using namespace std;
 
 class MNISTExperiment {
 private:
-    BooleanDataSet *training;
-    DataReferences<DataRow> *test;
-    vector<BitVectorPredicate> *predicates;
+    const vector<DataRow> *mnist_training;
+    const vector<DataRow> *mnist_test;
+    const vector<BitVectorPredicate> *predicates;
 
     void loadMNIST(string mnistPrefix);
+    vector<BitVectorPredicate>* createPredicates();
 
 public:
     MNISTExperiment(string mnistPrefix);
