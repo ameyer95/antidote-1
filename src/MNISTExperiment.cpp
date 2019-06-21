@@ -28,8 +28,16 @@ vector<DataRow>* simplified(const RawMNIST &mnist, pair<int, int> classes = make
 }
 
 MNISTExperiment::MNISTExperiment(string mnistPrefix) {
+    // The following allocate and populate this->{mnist_training, mnist_test, predicates}
+    // (Accordingly, that's what the destructor cleans up)
     loadMNIST(mnistPrefix);
     predicates = createPredicates();
+}
+
+MNISTExperiment::~MNISTExperiment() {
+    delete mnist_training;
+    delete mnist_test;
+    delete predicates;
 }
 
 vector<BitVectorPredicate>* MNISTExperiment::createPredicates() {
@@ -50,10 +58,11 @@ void MNISTExperiment::loadMNIST(string mnistPrefix) {
 
 double MNISTExperiment::run(int depth, int test_index) {
     ASTNode* program = ASTNode::buildTree(depth);
+    // By putting all of the following on the stack, we don't have to do heap deallocation
     ConcreteSemantics sem;
-    BooleanDataSet *training_set = new BooleanDataSet(new DataReferences<DataRow>(mnist_training));
-    double ret = sem.execute((*mnist_test)[test_index].first, training_set, predicates, program);
-    delete training_set;
+    DataReferences<DataRow> training_references(mnist_training);
+    BooleanDataSet training_dataset(&training_references);
+    double ret = sem.execute((*mnist_test)[test_index].first, &training_dataset, predicates, program);
     delete program;
     return ret;
 }

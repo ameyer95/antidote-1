@@ -33,8 +33,8 @@ private:
     pair<pair<int, int>, pair<int, int>> splitCounts(const BitVectorPredicate *phi);
 
 public:
+    // Does not handle deallocation
     BooleanDataSet(DataReferences<DataRow> *data) { this->data = data; }
-    // TODO implement destructor
 
     bool isPure();
     void filter(const BitVectorPredicate &phi, bool mode);
@@ -56,6 +56,7 @@ private:
 
 public:
     ConcreteSemantics();
+    // This class doesn't do any dynamic allocation and accordingly does not handle any deallocation
 
     double execute(const Input test_input, BooleanDataSet *training_set, const vector<BitVectorPredicate> *predicates, const ASTNode *program);
 

@@ -19,6 +19,8 @@ private:
 
 public:
     MNISTExperiment(string mnistPrefix);
+    ~MNISTExperiment();
+
     double run(int depth, int test_index);
 };
 

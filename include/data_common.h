@@ -13,7 +13,7 @@ private:
     vector<int> indices;
 
 public:
-    DataReferences(const vector<T> *data);
+    DataReferences(const vector<T> *data); // Does not handle deallocation
 
     const T& operator [](unsigned int i) const { return (*data)[indices[i]]; }
     void remove(int index) { indices.erase(indices.begin() + index); }
