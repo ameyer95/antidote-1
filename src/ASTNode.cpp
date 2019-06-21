@@ -39,16 +39,31 @@ ASTNode* ASTNode::buildTree(int depth) {
 
 
 /**
- * Various constructors
+ * Various constructors and destructors
  **/
+
+// Because ASTNode::~ASTNode() was declared pure virtual,
+// providing this is necessary AND still requires subclasses to implement a destructor.
+ASTNode::~ASTNode() {}
 
 SequenceNode::SequenceNode(const vector<ASTNode*> &children) {
     this->children = children;
 }
 
+SequenceNode::~SequenceNode() {
+    for(vector<ASTNode*>::iterator i = children.begin(); i != children.end(); i++) {
+        delete *i;
+    }
+}
+
 ITENode::ITENode(const ASTNode *then_child, const ASTNode *else_child) {
     this->then_child = then_child;
     this->else_child = else_child;
+}
+
+ITENode::~ITENode() {
+    delete then_child;
+    delete else_child;
 }
 
 FilterNode::FilterNode(bool mode) {

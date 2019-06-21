@@ -39,9 +39,10 @@ class Visitor;
 
 class ASTNode {
 public:
-    static ASTNode* buildTree(int depth); // XXX heap is never deallocated
+    static ASTNode* buildTree(int depth);
+
+    virtual ~ASTNode() = 0;
     virtual void accept(Visitor &v) const = 0;
-    //TODO implement destructor
 };
 
 
@@ -51,6 +52,7 @@ private:
 
 public:
     SequenceNode(const vector<ASTNode*> &children);
+    ~SequenceNode();
     void accept(Visitor &v) const;
 
     const vector<ASTNode*>& get_children() const { return children; }
@@ -63,6 +65,7 @@ protected:
 
 public:
     ITENode(const ASTNode *then_child, const ASTNode *else_child);
+    ~ITENode();
     const ASTNode* get_then_child() const { return then_child; }
     const ASTNode* get_else_child() const { return else_child; }
 };
@@ -87,6 +90,7 @@ public:
 class BestSplitNode : public ASTNode {
 public:
     BestSplitNode() {};
+    ~BestSplitNode() {};
     void accept(Visitor &v) const;
 };
 
@@ -97,6 +101,7 @@ private:
 
 public:
     FilterNode(bool mode);
+    ~FilterNode() {};
     void accept(Visitor &v) const;
 
     bool get_mode() const { return mode; }
@@ -106,6 +111,7 @@ public:
 class SummaryNode : public ASTNode {
 public:
     SummaryNode() {};
+    ~SummaryNode() {};
     void accept(Visitor &v) const;
 };
 
@@ -113,6 +119,7 @@ public:
 class ReturnNode : public ASTNode {
 public:
     ReturnNode() {};
+    ~ReturnNode() {};
     void accept(Visitor &v) const;
 };
 
