@@ -1,12 +1,92 @@
+#include "ArgParse.h"
 #include "ASTNode.h"
 #include "MNISTExperiment.h"
 #include "MNIST.h"
 #include "PrettyPrinter.h"
-#include <iostream>
-#include <utility>
 #include <cstdint>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 using namespace std;
 
+struct RunParams {
+    int depth;
+    vector<int> test_indices;
+    string mnist_prefix;
+};
+
+/**
+ * Forward declarations for main
+ */
+bool readParams(RunParams &params, const int &argc, char ** const &argv);
+void test_MNIST(const RunParams &params);
+
+int main(int argc, char **argv) {
+    RunParams params;
+    if(readParams(params, argc, argv)) {
+        test_MNIST(params);
+    }
+    return 0;
+}
+
+
+/**
+ * Relevant code
+ */
+
+void vectorizeIntStringSplit(vector<int> &items, const string &space_separated_list) {
+    istringstream iss(space_separated_list);
+    for(string s; iss >> s; ) {
+        items.push_back(stoi(s));
+    }
+}
+
+bool readParams(RunParams &params, const int &argc, char ** const &argv) {
+    Argument *depth, *test_indices, *mnist_prefix;
+    ArgParse p;
+    bool success;
+
+    depth = p.createArgument("-d", 1, "Depth of the tree to be built");
+    test_indices = p.createArgument("-t", 1, "Space-separated list of test indices");
+    mnist_prefix = p.createArgument("-m", 1, "Path to MNIST datasets");
+    p.parse(argc, argv);
+
+    if(!p.failure()) {
+        params.depth = stoi(depth->tokens[0]);
+        vectorizeIntStringSplit(params.test_indices, test_indices->tokens[0]);
+        params.mnist_prefix = mnist_prefix->tokens[0];
+        success = true;
+    } else {
+        cout << p.message() << endl;
+        cout << p.help_string() << endl;
+        success = false;
+    }
+
+    delete depth;
+    delete test_indices;
+    delete mnist_prefix;
+    return success;
+}
+
+void test_MNIST(const RunParams &params) {
+    MNISTExperiment e(params.mnist_prefix);
+    for(vector<int>::const_iterator i = params.test_indices.begin(); i != params.test_indices.end(); i++) {
+        if(*i < e.test_size()) {
+            cout << "running a depth-" << params.depth << " experiment on test " << *i << endl;
+            double ret = e.run(params.depth, *i);
+            cout << "result: " << ret << endl;
+        } else {
+            cout << "skipping test " << *i << " (out of bounds)" << endl;
+        }
+    }
+}
+
+
+/**
+ * (Now-)unused prototype code
+ */
 
 void test_build_ast(int depth) {
     ASTNode *root = ASTNode::buildTree(depth);
@@ -41,17 +121,4 @@ void test_load_MNIST() {
         print_digit(training.second.pixels + i*28*28*sizeof(uint8_t));
         cout << "==================================================" << endl << endl;
     }
-}
-
-void test_MNIST() {
-    MNISTExperiment e("data/");
-    cout << "running a depth-1 experiment on test 0" << endl;
-    double ret = e.run(1, 0);
-    cout << "result: " << ret << endl;
-}
-
-int main() {
-    test_build_asts();
-    test_MNIST();
-    return 0;
 }

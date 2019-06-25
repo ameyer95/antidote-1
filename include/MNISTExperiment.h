@@ -21,6 +21,7 @@ public:
     MNISTExperiment(string mnistPrefix);
     ~MNISTExperiment();
 
+    int test_size() { return mnist_test->size(); }
     double run(int depth, int test_index);
 };
 
