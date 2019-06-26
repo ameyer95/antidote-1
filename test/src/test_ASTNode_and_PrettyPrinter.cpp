@@ -91,3 +91,5 @@ TEST_CASE("Check ASTNode::buildTree has expected PrettyPrinter::getString") {
 
     REQUIRE(code_string == expected_code_string);
 }
+
+//TODO test the recursive nature of the destructors
