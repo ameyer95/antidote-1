@@ -1,0 +1,39 @@
+\section{Training Sets with Dropout}\label{sec:domain}
+
+\begin{definition}[Symbolic Dropout Set]
+Let $T$ be a set and $n$ an integer (with $n \leq |T|$).
+We denote the set of subsets of $T$ missing up to $n$-many elements as
+\[
+\langle T, n \rangle \coloneqq
+\{T' \subseteq T : |T \setminus T'| \leq n\} .
+\]
+Furthermore, we define a join operation as follows:
+\[
+\langle T_1, n_1 \rangle \sqcup \langle T_2, n_2 \rangle
+\coloneqq \langle T_1 \cup T_2,
+\max(|T_1 \setminus T_2| + n_2, |T_2 \setminus T_1| + n_1) \rangle .
+\]
+\end{definition}
+
+\begin{proposition}
+For any $T' \in \langle T_1, n_1 \rangle \cup \langle T_2, n_2 \rangle$,
+we have that $T' \in \langle T_1, n_1 \rangle \sqcup \langle T_2, n_2 \rangle$.
+\end{proposition}
+\begin{proof}
+Suppose $T \in \langle T_i, n_i \rangle$,
+so $T \subseteq T_i$ with $|T_i \setminus T| \leq n_i$.
+Certainly $T \subseteq T_i \cup T_j$,
+and $|(T_i \cup T_j) \setminus T| = |(T_j \setminus T_i) \cup (T_i \setminus T)|
+\leq |T_j \setminus T_i| + |T_i \setminus T| \leq |T_j \setminus T_i| + n_i$.
+\end{proof}
+
+To motivate the abstract semantics,
+observe that $\langle T, n \rangle$ represents large collections of subsets:
+specifically,
+$|\langle T, n \rangle| = \sum_{k = 0}^n \binom{|T|}{k}$.
+Fortunately, decision tree building largely involves counting elements of $T$
+that meet specific properties,
+so (overapproximating the possible results of) those computations
+on $\langle T, n \rangle$ can be done efficiently by first computing
+any necessary count $c$ directly on $T$ and then using the interval
+$[\text{max}(0, c-n), c]$ in its place.

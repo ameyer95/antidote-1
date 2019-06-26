@@ -1,0 +1,85 @@
+\section{A Primitive Language}\label{sec:dsl}
+
+Decision trees inductively, greedily split the training set
+using some set of predicates based on the feature set.
+A test input is then classified by following a single path through the tree.
+Note then, that since we care about the composition of training the tree
+and classifying a single input,
+that we need not actually construct the full tree---%
+we need only to construct the path that the specified input would follow
+(as if we were training the tree depth-first and stopping after a single path).
+We provide a (very minimal) language in which the training-classification
+composition can be written;
+each program has a fixed test input $x$ and (finite) set of predicates $\Phi$
+and additionally manipulates a state consisting of a triple $(T, \varphi, p)$
+where $T$ is the current slice of the training set,
+$\varphi$ is the most recent predicate chosen for splitting,
+and $p$ stores the posterior to be returned (the classification value).
+\todo{The language does not exactly match the ASTNode class in the implementation.}
+
+\begin{figure}
+\begin{minipage}{0.65\textwidth}
+\centering
+\begin{tabular}{rcl}
+Statements $S$ & $\coloneqq$ & $S_1 ; S_2$ \\
+& $\mid$ & if $\mathit{impurity}(T) = 0$ then $S_1$ else $S_2$ \\
+& $\mid$ & if $x \models \varphi$ then $S_1$ else $S_2$ \\
+& $\mid$ & $\varphi \gets \mathit{bestsplit}_\Phi(T)$ \\
+& $\mid$ & $T \gets \mathit{filter}(T, \varphi)$ \\
+& $\mid$ & $T \gets \mathit{filter}(T, \lnot \varphi)$ \\
+& $\mid$ & $p \gets \mathit{summary}(T)$ \\
+Return Statement $R$ & $\coloneqq$ & return $p$ \\
+Program $P$ & $\coloneqq$ & $S ; R$
+\end{tabular}
+\end{minipage}
+%
+\begin{minipage}{0.3\textwidth}
+\centering
+\begin{tabular}{l}
+if $\mathit{impurity}(T) = 0$ then \\
+\quad $p \gets \mathit{summary}(T)$ \\
+else \\
+\quad $\varphi \gets \mathit{bestsplit}_\Phi(T)$ \\
+\quad if $x \models \varphi$ then \\
+\qquad $T \gets \mathit{filter}(T, \varphi)$ \\
+\quad else \\
+\qquad $T \gets \mathit{filter}(T, \lnot\varphi)$ \\
+\quad if $\mathit{impurity}(T) = 0$ then \\
+\qquad $p \gets \mathit{summary}(T)$ \\
+\quad else \\
+\qquad $\varphi \gets \mathit{bestsplit}_\Phi(T)$ \\
+\qquad if $x \models \varphi$ then \\
+\qquad\quad $T \gets \mathit{filter}(T, \varphi)$ \\
+\qquad else \\
+\qquad\quad $T \gets \mathit{filter}(T, \lnot \varphi)$ \\
+\qquad $p \gets \mathit{summary}(T)$ \\
+return $p$
+\end{tabular}
+\end{minipage}
+\caption{Left: Simple inductive splitting language.
+Right: Depth-2 classifier.}
+\label{fig:dsl}
+\end{figure}
+
+The grammar is given in Figure~\ref{fig:dsl} (left).
+The intended instantiations of the language correspond
+to classifiers of specified depths;
+for example, Figure~\ref{fig:dsl} (right) shows an implementation of
+the training-classification composition for a tree of depth 2.
+It begins with ``if $\mathit{impurity}(T) = 0 \ldots$''
+which checks if the current training set fragment has 100\% confidence
+for one particular classification;
+if so, it simply sets the posterior variable appropriately.
+Otherwise, it tries to split the data up in some meaningful way
+to give a better prediction:
+this is done (greedily) by selecting a predicate $\varphi \in \Phi$
+that has the highest \emph{mutual information} with the classification label:
+the training set is then restricted to the subset
+that ``looks the same'' as the test input under $\varphi$
+(using ``$T \gets \mathit{filter}(T, (\lnot)\varphi)$'').
+Because this is a depth-2 tree, the block described so far is repeated
+(the depth describes the number of splits, i.e.\ the number of
+chosen $\varphi$ and $\mathit{filter}$ calls);
+at this point, the max depth is reached,
+so the training set fragment is used to produce a posterior classification
+regardless of whether or not refinement has produced a pure training subset.

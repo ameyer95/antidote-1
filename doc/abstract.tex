@@ -1,0 +1,117 @@
+\section{Abstract Semantics}
+
+Additionally, we provide semantics for calculations on our abstraction $\langle T, n \rangle$,
+given in Figure~\ref{fig:abstract}.
+Here, the state is a triple $(\langle T, n \rangle, \Phi', p^\#)$
+where $\Phi' \subseteq \Phi$ 
+(because now, since there are multiple possible training sets,
+multiple different $\varphi \in \Phi$ could be the best split)
+and where $p^\# \in 2^{[0,1]}$
+using some appropriate abstract domain, e.g.\ intervals.
+Now, $\den{P}^\# : \langle T, n \rangle \mapsto p^\#$.
+Let me point out a few (but not all) details
+that introduce imprecision through overapproximations:
+\begin{itemize}
+    \item In the branching based on $\mathit{impurity}(T) = 0$,
+        no refinement of $\mathit{impurity}(T)$ is done when taking the else-branch;
+        this is because the dropout domain, as presented,
+        is not in general capable of more-tightly expressing an upper bound for
+        $\alpha(\{T' \in \langle T, n \rangle \mid \mathit{impurity}(T') \neq 0\})
+        \sqsubseteq \langle T, n \rangle$.
+    \item When updating the state via
+        $\den{\varphi \gets \mathit{bestsplit}_\Phi(T)}^\#$,
+        certain $\varphi$ could only be the best split for specific $T' \in \langle T, n \rangle$,
+        yet all are incorporated into the single unified abstraction.
+    \item Anywhere different dropout sets are joined,
+        if their symmetric difference is large, the resultant join
+        will be very imprecise.
+        (In particular, this happens in $\den{T \gets \mathit{filter}(T, \varphi)}^\#$,
+        especially when there exist very extensionally different $\varphi, \psi \in \Phi'$,
+        or when $\Phi'$ is simply large.)
+\end{itemize}
+
+\todo{Be more formal about the possibility of trivial splits.}
+
+\begin{figure}
+\centering
+\begin{align*}
+\den{S ; R}^\#(\langle T, n \rangle) \coloneqq&~
+\den{R}^\#(\den{S}^\#(\langle T, n \rangle, \bot, \bot)) \\
+%
+\den{S_1 ; S_2}^\#(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~
+\den{S_2}^\#(\den{S_1}^\#(\langle T, n \rangle, \Phi', p^\#) \\
+%
+\den{\text{if } \mathit{impurity}(T) = 0 \text{ then } S_1 \text{ else } S_2}^\#
+(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~
+\text{let } T_0^\# = \mathit{puresets}(\langle T, n \rangle, 0) \text{ and }
+T_1^\# = \mathit{puresets}(\langle T, n \rangle, 1) \text{ in } \\
+&~\den{S_2}^\#(\langle T, n \rangle, \Phi', p) \\
+&~\sqcup
+(\text{if } T_0^\# = \bot \text{ then } \bot \text{ else } \den{S_1}^\#(T_0^\#, \Phi', p^\#)) \\
+&~\sqcup
+(\text{if } T_1^\# = \bot \text{ then } \bot \text{ else } \den{S_1}^\#(T_1^\#, \Phi', p^\#)) \\
+%
+\den{\text{if } x \models \varphi \text{ then } S_1 \text{ else } S_2}^\#
+(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~
+\den{S_1}^\#(\langle T, n \rangle, \{\varphi \in \Phi' : x \models \varphi\}, p^\#) \\
+&~\sqcup
+\den{S_2}^\#(\langle T, n \rangle, \{\varphi \in \Phi' : x \models \lnot \varphi\}, p^\#) \\
+%
+\den{\varphi \gets \mathit{bestsplit}_\Phi(T)}^\#(\langle T, n \rangle, \Phi', p^\#)
+\coloneqq&~ (\langle T, n \rangle, \mathit{bestsplit}_\Phi^\#(\langle T, n \rangle), p^\#) \\
+%
+\den{T \gets \mathit{filter}(T, (\lnot)\varphi)}^\#(\langle T, n \rangle, \Phi', p^\#)
+\coloneqq&~ (\bigsqcup_{\varphi \in \Phi'} (\langle T, n \rangle \upharpoonright (\lnot) \varphi),
+\Phi', p^\#) \\
+%
+\den{p \gets \mathit{summary}(T)}^\#(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~
+(\langle T, n \rangle, \Phi', \mathit{summary}^\#(\langle T, n \rangle)) \\
+%
+\den{\text{return } p}^\#(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~ p^\#
+\end{align*}
+where
+\begin{align*}
+(\langle T_1, n_1 \rangle, \Phi_1', p_1^\#) \sqcup (\langle T_2, n_2 \rangle, \Phi_2', p_2^\#)
+\coloneqq&~
+(\langle T_1, n_1 \rangle \sqcup \langle T_2, n_2 \rangle,
+\Phi_1' \cup \Phi_2', p_1^\# \sqcup p_2^\#) \\
+%
+T \upharpoonright \varphi \coloneqq&~ \{(x,y) \in T \mid x \models \varphi\} \\
+%
+\langle T, n \rangle \upharpoonright \varphi \coloneqq&~
+\langle T \upharpoonright \varphi, \text{min}(n, |T \upharpoonright \varphi|) \rangle \\
+%
+\mathit{puresets}(\langle T, n\rangle, \hat{y}) \coloneqq&~
+\text{let } T' = \{(x,y) \in T \mid y = \hat{y}\} \text{ in }
+\text{if } |T \setminus T'| \leq n \text{ then } \langle T', n - |T \setminus T'| \rangle
+\text{ else } \bot \\
+%
+\mathit{summary}^\#(\langle T, n \rangle) \coloneqq&~
+\text{let } c_1 = |\{(x,y) \in T : y = 1\}| \text{ in }
+\frac{[max(0, c_1 - n), c_1]}{[max(1, |T| - n), |T|]}\\
+%
+\mathit{impurity}^\#(\langle T, n \rangle) \coloneqq&~
+[2,2] \cdot \mathit{summary^\#(\langle T, n \rangle)}
+\cdot ([1,1] - summary^\#(\langle T, n \rangle)) \\
+%
+\mathit{score}^\#(\langle T, n \rangle, \varphi) \coloneqq&~
+\text{let } \langle T_0, n_0 \rangle = \langle T, n \rangle \upharpoonright \lnot \varphi
+\text{ and } \langle T_1, n_1 \rangle = \langle T, n \rangle \upharpoonright \varphi \text{ in } \\
+&~[|T_0| - n_0, |T_0|] \cdot \mathit{impurity}^\#(\langle T_0, n_0 \rangle) +
+[|T_1| - n_1, |T_1|] \cdot \mathit{impurity}^\#(\langle T_1, n_1 \rangle)\\
+%
+\mathit{bestsplit}^\#_\Phi(\langle T, n \rangle) \coloneqq&~
+\text{let } \varphi^* = \text{argmin}_{\varphi^* \in \Phi} \text{min}(\mathit{score}^\#(\langle T, n \rangle, \varphi^*)) \text{ in } \\
+&~ \{\varphi \in \Phi \mid \text{min}(\mathit{score}^\#(\langle T, n \rangle, \varphi)) \leq \text{max}(\mathit{score}^\#(\langle T, n \rangle, \varphi^*))\}
+\end{align*}
+\caption{Dropout Semantics (note that many of the auxiliary functions involve interval arithmetic).}
+\label{fig:abstract}
+\end{figure}
+
+\begin{theorem}[Soundness]
+If $T' \in \langle T, n \rangle$ then $\den{P}(T') \in \den{P}^\#(\langle T, n \rangle)$.
+\end{theorem}
+\begin{proof}
+``Trivial,'' ``obvious,'' etc.
+\todo{Actually prove things.}
+\end{proof}

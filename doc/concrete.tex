@@ -1,0 +1,55 @@
+\section{Concrete Semantics}
+
+We give concrete semantics for evaluating instantiations of the language
+in Figure~\ref{fig:concrete};
+built into these semantics are choices for parameters of decision tree learning---%
+notably, $\mathit{impurity(T)}$ uses the \emph{Gini impurity} criteria
+(a common alternative to Shannon entropy, used for its mathematical simplicity
+/ avoidance of logarithms).
+The high-level usage involves the semantics of a program $P \coloneqq S ; R$
+with $\den{P} : T \mapsto p$.
+$\den{\cdot}$ is defined with respect to the fixed test input $x$ and set of predicates,
+so $\den{P}$ maps a training set to the posterior distribution describing $x$'s classification
+(specifically, a $[0,1]$-valued Bernoulli parameter.)
+
+\todo{Be more formal about the possibility of trivial splits.}
+
+\begin{figure}
+\centering
+\begin{align*}
+\den{S ; R}(T) \coloneqq&~ \den{R}(\den{S}(T, \bot, \bot)) \\
+%
+\den{S_1 ; S_2}(T, \varphi, p) \coloneqq&~ \den{S_2}(\den{S_1}(T, \varphi, p)) \\
+%
+\den{\text{if } \mathit{impurity}(T) = 0 \text{ then } S_1 \text{ else } S_2}(T, \varphi, p)
+\coloneqq&~
+\text{if } \mathit{impurity}(T) = 0 \text{ then } \den{S_1}(T, \varphi, p)
+\text{ else } \den{S_2}(T, \varphi, p) \\
+%
+\den{\text{if } x \models \varphi \text{ then } S_1 \text{ else } S_2}(T, \varphi, p) \coloneqq&~
+\text{if } x \models \varphi \text{ then } \den{S_1}(T, \varphi, p)
+\text{ else } \den{S_2}(T, \varphi, p) \\
+%
+\den{\varphi \gets \mathit{bestsplit}_\Phi(T)}(T, \varphi, p) \coloneqq&~
+(T, \mathit{bestsplit}_\Phi(T), p) \\
+%
+\den{T \gets \mathit{filter}(T, (\lnot)\varphi)}(T, \varphi, p) \coloneqq&~
+(T \upharpoonright (\lnot)\varphi, \varphi, p) \\
+%
+\den{p \gets \mathit{summary}(T)}(T, \varphi, p) \coloneqq&~ (T, \varphi, \mathit{summary}(T)) \\
+%
+\den{\text{return } p}(T, \varphi, p) \coloneqq&~ p
+\end{align*}
+where $T \subseteq \mathcal{X} \times \{0,1\}$ and
+\begin{align*}
+T \upharpoonright \varphi \coloneqq&~ \{(x,y) \in T \mid x \models \varphi\} \\
+\mathit{summary}(T) \coloneqq&~ \frac{|\{(x,y) \in T : y = 1\}|}{|T|} \\
+\mathit{impurity}(T) \coloneqq&~ 2 \cdot \mathit{summary}(T) \cdot (1-\mathit{summary}(T)) \\
+\mathit{bestsplit}_\Phi(T) \coloneqq&~ \text{argmin}_{\varphi^* \in \Phi}~
+|T \upharpoonright \varphi^*| \cdot \mathit{impurity}(T \upharpoonright \varphi^*) +
+|T \upharpoonright \lnot\varphi^*| \cdot \mathit{impurity}(T \upharpoonright \lnot\varphi^*)
+\end{align*}
+\caption{Concrete Semantics.}
+\label{fig:concrete}
+\end{figure}
+
