@@ -1,4 +1,4 @@
-\usepackage[margin=1in]{geometry}
+\usepackage[margin=0.5in]{geometry}
 \usepackage{mathtools}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -34,10 +34,10 @@
 }
 
 % DSL syntax strings (for use in math mode)
-\newcommand{\iteimpuritynode}[2]{\text{if } \mathit{impurity}(T) = 0 \text{ then } {#1} \text{ else } {#2}}
-\newcommand{\itetrivialnode}[2]{\text{if } \varphi = \bot \text{ then } {#1} \text{ else } {#2}}
-\newcommand{\itemodelsnode}[2]{\text{if } x \models \varphi \text{ then } {#1} \text{ else } {#2}}
-\newcommand{\bestsplitnode}{\varphi \gets \mathit{bestsplit}_\Phi(T)}
-\newcommand{\filternode}[1][]{T \gets \mathit{filter}(T, #1\varphi)} % Can pass \lnot
-\newcommand{\summarynode}{p \gets \mathit{summary}(T)}
-\newcommand{\returnnode}{\text{return } p}
+\newcommand{\iteimpuritynode}[2]{\texttt{if impurity(T) == 0 then } {#1} \texttt{ else } {#2}}
+\newcommand{\itetrivialnode}[2]{\texttt{if phi == } \bot \texttt{ then } {#1} \texttt{ else } {#2}}
+\newcommand{\itemodelsnode}[2]{\texttt{if x models phi then } {#1} \text{ else } {#2}}
+\newcommand{\bestsplitnode}{\texttt{phi = bestsplit(T)}}
+\newcommand{\filternode}[1][]{\texttt{T = filter(T, } {#1} \texttt{phi)}} % Can pass \lnot
+\newcommand{\summarynode}{\texttt{p = summary(T)}}
+\newcommand{\returnnode}{\texttt{return p}}

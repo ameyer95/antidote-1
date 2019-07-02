@@ -39,21 +39,23 @@ Return Statement $R$ & $\coloneqq$ & $\returnnode$ \\
 %
 \begin{minipage}{0.3\textwidth}
 \centering
+\texttt{
 \begin{tabular}{l}
-if $\mathit{impurity}(T) = 0$ then \\
-\quad $p \gets \mathit{summary}(T)$ \\
+if impurity(T) == 0 then \\
+\quad p = summary(T) \\
 else \\
-\quad $\varphi \gets \mathit{bestsplit}_\Phi(T)$ \\
-\quad if $\varphi = \bot$ then \\
-\qquad $p \gets \mathit{summary}(T)$ \\
+\quad phi = bestsplit(T) \\
+\quad if phi == $\bot$ then \\
+\qquad p = summary(T) \\
 \quad else \\
-\qquad if $x \models \varphi$ then \\
-\qquad\quad $T \gets \mathit{filter}(T, \varphi)$ \\
+\qquad if x models phi then \\
+\qquad\quad T = filter(T, phi) \\
 \qquad else \\
-\qquad\quad $T \gets \mathit{filter}(T, \lnot\varphi)$ \\
-\qquad $p \gets \mathit{summary}(T)$ \\
-return $p$
+\qquad\quad T = filter(T, $\lnot$phi) \\
+\qquad p = summary(T) \\
+return p
 \end{tabular}
+}
 \end{minipage}
 \caption{Left: Simple inductive splitting language.
 Right: Depth-1 classifier.}
