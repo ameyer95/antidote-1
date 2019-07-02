@@ -17,7 +17,7 @@ template <typename X>
 class Predicate {
 private:
 public:
-    virtual const bool evaluate(const X &input) const = 0;
+    virtual bool evaluate(const X &input) const = 0;
 };
 
 
@@ -50,7 +50,7 @@ private:
 
 public:
     BitVectorPredicate(int index) { this->index = index; }
-    const bool evaluate(const Input &input) const { return input[index]; }
+    bool evaluate(const Input &input) const { return input[index]; }
 };
 
 
