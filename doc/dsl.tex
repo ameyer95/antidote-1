@@ -22,13 +22,13 @@ and $p$ stores the posterior to be returned (the classification value).
 \centering
 \begin{tabular}{rcl}
 Statements $S$ & $\coloneqq$ & $S_1 ; S_2$ \\
-& $\mid$ & if $\mathit{impurity}(T) = 0$ then $S_1$ else $S_2$ \\
-& $\mid$ & if $x \models \varphi$ then $S_1$ else $S_2$ \\
-& $\mid$ & $\varphi \gets \mathit{bestsplit}_\Phi(T)$ \\
-& $\mid$ & $T \gets \mathit{filter}(T, \varphi)$ \\
-& $\mid$ & $T \gets \mathit{filter}(T, \lnot \varphi)$ \\
-& $\mid$ & $p \gets \mathit{summary}(T)$ \\
-Return Statement $R$ & $\coloneqq$ & return $p$ \\
+& $\mid$ & $\iteimpuritynode{S_1}{S_2}$ \\
+& $\mid$ & $\itemodelsnode{S_1}{S_2}$ \\
+& $\mid$ & $\bestsplitnode$ \\
+& $\mid$ & $\filternode$ \\
+& $\mid$ & $\filternode[\lnot]$ \\
+& $\mid$ & $\summarynode$ \\
+Return Statement $R$ & $\coloneqq$ & $\returnnode$ \\
 Program $P$ & $\coloneqq$ & $S ; R$
 \end{tabular}
 \end{minipage}

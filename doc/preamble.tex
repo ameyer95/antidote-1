@@ -25,3 +25,11 @@
 \newcommand{\rfive}{(\emph{v})~}
 
 \newcommand{\den}[1]{\llbracket {#1} \rrbracket}
+
+% DSL syntax strings (for use in math mode)
+\newcommand{\iteimpuritynode}[2]{\text{if } \mathit{impurity}(T) = 0 \text{ then } {#1} \text{ else } {#2}}
+\newcommand{\itemodelsnode}[2]{\text{if } x \models \varphi \text{ then } {#1} \text{ else } {#2}}
+\newcommand{\bestsplitnode}{\varphi \gets \mathit{bestsplit}_\Phi(T)}
+\newcommand{\filternode}[1][]{T \gets \mathit{filter}(T, #1\varphi)} % Can pass \lnot
+\newcommand{\summarynode}{p \gets \mathit{summary}(T)}
+\newcommand{\returnnode}{\text{return } p}

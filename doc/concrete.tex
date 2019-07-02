@@ -21,24 +21,23 @@ so $\den{P}$ maps a training set to the posterior distribution describing $x$'s 
 %
 \den{S_1 ; S_2}(T, \varphi, p) \coloneqq&~ \den{S_2}(\den{S_1}(T, \varphi, p)) \\
 %
-\den{\text{if } \mathit{impurity}(T) = 0 \text{ then } S_1 \text{ else } S_2}(T, \varphi, p)
-\coloneqq&~
+\den{\iteimpuritynode{S_1}{S_2}}(T, \varphi, p) \coloneqq&~
 \text{if } \mathit{impurity}(T) = 0 \text{ then } \den{S_1}(T, \varphi, p)
 \text{ else } \den{S_2}(T, \varphi, p) \\
 %
-\den{\text{if } x \models \varphi \text{ then } S_1 \text{ else } S_2}(T, \varphi, p) \coloneqq&~
+\den{\itemodelsnode{S_1}{S_2}}(T, \varphi, p) \coloneqq&~
 \text{if } x \models \varphi \text{ then } \den{S_1}(T, \varphi, p)
 \text{ else } \den{S_2}(T, \varphi, p) \\
 %
-\den{\varphi \gets \mathit{bestsplit}_\Phi(T)}(T, \varphi, p) \coloneqq&~
+\den{\bestsplitnode}(T, \varphi, p) \coloneqq&~
 (T, \mathit{bestsplit}_\Phi(T), p) \\
 %
-\den{T \gets \mathit{filter}(T, (\lnot)\varphi)}(T, \varphi, p) \coloneqq&~
+\den{\filternode[(\lnot)]}(T, \varphi, p) \coloneqq&~
 (T \upharpoonright (\lnot)\varphi, \varphi, p) \\
 %
-\den{p \gets \mathit{summary}(T)}(T, \varphi, p) \coloneqq&~ (T, \varphi, \mathit{summary}(T)) \\
+\den{\summarynode}(T, \varphi, p) \coloneqq&~ (T, \varphi, \mathit{summary}(T)) \\
 %
-\den{\text{return } p}(T, \varphi, p) \coloneqq&~ p
+\den{\returnnode}(T, \varphi, p) \coloneqq&~ p
 \end{align*}
 where $T \subseteq \mathcal{X} \times \{0,1\}$ and
 \begin{align*}

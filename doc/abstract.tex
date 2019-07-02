@@ -34,15 +34,15 @@ that introduce imprecision through overapproximations:
 
 \begin{figure}
 \centering
+\newcommand{\argtuple}{\langle T, n \rangle, \Phi', p^\#}
 \begin{align*}
 \den{S ; R}^\#(\langle T, n \rangle) \coloneqq&~
 \den{R}^\#(\den{S}^\#(\langle T, n \rangle, \bot, \bot)) \\
 %
-\den{S_1 ; S_2}^\#(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~
-\den{S_2}^\#(\den{S_1}^\#(\langle T, n \rangle, \Phi', p^\#) \\
+\den{S_1 ; S_2}^\#(\argtuple) \coloneqq&~
+\den{S_2}^\#(\den{S_1}^\#(\argtuple) \\
 %
-\den{\text{if } \mathit{impurity}(T) = 0 \text{ then } S_1 \text{ else } S_2}^\#
-(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~
+\den{\iteimpuritynode{S_1}{S_2}}^\#(\argtuple) \coloneqq&~
 \text{let } T_0^\# = \mathit{puresets}(\langle T, n \rangle, 0) \text{ and }
 T_1^\# = \mathit{puresets}(\langle T, n \rangle, 1) \text{ in } \\
 &~\den{S_2}^\#(\langle T, n \rangle, \Phi', p) \\
@@ -51,23 +51,22 @@ T_1^\# = \mathit{puresets}(\langle T, n \rangle, 1) \text{ in } \\
 &~\sqcup
 (\text{if } T_1^\# = \bot \text{ then } \bot \text{ else } \den{S_1}^\#(T_1^\#, \Phi', p^\#)) \\
 %
-\den{\text{if } x \models \varphi \text{ then } S_1 \text{ else } S_2}^\#
-(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~
+\den{\itemodelsnode{S_1}{S_2}}^\#(\argtuple) \coloneqq&~
 \den{S_1}^\#(\langle T, n \rangle, \{\varphi \in \Phi' : x \models \varphi\}, p^\#) \\
 &~\sqcup
 \den{S_2}^\#(\langle T, n \rangle, \{\varphi \in \Phi' : x \models \lnot \varphi\}, p^\#) \\
 %
-\den{\varphi \gets \mathit{bestsplit}_\Phi(T)}^\#(\langle T, n \rangle, \Phi', p^\#)
+\den{\bestsplitnode}^\#(\argtuple)
 \coloneqq&~ (\langle T, n \rangle, \mathit{bestsplit}_\Phi^\#(\langle T, n \rangle), p^\#) \\
 %
-\den{T \gets \mathit{filter}(T, (\lnot)\varphi)}^\#(\langle T, n \rangle, \Phi', p^\#)
+\den{\filternode[(\lnot)]}^\#(\argtuple)
 \coloneqq&~ (\bigsqcup_{\varphi \in \Phi'} (\langle T, n \rangle \upharpoonright (\lnot) \varphi),
 \Phi', p^\#) \\
 %
-\den{p \gets \mathit{summary}(T)}^\#(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~
+\den{\summarynode}^\#(\argtuple) \coloneqq&~
 (\langle T, n \rangle, \Phi', \mathit{summary}^\#(\langle T, n \rangle)) \\
 %
-\den{\text{return } p}^\#(\langle T, n \rangle, \Phi', p^\#) \coloneqq&~ p^\#
+\den{\returnnode}^\#(\argtuple) \coloneqq&~ p^\#
 \end{align*}
 where
 \begin{align*}
