@@ -72,13 +72,13 @@ ImageFile readImageFile(const string full_path) {
 }
 
 pair<LabelFile, ImageFile> MNIST_readTrainingSet(const string prefix) {
-    return make_pair(readLabelFile(prefix + MNIST_TRAINING_LABEL_FILE),
-                     readImageFile(prefix + MNIST_TRAINING_IMAGE_FILE));
+    return make_pair(readLabelFile(prefix + "/" + MNIST_TRAINING_LABEL_FILE),
+                     readImageFile(prefix + "/" + MNIST_TRAINING_IMAGE_FILE));
 }
 
 pair<LabelFile, ImageFile> MNIST_readTestSet(const string prefix) {
-    return make_pair(readLabelFile(prefix + MNIST_TEST_LABEL_FILE),
-                     readImageFile(prefix + MNIST_TEST_IMAGE_FILE));
+    return make_pair(readLabelFile(prefix + "/" + MNIST_TEST_LABEL_FILE),
+                     readImageFile(prefix + "/" + MNIST_TEST_IMAGE_FILE));
 }
 
 RawMNIST::RawMNIST(MNISTMode mode, const string prefix) {
@@ -88,6 +88,7 @@ RawMNIST::RawMNIST(MNISTMode mode, const string prefix) {
     } else {
         files = MNIST_readTestSet(prefix);
     }
+    // It's fine to copy the struct objects because the main data fields are heap pointers
     image_file = files.second;
     label_file = files.first;
 }
