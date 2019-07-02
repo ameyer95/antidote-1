@@ -11,44 +11,64 @@ with $\den{P} : T \mapsto p$.
 $\den{\cdot}$ is defined with respect to the fixed test input $x$ and set of predicates,
 so $\den{P}$ maps a training set to the posterior distribution describing $x$'s classification
 (specifically, a $[0,1]$-valued Bernoulli parameter.)
-
-\todo{Be more formal about the possibility of trivial splits.}
+In the interest of formality, Figure~\ref{fig:concrete} writes the definition of $\den{\cdot}$
+using $\den[P]{\cdot}$, $\den[S]{\cdot}$, $\den[U]{\cdot}$, and $\den[R]{\cdot}$.
 
 \begin{figure}
 \centering
+Globals: test input $x \in \mathcal{X}$ and totally-ordered predicates $(\Phi, <_\Phi)$
 \begin{align*}
-\den{S ; R}(T) \coloneqq&~ \den{R}(\den{S}(T, \bot, \bot)) \\
+\den[P]{S ; R}(T) \coloneqq&~
+\den[R]{R}(\den[S]{S}(T, \bot, \bot)) \\
 %
-\den{S_1 ; S_2}(T, \varphi, p) \coloneqq&~ \den{S_2}(\den{S_1}(T, \varphi, p)) \\
+\den[S]{S_1 ; S_2}(T, \varphi, p) \coloneqq&~
+\den[S]{S_2}(\den[S]{S_1}(T, \varphi, p)) \\
 %
-\den{\iteimpuritynode{S_1}{S_2}}(T, \varphi, p) \coloneqq&~
-\text{if } \mathit{impurity}(T) = 0 \text{ then } \den{S_1}(T, \varphi, p)
-\text{ else } \den{S_2}(T, \varphi, p) \\
+\den[S]{\iteimpuritynode{S_1}{S_2}}(T, \varphi, p) \coloneqq&~
+\text{if } \mathit{impurity}(T) = 0 \text{ then } \den[S]{S_1}(T, \varphi, p)
+\text{ else } \den[S]{S_2}(T, \varphi, p) \\
 %
-\den{\itemodelsnode{S_1}{S_2}}(T, \varphi, p) \coloneqq&~
-\text{if } x \models \varphi \text{ then } \den{S_1}(T, \varphi, p)
-\text{ else } \den{S_2}(T, \varphi, p) \\
+\den[S]{\itetrivialnode{S}{U}}(T, \varphi, p) \coloneqq&~
+\text{if } \varphi = \bot \text{ then } \den[S]{S}(T, \varphi, p)
+\text{ else } \den[U]{U}(T, \varphi, p) \\
 %
-\den{\bestsplitnode}(T, \varphi, p) \coloneqq&~
+\den[S]{\bestsplitnode}(T, \varphi, p) \coloneqq&~
 (T, \mathit{bestsplit}_\Phi(T), p) \\
 %
-\den{\filternode[(\lnot)]}(T, \varphi, p) \coloneqq&~
+\den[S]{\summarynode}(T, \varphi, p) \coloneqq&~
+(T, \varphi, \mathit{summary}(T)) \\
+%
+\den[U]{S}(T, \varphi, p) \coloneqq&~
+\den[S]{S}(T, \varphi, p) \\
+%
+\den[U]{U_1 ; U_2}(T, \varphi, p) \coloneqq&~
+\den[U]{U_2}(\den[U]{U_1}(T, \varphi, p)) \\
+%
+\den[U]{\itemodelsnode{U_1}{U_2}}(T, \varphi, p) \coloneqq&~
+\text{if } x \models \varphi \text{ then } \den[U]{U_1}(T, \varphi, p)
+\text{ else } \den[U]{U_2}(T, \varphi, p) \\
+%
+\den[U]{\filternode[(\lnot)]}(T, \varphi, p) \coloneqq&~
 (T \upharpoonright (\lnot)\varphi, \varphi, p) \\
 %
-\den{\summarynode}(T, \varphi, p) \coloneqq&~ (T, \varphi, \mathit{summary}(T)) \\
-%
-\den{\returnnode}(T, \varphi, p) \coloneqq&~ p
+\den[R]{\returnnode}(T, \varphi, p) \coloneqq&~ p
 \end{align*}
 where $T \subseteq \mathcal{X} \times \{0,1\}$ and
 \begin{align*}
 T \upharpoonright \varphi \coloneqq&~ \{(x,y) \in T \mid x \models \varphi\} \\
 \mathit{summary}(T) \coloneqq&~ \frac{|\{(x,y) \in T : y = 1\}|}{|T|} \\
 \mathit{impurity}(T) \coloneqq&~ 2 \cdot \mathit{summary}(T) \cdot (1-\mathit{summary}(T)) \\
-\mathit{bestsplit}_\Phi(T) \coloneqq&~ \text{argmin}_{\varphi^* \in \Phi}~
-|T \upharpoonright \varphi^*| \cdot \mathit{impurity}(T \upharpoonright \varphi^*) +
-|T \upharpoonright \lnot\varphi^*| \cdot \mathit{impurity}(T \upharpoonright \lnot\varphi^*)
+\mathit{score}(T, \varphi) \coloneqq&~
+|T \upharpoonright \varphi| \cdot \mathit{impurity}(T \upharpoonright \varphi) +
+|T \upharpoonright \lnot\varphi| \cdot \mathit{impurity}(T \upharpoonright \lnot\varphi) \\
+\mathit{bestsplit}_\Phi(T) \coloneqq&~
+\text{let } \Phi' = \{\varphi \in \Phi : T \upharpoonright \varphi \not\in \{\emptyset, T\}\} \text{ in } \\
+&~\text{if } \Phi' = \emptyset \text{ then } \bot \text{ else }
+\text{min}_{<_\Phi} \text{argsmin}_{\varphi^* \in \Phi'}~\mathit{score}(T, \varphi^*)
 \end{align*}
-\caption{Concrete Semantics.}
+\caption{Concrete Semantics.
+Note in the definition of $\mathit{bestsplit}_\Phi(T)$
+that I use ``argsmin'' to denote the \emph{set} of arguments
+that minimize the objective (to be rigorous about ties).}
 \label{fig:concrete}
 \end{figure}
-

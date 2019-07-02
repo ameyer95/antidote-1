@@ -5,6 +5,7 @@
 \usepackage{amsthm}
 \usepackage{xcolor}
 \usepackage{stmaryrd}
+\usepackage{etoolbox} % for \ifstrempty
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
@@ -24,10 +25,17 @@
 \newcommand{\rfour}{(\emph{iv})~}
 \newcommand{\rfive}{(\emph{v})~}
 
-\newcommand{\den}[1]{\llbracket {#1} \rrbracket}
+\newcommand{\den}[2][]{%
+    \ifstrempty{#1}{%
+        \llbracket {#2} \rrbracket
+    }{%
+        \llbracket {#2} \rrbracket_{#1}
+    }%
+}
 
 % DSL syntax strings (for use in math mode)
 \newcommand{\iteimpuritynode}[2]{\text{if } \mathit{impurity}(T) = 0 \text{ then } {#1} \text{ else } {#2}}
+\newcommand{\itetrivialnode}[2]{\text{if } \varphi = \bot \text{ then } {#1} \text{ else } {#2}}
 \newcommand{\itemodelsnode}[2]{\text{if } x \models \varphi \text{ then } {#1} \text{ else } {#2}}
 \newcommand{\bestsplitnode}{\varphi \gets \mathit{bestsplit}_\Phi(T)}
 \newcommand{\filternode}[1][]{T \gets \mathit{filter}(T, #1\varphi)} % Can pass \lnot
