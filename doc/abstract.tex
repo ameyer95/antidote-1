@@ -3,9 +3,10 @@
 Additionally, we provide semantics for calculations on our abstraction $\langle T, n \rangle$,
 given in Figure~\ref{fig:abstract}.
 Here, the state is a triple $(\langle T, n \rangle, \Phi', p^\#)$
-where $\Phi' \subseteq \Phi$ 
+where $\Phi' \subseteq \Phi \cup \{\bot\}$
 (because now, since there are multiple possible training sets,
-multiple different $\varphi \in \Phi$ could be the best split)
+multiple different $\varphi \in \Phi$ could be the best split,
+and $\bot$ is for the all-trivial-split possibility)
 and where $p^\# \in 2^{[0,1]}$
 using some appropriate abstract domain, e.g.\ intervals.
 Now, $\den{P}^\# : \langle T, n \rangle \mapsto p^\#$.
@@ -22,51 +23,77 @@ that introduce imprecision through overapproximations:
         $\den{\varphi \gets \mathit{bestsplit}_\Phi(T)}^\#$,
         certain $\varphi$ could only be the best split for specific $T' \in \langle T, n \rangle$,
         yet all are incorporated into the single unified abstraction.
-    \item Anywhere different dropout sets are joined,
+        Accordingly, anywhere different dropout sets are joined,
         if their symmetric difference is large, the resultant join
         will be very imprecise.
         (In particular, this happens in $\den{T \gets \mathit{filter}(T, \varphi)}^\#$,
         especially when there exist very extensionally different $\varphi, \psi \in \Phi'$,
         or when $\Phi'$ is simply large.)
+    \item When selecting the best split, we completely ignore tie-breaking via $<_\Phi$.
+    \item Filtering can produce $\langle T, n \rangle$ with $n = |T|$ (i.e.\ $\emptyset \in \langle T, n \rangle$),
+        but we know that if $\varphi$ is bound through selecting a best split,
+        in the concrete case, we would never do that if the resultant filter call would equal $\emptyset$.
+        The grammar is not strong enough to actaully enforce this, however,
+        so instead we allow for $\mathit{summary^\#}(\langle T, n \rangle)$
+        to return $\top$ (i.e.\ $[0, 1]$) whenever $n = |T|$ --
+        since in the concrete case, we avoid defining $\mathit{summary}$ for $|T| = 0$
+        and instead have as an invariant of the semantics that an initially non-empty training set
+        will never encounter it.
 \end{itemize}
-
-\todo{Be more formal about the possibility of trivial splits.}
 
 \begin{figure}
 \centering
 \newcommand{\argtuple}{\langle T, n \rangle, \Phi', p^\#}
 \begin{align*}
-\den{S ; R}^\#(\langle T, n \rangle) \coloneqq&~
-\den{R}^\#(\den{S}^\#(\langle T, n \rangle, \bot, \bot)) \\
+%%
+%\den[U]{\filternode[(\lnot)]}(T, \varphi, p) \coloneqq&~
+%\den[R]{\returnnode}(T, \varphi, p) \coloneqq&~ p
+%%
+\den[P]{S ; R}^\#(\langle T, n \rangle) \coloneqq&~
+\den[R]{R}^\#(\den[S]{S}^\#(\langle T, n \rangle, \bot, \bot)) \\
 %
-\den{S_1 ; S_2}^\#(\argtuple) \coloneqq&~
-\den{S_2}^\#(\den{S_1}^\#(\argtuple) \\
+\den[S]{S_1 ; S_2}^\#(\argtuple) \coloneqq&~
+\den[S]{S_2}^\#(\den[S]{S_1}^\#(\argtuple)) \\
 %
-\den{\iteimpuritynode{S_1}{S_2}}^\#(\argtuple) \coloneqq&~
+\den[S]{\iteimpuritynode{S_1}{S_2}}^\#(\argtuple) \coloneqq&~
 \text{let } T_0^\# = \mathit{puresets}(\langle T, n \rangle, 0) \text{ and }
 T_1^\# = \mathit{puresets}(\langle T, n \rangle, 1) \text{ in } \\
-&~\den{S_2}^\#(\langle T, n \rangle, \Phi', p) \\
+&~\den[S]{S_2}^\#(\langle T, n \rangle, \Phi', p) \\
 &~\sqcup
-(\text{if } T_0^\# = \bot \text{ then } \bot \text{ else } \den{S_1}^\#(T_0^\#, \Phi', p^\#)) \\
+(\text{if } T_0^\# = \bot \text{ then } \bot \text{ else } \den[S]{S_1}^\#(T_0^\#, \Phi', p^\#)) \\
 &~\sqcup
-(\text{if } T_1^\# = \bot \text{ then } \bot \text{ else } \den{S_1}^\#(T_1^\#, \Phi', p^\#)) \\
+(\text{if } T_1^\# = \bot \text{ then } \bot \text{ else } \den[S]{S_1}^\#(T_1^\#, \Phi', p^\#)) \\
 %
-\den{\itemodelsnode{S_1}{S_2}}^\#(\argtuple) \coloneqq&~
-\den{S_1}^\#(\langle T, n \rangle, \{\varphi \in \Phi' : x \models \varphi\}, p^\#) \\
+\den[S]{\itetrivialnode{S}{U}}^\#(\argtuple) \coloneqq&~
+(\text{if } \bot \in \Phi' \text{ then } \den[S]{S}^\#(\langle T, n \rangle, \{\bot\}, p^\#) \text{ else } \bot) \\
 &~\sqcup
-\den{S_2}^\#(\langle T, n \rangle, \{\varphi \in \Phi' : x \models \lnot \varphi\}, p^\#) \\
+(\text{if } \Phi' \setminus \{\bot\} \neq \emptyset \text{ then }
+\den[U]{U}^\#(\langle T, n \rangle, \Phi' \setminus \{\bot\}, p^\#) \text{ else } \bot)\\
 %
-\den{\bestsplitnode}^\#(\argtuple)
+\den[S]{\bestsplitnode}^\#(\argtuple)
 \coloneqq&~ (\langle T, n \rangle, \mathit{bestsplit}_\Phi^\#(\langle T, n \rangle), p^\#) \\
 %
-\den{\filternode[(\lnot)]}^\#(\argtuple)
-\coloneqq&~ (\bigsqcup_{\varphi \in \Phi'} (\langle T, n \rangle \upharpoonright (\lnot) \varphi),
-\Phi', p^\#) \\
-%
-\den{\summarynode}^\#(\argtuple) \coloneqq&~
+\den[S]{\summarynode}^\#(\argtuple) \coloneqq&~
 (\langle T, n \rangle, \Phi', \mathit{summary}^\#(\langle T, n \rangle)) \\
 %
-\den{\returnnode}^\#(\argtuple) \coloneqq&~ p^\#
+\den[U]{S}^\#(\argtuple) \coloneqq&~
+\den[S]{S}^\#(\argtuple) \\
+%
+\den[U]{U_1 ; U_2}(\argtuple) \coloneqq&~
+\den[U]{U_2}^\#(\den[U]{U_1}^\#(\argtuple)) \\
+%
+\den[U]{\itemodelsnode{U_1}{U_2}}^\#(\argtuple) \coloneqq&~
+\text{let } \Psi = \{\varphi \in \Phi' : x \models \varphi\} \text{ in } \\
+&~(\text{if } \Psi = \emptyset \text{ then } \bot \text{ else }
+\den[U]{U_1}^\#(\langle T, n \rangle, \Psi, p^\#)) \\
+&~\sqcup
+(\text{if } \Phi' \setminus \Psi = \emptyset \text{ then } \bot \text{ else }
+\den[U]{U_2}^\#(\langle T, n \rangle, \Phi' \setminus \Psi, p^\#)) \\
+%
+\den[U]{\filternode[(\lnot)]}^\#(\argtuple) \coloneqq&~
+(\bigsqcup_{\varphi \in \Phi'} (\langle T, n \rangle \upharpoonright (\lnot) \varphi), \Phi', p^\#) \\
+%
+\den[R]{\returnnode}^\#(\argtuple) \coloneqq&~ p^\#
 \end{align*}
 where
 \begin{align*}
@@ -86,8 +113,9 @@ T \upharpoonright \varphi \coloneqq&~ \{(x,y) \in T \mid x \models \varphi\} \\
 \text{ else } \bot \\
 %
 \mathit{summary}^\#(\langle T, n \rangle) \coloneqq&~
+\text{if } n = |T| \text{ then } [0, 1] \text{ else }
 \text{let } c_1 = |\{(x,y) \in T : y = 1\}| \text{ in }
-\frac{[max(0, c_1 - n), c_1]}{[max(1, |T| - n), |T|]}\\
+\frac{[max(0, c_1 - n), c_1]}{[|T| - n, |T|]}\\
 %
 \mathit{impurity}^\#(\langle T, n \rangle) \coloneqq&~
 [2,2] \cdot \mathit{summary^\#(\langle T, n \rangle)}
@@ -100,13 +128,24 @@ T \upharpoonright \varphi \coloneqq&~ \{(x,y) \in T \mid x \models \varphi\} \\
 [|T_1| - n_1, |T_1|] \cdot \mathit{impurity}^\#(\langle T_1, n_1 \rangle)\\
 %
 \mathit{bestsplit}^\#_\Phi(\langle T, n \rangle) \coloneqq&~
-\text{let } \varphi^* = \text{argmin}_{\varphi^* \in \Phi} \text{min}(\mathit{score}^\#(\langle T, n \rangle, \varphi^*)) \text{ in } \\
-&~ \{\varphi \in \Phi \mid \text{min}(\mathit{score}^\#(\langle T, n \rangle, \varphi)) \leq \text{max}(\mathit{score}^\#(\langle T, n \rangle, \varphi^*))\}
+\text{let } \Psi = \{\varphi \in \Phi : \langle T, n \rangle \upharpoonright \varphi \neq \bot
+\land \langle T, n \rangle \upharpoonright \lnot\varphi \neq \bot\} \text{ in } \\
+&~\text{let } \tau = \min_{\varphi^* \in \Psi} \max(\mathit{score}^\#(\langle T, n \rangle, \varphi^*)) \text{ in } \\
+&~\{\varphi \in \Psi : \min(\mathit{score}^\#(\langle T, n \rangle, \varphi)) \leq \tau\}\\
+&~\cup (\text{if } \forall \varphi \in \Psi \ldotp \bot \in \langle T, n \rangle \upharpoonright \varphi
+\lor \bot \in \langle T, n \rangle \upharpoonright \lnot\varphi \text{ then } \{\bot\} \text{ else } \emptyset) \\
 \end{align*}
 \caption{Dropout Semantics (note that many of the auxiliary functions involve interval arithmetic).}
 \label{fig:abstract}
 \end{figure}
 
+
+Again, we have that $\bot \not \in \Phi'$ when we need to use it.
+\begin{proposition}[todo]
+\todo{Write the analog of the concrete one}
+\end{proposition}
+
+And, perhaps most importantly, the semantics are sound.
 \begin{theorem}[Soundness]
 If $T' \in \langle T, n \rangle$ then $\den{P}(T') \in \den{P}^\#(\langle T, n \rangle)$.
 \end{theorem}
