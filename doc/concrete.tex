@@ -72,3 +72,10 @@ that I use ``argsmin'' to denote the \emph{set} of arguments
 that minimize the objective (to be rigorous about ties).}
 \label{fig:concrete}
 \end{figure}
+
+\begin{proposition}[Well-defined concrete semantics]
+If $P$ is a program generated from the grammar in Figure~\ref{fig:dsl},
+then $\den{\cdot}$ never involves a computation of
+$T \upharpoonright \varphi$, $x \models \varphi$, or $\mathit{score}(T, \varphi)$
+when $\varphi = \bot$.
+\end{proposition}
