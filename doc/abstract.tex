@@ -29,7 +29,10 @@ that introduce imprecision through overapproximations:
         (In particular, this happens in $\den{T \gets \mathit{filter}(T, \varphi)}^\#$,
         especially when there exist very extensionally different $\varphi, \psi \in \Phi'$,
         or when $\Phi'$ is simply large.)
-    \item When selecting the best split, we completely ignore tie-breaking via $<_\Phi$.
+    \item When selecting the best split, there is the potential for large overapproximations:
+        \rone we completely ignore tie-breaking via $<_\Phi$, and (more importantly)
+        \rtwo we are not able to track joint information about when certain $\varphi$
+        are trivial splits for some $T'$ and not others.
     \item Filtering can produce $\langle T, n \rangle$ with $n = |T|$ (i.e.\ $\emptyset \in \langle T, n \rangle$),
         but we know that if $\varphi$ is bound through selecting a best split,
         in the concrete case, we would never do that if the resultant filter call would equal $\emptyset$.
@@ -124,12 +127,14 @@ T \upharpoonright \varphi \coloneqq&~ \{(x,y) \in T \mid x \models \varphi\} \\
 [|T_1| - n_1, |T_1|] \cdot \mathit{impurity}^\#(\langle T_1, n_1 \rangle)\\
 %
 \mathit{bestsplit}^\#_\Phi(\langle T, n \rangle) \coloneqq&~
-\text{let } \Psi = \{\varphi \in \Phi : \langle T, n \rangle \upharpoonright \varphi \neq \bot
-\land \langle T, n \rangle \upharpoonright \lnot\varphi \neq \bot\} \text{ in } \\
-&~\text{let } \tau = \min_{\varphi^* \in \Psi} \max(\mathit{score}^\#(\langle T, n \rangle, \varphi^*)) \text{ in } \\
-&~\{\varphi \in \Psi : \min(\mathit{score}^\#(\langle T, n \rangle, \varphi)) \leq \tau\}\\
-&~\cup (\text{if } \forall \varphi \in \Psi \ldotp \bot \in \langle T, n \rangle \upharpoonright \varphi
-\lor \bot \in \langle T, n \rangle \upharpoonright \lnot\varphi \text{ then } \{\bot\} \text{ else } \emptyset) \\
+\text{let } \Psi_\forall = \{\varphi \in \Phi : \emptyset \not \in \langle T, n \rangle \upharpoonright \varphi
+\land \emptyset \not \in \langle T, n \rangle \upharpoonright \lnot\varphi\} \text{ in } \\
+&~\text{let } \Psi_\exists = \{\varphi \in \Phi :
+\langle \emptyset, \cdot \rangle \neq \langle T, n \rangle \upharpoonright \varphi \land
+\langle \emptyset, \cdot \rangle \neq \langle T, n \rangle \upharpoonright \lnot \varphi \} \text{ in } \\
+&~\text{if } \Psi_\forall = \emptyset \text{ then } \Psi_\exists \cup \{\bot\} \\
+&~\text{else } \{\varphi \in \Psi_\exists : \min(\mathit{score}^\#(\langle T, n \rangle, \varphi))
+\leq \min_{\varphi^* \in \Psi_\forall} \max(\mathit{score}^\#(\langle T, n \rangle, \varphi^*))\}
 \end{align*}
 \caption{Dropout Semantics (note that many of the auxiliary functions involve interval arithmetic).}
 \label{fig:abstract}
@@ -142,10 +147,56 @@ Again, we have that $\bot \not \in \Phi'$ when we need to use it.
 \end{proposition}
 
 And, perhaps most importantly, the semantics are sound.
+There are a lot of details, many of which are fairly trivial.
+We will highlight the main non-trivial detail with a lemma:
+\begin{lemma}
+Fix a set of predicates $\Phi$, a training set $T$, and an integer $n \leq |T|$.
+Let $C = \{\mathit{bestsplit}_\Phi(T') : T' \in \langle T, n \rangle\}$
+and let $A = \mathit{bestsplit}^\#_\Phi(\langle T, n \rangle)$;
+then $C \subseteq A$.
+\end{lemma}
+\begin{proof}
+Intuitively, in $\mathit{bestsplit}^\#_\Phi$ the set of predicates
+$\Psi_\forall$ consists of those $\varphi \in \Phi$
+such that \emph{for all} possible $T' \in \langle T, n \rangle$,
+$\varphi$ non-trivially splits $T'$;
+$\Psi_\exists$ similarly contains those $\varphi \in \Phi$
+such that \emph{there exists} some $T' \in \langle T, n \rangle$
+which $\varphi$ non-trivially splits.
+These are used to reason (imprecisely) about
+\rone what score a predicate needs to have the potential to be the best split, and
+\rtwo whether it's possible that, for some $T'$, \emph{only} trivial splits are possible.
+We will show $C \subseteq A$ by showing each $\hat{\varphi}$ in $C$ must also be in $A$.
+We proceed through two cases:
+\begin{itemize}
+    \item Case $\hat{\varphi} = \bot$:
+        then by definition of $C$, there exists some $T' \in \langle T, n \rangle$
+        such that in the computation of $\mathit{bestsplit}_\Phi(T')$,
+        all $\varphi \in \Phi$ resulted in trivial splits.
+        Accordingly, since for each $\varphi$ there exists some $T'$ (the one fixed prior)
+        that is split trivially, in the computation of
+        $\mathit{bestsplit}^\#_\Phi(\langle T, n \rangle)$
+        we have that $\Psi_\forall = \emptyset$,
+        and the if-then-else expression thus returns $\bot$ (among other things).
+    \item Case $\hat{\varphi} \neq \bot$:
+        there exists some $T' \in \langle T, n \rangle$
+        such that in the computation of $\mathit{bestsplit}_\Phi(T')$,
+        \rone $\hat{\varphi}$ non-trivally splits $T'$, and furthermore
+        \rtwo for all $\varphi \in \Phi'$ we have that
+        $\mathit{score}(T', \hat{\varphi}) \leq \mathit{score}(T', \varphi)$.
+        Using \rone we have that in the computation of $\mathit{bestsplit}^\#_\Phi(\langle T, n \rangle)$,
+        $\hat{\varphi} \in \Psi_\exists$.
+        Thus if $\Psi_\forall = \emptyset$, we have that $\hat{\varphi}$ is included in $A$;
+        otherwise, consider the minimizing $\varphi^*$ in the last line of $\mathit{bestsplit}^\#_\Phi$,
+        and by employing \rtwo observe that $\mathit{score}(T', \hat{\varphi}) \leq \mathit{score}(T', \varphi^*)$,
+        thus certainly $\min(\mathit{score}^\#(\langle T, n \rangle, \hat{\varphi})) \leq
+        \max(\mathit{score}^\#(\langle T, n \rangle, \varphi^*))$,
+        and we still have that $\hat{\varphi}$ is included in $A$.
+\end{itemize}
+\end{proof}
 \begin{theorem}[Soundness]
 If $T' \in \langle T, n \rangle$ then $\den{P}(T') \in \den{P}^\#(\langle T, n \rangle)$.
 \end{theorem}
 \begin{proof}
-``Trivial,'' ``obvious,'' etc.
-\todo{Actually prove things.}
+``Trivial,'' ``obvious,'' etc., following induction over the grammar.
 \end{proof}
