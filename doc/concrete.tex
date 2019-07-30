@@ -74,8 +74,12 @@ that minimize the objective (to be rigorous about ties).}
 \end{figure}
 
 \begin{proposition}[Well-defined concrete semantics]
-If $P$ is a program generated from the grammar in Figure~\ref{fig:dsl},
-then $\den{\cdot}$ never involves a computation of
-$T \upharpoonright \varphi$, $x \models \varphi$, or $\mathit{score}(T, \varphi)$
-when $\varphi = \bot$.
+If $P$ is a program generated from the grammar in Figure~\ref{fig:dsl}, then
+\begin{itemize}
+    \item If $T \neq \emptyset$, then $\den{P}(T)$ never divides by zero
+        (as might seem possible in $\mathit{summary}(T)$).
+    \item $\den{P}$ never involves a computation of
+        $T \upharpoonright \varphi$, $x \models \varphi$, or $\mathit{score}(T, \varphi)$
+        in which $\varphi = \bot$.
+\end{itemize}
 \end{proposition}

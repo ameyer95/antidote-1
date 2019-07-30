@@ -45,10 +45,6 @@ that introduce imprecision through overapproximations:
 \centering
 \newcommand{\argtuple}{\langle T, n \rangle, \Phi', p^\#}
 \begin{align*}
-%%
-%\den[U]{\filternode[(\lnot)]}(T, \varphi, p) \coloneqq&~
-%\den[R]{\returnnode}(T, \varphi, p) \coloneqq&~ p
-%%
 \den[P]{S ; R}^\#(\langle T, n \rangle) \coloneqq&~
 \den[R]{R}^\#(\den[S]{S}^\#(\langle T, n \rangle, \bot, \bot)) \\
 %
@@ -58,7 +54,7 @@ that introduce imprecision through overapproximations:
 \den[S]{\iteimpuritynode{S_1}{S_2}}^\#(\argtuple) \coloneqq&~
 \text{let } T_0^\# = \mathit{puresets}(\langle T, n \rangle, 0) \text{ and }
 T_1^\# = \mathit{puresets}(\langle T, n \rangle, 1) \text{ in } \\
-&~\den[S]{S_2}^\#(\langle T, n \rangle, \Phi', p) \\
+&~\den[S]{S_2}^\#(\langle T, n \rangle, \Phi', p^\#) \\
 &~\sqcup
 (\text{if } T_0^\# = \bot \text{ then } \bot \text{ else } \den[S]{S_1}^\#(T_0^\#, \Phi', p^\#)) \\
 &~\sqcup
