@@ -75,11 +75,8 @@ T_1^\# = \mathit{puresets}(\langle T, n \rangle, 1) \text{ in } \\
 \den[S]{\summarynode}^\#(\argtuple) \coloneqq&~
 (\langle T, n \rangle, \Phi', \mathit{summary}^\#(\langle T, n \rangle)) \\
 %
-\den[U]{S}^\#(\argtuple) \coloneqq&~
-\den[S]{S}^\#(\argtuple) \\
-%
-\den[U]{U_1 ; U_2}^\#(\argtuple) \coloneqq&~
-\den[U]{U_2}^\#(\den[U]{U_1}^\#(\argtuple)) \\
+\den[U]{U ; S}^\#(\argtuple) \coloneqq&~
+\den[S]{S}^\#(\den[U]{U}^\#(\argtuple)) \\
 %
 \den[U]{\itemodelsnode{U_1}{U_2}}^\#(\argtuple) \coloneqq&~
 \text{let } \Psi = \{\varphi \in \Phi' : x \models \varphi\} \text{ in } \\

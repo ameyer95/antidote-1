@@ -38,11 +38,8 @@ Globals: test input $x \in \mathcal{X}$ and totally-ordered predicates $(\Phi, <
 \den[S]{\summarynode}(T, \varphi, p) \coloneqq&~
 (T, \varphi, \mathit{summary}(T)) \\
 %
-\den[U]{S}(T, \varphi, p) \coloneqq&~
-\den[S]{S}(T, \varphi, p) \\
-%
-\den[U]{U_1 ; U_2}(T, \varphi, p) \coloneqq&~
-\den[U]{U_2}(\den[U]{U_1}(T, \varphi, p)) \\
+\den[U]{U ; S}(T, \varphi, p) \coloneqq&~
+\den[S]{S}(\den[U]{U}(T, \varphi, p)) \\
 %
 \den[U]{\itemodelsnode{U_1}{U_2}}(T, \varphi, p) \coloneqq&~
 \text{if } x \models \varphi \text{ then } \den[U]{U_1}(T, \varphi, p)
