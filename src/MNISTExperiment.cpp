@@ -57,7 +57,7 @@ void MNISTExperiment::loadMNIST(string mnistPrefix) {
 }
 
 double MNISTExperiment::run(int depth, int test_index) {
-    ASTNode* program = ASTNode::buildTree(depth);
+    ProgramNode* program = buildTree(depth);
     // By putting all of the following on the stack, we don't have to do heap deallocation
     ConcreteSemantics sem;
     DataReferences<DataRow> training_references(mnist_training);

@@ -80,7 +80,7 @@ public:
 
 
 //TODO ensure training_set etc are appropriately passed around by reference / as pointers
-class ConcreteSemantics : public Visitor {
+class ConcreteSemantics : public ASTVisitor {
 private:
     Input test_input;
     BooleanDataSet *training_set;
@@ -88,20 +88,22 @@ private:
     const BitVectorPredicate *phi;
     const vector<BitVectorPredicate> *predicates;
     double return_value; // Largely a proxy for posterior
-    bool halt; // Controls whether we've hit a return statement
 
 public:
     ConcreteSemantics();
     // This class doesn't do any dynamic allocation and accordingly does not handle any deallocation
 
-    double execute(const Input test_input, BooleanDataSet *training_set, const vector<BitVectorPredicate> *predicates, const ASTNode *program);
+    double execute(const Input test_input, BooleanDataSet *training_set, const vector<BitVectorPredicate> *predicates, const ProgramNode *program);
 
+    void visit(const ProgramNode &node);
     void visit(const SequenceNode &node);
     void visit(const ITEImpurityNode &node);
-    void visit(const ITEModelsNode &node);
+    void visit(const ITENoPhiNode &node);
     void visit(const BestSplitNode &node);
-    void visit(const FilterNode &node);
     void visit(const SummaryNode &node);
+    void visit(const UsePhiSequenceNode &node);
+    void visit(const ITEModelsNode &node);
+    void visit(const FilterNode &node);
     void visit(const ReturnNode &node);
 };
 

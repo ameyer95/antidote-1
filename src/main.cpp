@@ -89,7 +89,7 @@ void test_MNIST(const RunParams &params) {
  */
 
 void test_build_ast(int depth) {
-    ASTNode *root = ASTNode::buildTree(depth);
+    ProgramNode *root = buildTree(depth);
     PrettyPrinter p = PrettyPrinter();
     cout << "Depth " << depth << endl;
     root->accept(p);

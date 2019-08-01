@@ -2,7 +2,6 @@
 #include "ASTNode.h"
 #include "data_common.h"
 #include "information_math.h"
-#include <math.h> // for isnan
 #include <utility>
 #include <vector>
 using namespace std;
@@ -11,60 +10,68 @@ ConcreteSemantics::ConcreteSemantics() {
     //TODO
 }
 
-double ConcreteSemantics::execute(const Input test_input, BooleanDataSet *training_set, const vector<BitVectorPredicate> *predicates, const ASTNode *program) {
+double ConcreteSemantics::execute(const Input test_input, BooleanDataSet *training_set, const vector<BitVectorPredicate> *predicates, const ProgramNode *program) {
     this->test_input = test_input;
     this->training_set = training_set;
     this->predicates = predicates;
-    halt = false;
+    phi = NULL;
     program->accept(*this);
     return return_value;
 }
 
+void ConcreteSemantics::visit(const ProgramNode &node) {
+    node.get_left_child()->accept(*this);
+    node.get_right_child()->accept(*this);
+}
+
 void ConcreteSemantics::visit(const SequenceNode &node) {
-    if(halt) return;
-    vector<ASTNode*> children = node.get_children();
-    for(vector<ASTNode*>::iterator i = children.begin(); i != children.end(); i++) {
-        (*i)->accept(*this);
-    }
+    node.get_left_child()->accept(*this);
+    node.get_right_child()->accept(*this);
 }
 
 void ConcreteSemantics::visit(const ITEImpurityNode &node) {
-    if(halt) return;
     if(training_set->isPure()) {
-        node.get_then_child()->accept(*this);
+        node.get_left_child()->accept(*this);
     } else {
-        node.get_else_child()->accept(*this);
+        node.get_right_child()->accept(*this);
     }
 }
 
-void ConcreteSemantics::visit(const ITEModelsNode &node) {
-    if(halt) return;
-    if(phi->evaluate(test_input)) {
-        node.get_then_child()->accept(*this);
+void ConcreteSemantics::visit(const ITENoPhiNode &node) {
+    if(phi == NULL) {
+        node.get_left_child()->accept(*this);
     } else {
-        node.get_else_child()->accept(*this);
+        node.get_right_child()->accept(*this);
     }
 }
 
 void ConcreteSemantics::visit(const BestSplitNode &node) {
-    if(halt) return;
     phi = training_set->bestSplit(predicates);
 }
 
-void ConcreteSemantics::visit(const FilterNode &node) {
-    if(halt) return;
-    training_set->filter(*phi, node.get_mode());
-}
-
 void ConcreteSemantics::visit(const SummaryNode &node) {
-    if(halt) return;
     posterior = training_set->summary();
 }
 
+void ConcreteSemantics::visit(const UsePhiSequenceNode &node) {
+    node.get_left_child()->accept(*this);
+    node.get_right_child()->accept(*this);
+}
+
+void ConcreteSemantics::visit(const ITEModelsNode &node) {
+    if(phi->evaluate(test_input)) {
+        node.get_left_child()->accept(*this);
+    } else {
+        node.get_right_child()->accept(*this);
+    }
+}
+
+void ConcreteSemantics::visit(const FilterNode &node) {
+    training_set->filter(*phi, node.get_mode());
+}
+
 void ConcreteSemantics::visit(const ReturnNode &node) {
-    if(halt) return;
     return_value = posterior;
-    halt = true;
 }
 
 int BooleanDataSet::countOnes() {
@@ -111,19 +118,22 @@ double BooleanDataSet::summary() {
     return (double)countOnes() / data->size();
 }
 
+bool emptyCount(const pair<int, int> &counts) {
+    return counts.first == 0 && counts.second == 0;
+}
+
 const BitVectorPredicate* BooleanDataSet::bestSplit(const vector<BitVectorPredicate> *predicates) {
     double best_score, current_score;
     const BitVectorPredicate *best_predicate = NULL;
     pair<pair<int, int>, pair<int, int>> counts;
     for(vector<BitVectorPredicate>::const_iterator i = predicates->begin(); i != predicates->end(); i++) {
         counts = splitCounts(&(*i));
-        current_score = informationGain(counts.first, counts.second);
-        //XXX the semantics of this conditional,
-        // and what to do when all splits are trivial or provide no gain,
-        // are corner cases that really need more careful consideration
-        if(best_predicate == NULL || isnan(best_score) || best_score < current_score) {
-            best_score = current_score;
-            best_predicate = &(*i); // Need the address of the iterator's current element
+        if(!emptyCount(counts.first) && !emptyCount(counts.second)) {
+            current_score = informationGain(counts.first, counts.second);
+            if(best_predicate == NULL || best_score < current_score) {
+                best_score = current_score;
+                best_predicate = &(*i); // Need the address of the iterator's current element
+            }
         }
     }
     return best_predicate;
