@@ -14,43 +14,55 @@ const char * const DEPTH_0_CODE_LINES[2] = {
 "return p;\n"
 };
 
-const int DEPTH_1_CODE_NUM_LINES = 12;
-const char * const DEPTH_1_CODE_LINES[12] = {
+const int DEPTH_1_CODE_NUM_LINES = 16;
+const char * const DEPTH_1_CODE_LINES[16] = {
 "if(impurity(T) = 0) {\n",
 "  p <- summary(T);\n",
 "} else {\n",
 "  phi <- bestsplit(T);\n",
-"  if(x models phi) {\n",
-"    T <- filter(T, phi);\n",
-"  } else {\n",
-"    T <- filter(T, not phi);\n",
-"  }\n",
-"  p <- summary(T);\n",
-"}\n",
-"return p;\n"
-};
-
-const int DEPTH_2_CODE_NUM_LINES = 22;
-const char * const DEPTH_2_CODE_LINES[22] = {
-"if(impurity(T) = 0) {\n",
-"  p <- summary(T);\n",
-"} else {\n",
-"  phi <- bestsplit(T);\n",
-"  if(x models phi) {\n",
-"    T <- filter(T, phi);\n",
-"  } else {\n",
-"    T <- filter(T, not phi);\n",
-"  }\n",
-"  if(impurity(T) = 0) {\n",
+"  if(phi = null) {\n",
 "    p <- summary(T);\n",
 "  } else {\n",
-"    phi <- bestsplit(T);\n",
 "    if(x models phi) {\n",
 "      T <- filter(T, phi);\n",
 "    } else {\n",
 "      T <- filter(T, not phi);\n",
 "    }\n",
 "    p <- summary(T);\n",
+"  }\n",
+"}\n",
+"return p;\n"
+};
+
+const int DEPTH_2_CODE_NUM_LINES = 30;
+const char * const DEPTH_2_CODE_LINES[30] = {
+"if(impurity(T) = 0) {\n",
+"  p <- summary(T);\n",
+"} else {\n",
+"  phi <- bestsplit(T);\n",
+"  if(phi = null) {\n",
+"    p <- summary(T);\n",
+"  } else {\n",
+"    if(x models phi) {\n",
+"      T <- filter(T, phi);\n",
+"    } else {\n",
+"      T <- filter(T, not phi);\n",
+"    }\n",
+"    if(impurity(T) = 0) {\n",
+"      p <- summary(T);\n",
+"    } else {\n",
+"      phi <- bestsplit(T);\n",
+"      if(phi = null) {\n",
+"        p <- summary(T);\n",
+"      } else {\n",
+"        if(x models phi) {\n",
+"          T <- filter(T, phi);\n",
+"        } else {\n",
+"          T <- filter(T, not phi);\n",
+"        }\n",
+"        p <- summary(T);\n",
+"      }\n",
+"    }\n",
 "  }\n",
 "}\n",
 "return p;\n"
@@ -81,7 +93,7 @@ TEST_CASE("Check ASTNode::buildTree has expected PrettyPrinter::getString") {
     for(int i = 0; i < NUM_DEPTHS; i++) {
         // catch2 runs each path through a section individually
         SECTION("Depth " + to_string(i)) {
-            program = ASTNode::buildTree(i);
+            program = buildTree(i);
             expected_code_string = lines_to_string(CODE_LINES[i], CODE_NUM_LINES[i]);
         }
     }
