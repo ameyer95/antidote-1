@@ -33,16 +33,13 @@ ProgramNode* buildTree(int depth) {
 
 
 /**
- * Various constructors and destructors
+ * Various member functions
  **/
 
-// Because ASTNode::~ASTNode() was declared pure virtual,
-// providing this is necessary AND still requires subclasses to implement a destructor.
+// Because ASTNode::~ASTNode() was declared pure virtual
+// (to enforce subclasses to implement destructors),
+// we actually still need to provide a definition for the abstract base case.
 ASTNode::~ASTNode() {}
-
-FilterNode::FilterNode(bool mode) {
-    this->mode = mode;
-}
 
 
 /**

@@ -7,39 +7,25 @@ using namespace std;
 /**
  * The AST class hierarchy here is slightly involved;
  * we use the C++ type system to enforce the grammar productions.
- * Accordingly, every AST node class inherits from two sources:
- *   1) an abstract ASTNode class, and
- *   2) an empty abstract class corresponding to a type of production rule.
- * To document the class hierarchy in an ascii comment,
- * we show the inheritances of (1) and (2) separately.
+ * Additionally, the production rules generally involve either 0 or 2 non-terminals,
+ * the latter of which all thus subclass such a template.
+ * It's shown below:
  *
- * ASTNode (abstract)
- *   PairNodeTemplate (template)
- *     ProgramNode
- *     SequenceNode
- *     ITEImpurityNode
- *     ITENoPhiNode
- *     UsePhiSequenceNode
- *     ITEModelsNode
- *   BestSplitNode
- *   SummaryNode
- *   FilterNode
- *   ReturnNode
- *
- * ProgramProduction (abstract)
- *   ProgramNode
- * StatementProduction (abstract)
- *   SequenceNode
- *   ITEImpurityNode
- *   ITENoPhiNode
- *   BestSplitNode
- *   SummaryNode
- * UsePhiStatementProduction (abstract)
- *   UsePhiSequenceNode
- *   ITEModelsNode
- *   FilterNode
- * ReturnStatementProduction (abstract)
- *   ReturnNode
+ * ASTNode (abstract)                  PairNodeTemplate (template)
+ *   ProgramProduction (abstract)          |
+ *     ProgramNode ------------------------|
+ *   StatementProduction (abstract)        |
+ *     SequenceNode -----------------------|
+ *     ITEImpurityNode --------------------|
+ *     ITENoPhiNode -----------------------|
+ *     BestSplitNode                       |
+ *     SummaryNode                         |
+ *   UsePhiStatementProduction (abstract)  |
+ *     UsePhiSequenceNode -----------------|
+ *     ITEModelsNode ----------------------|
+ *     FilterNode
+ *   ReturnStatementProduction (abstract)
+ *     ReturnNode
  *
  * It represents this simple Decision-Tree-Learning-Classification DSL:
  *            Program P := S ; R
@@ -66,36 +52,8 @@ using namespace std;
 
 
 /**
- * The various grammar production types, as empty abstract classes.
- * (A pure virtual destructor is included to enforce that they are abstract
- * while being "empty" enough.)
- */
-
-class ProgramProduction {
-public:
-    virtual ~ProgramProduction() = 0;
-};
-
-class StatementProduction {
-public:
-    virtual ~StatementProduction() = 0;
-};
-
-class UsePhiStatementProduction {
-public:
-    virtual ~UsePhiStatementProduction() = 0;
-};
-
-class ReturnStatementProduction {
-public:
-    virtual ~ReturnStatementProduction() = 0;
-};
-
-
-/**
  * The main AST abstract base class
  */
-
 
 // Forward declare the visitor since the ASTNode subclasses need accept(ASTVisitor...) methods
 class ASTVisitor;
@@ -109,12 +67,22 @@ public:
 
 
 /**
+ * The various grammar production types
+ */
+
+class ProgramProduction : public ASTNode {};
+class StatementProduction : public ASTNode {};
+class UsePhiStatementProduction : public ASTNode {};
+class ReturnStatementProduction : public ASTNode {};
+
+
+/**
  * Generic ASTNode templates since, e.g., there are multiple if-then-else productions.
  */
 
 
 template <typename L, typename R>
-class PairNodeTemplate : public ASTNode {
+class PairNodeTemplate {
 protected:
     const L *left_child;
     const R *right_child;
@@ -176,7 +144,7 @@ public:
 };
 
 
-class BestSplitNode : public StatementProduction, public ASTNode {
+class BestSplitNode : public StatementProduction {
 public:
     BestSplitNode() {};
     ~BestSplitNode() {};
@@ -184,7 +152,7 @@ public:
 };
 
 
-class SummaryNode : public StatementProduction, public ASTNode {
+class SummaryNode : public StatementProduction {
 public:
     SummaryNode() {};
     ~SummaryNode() {};
@@ -193,7 +161,7 @@ public:
 
 
 /**
- * UsePhiStatmentProduction grammar productions
+ * UsePhiStatementProduction grammar productions
  */
 
 
@@ -213,12 +181,12 @@ public:
 };
 
 
-class FilterNode : public UsePhiStatementProduction, public ASTNode {
+class FilterNode : public UsePhiStatementProduction {
 private:
     bool mode; // Determines whether or not phi is negated
 
 public:
-    FilterNode(bool mode);
+    FilterNode(bool mode) { this->mode = mode; }
     ~FilterNode() {};
     void accept(ASTVisitor &v) const;
 
@@ -231,7 +199,7 @@ public:
  */
 
 
-class ReturnNode : public ReturnStatementProduction, public ASTNode {
+class ReturnNode : public ReturnStatementProduction {
 public:
     ReturnNode() {};
     ~ReturnNode() {};
