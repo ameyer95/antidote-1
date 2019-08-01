@@ -7,34 +7,28 @@ using namespace std;
  * The program-building functions
  **/
 
-ASTNode* buildTreeUnit(ASTNode* base) {
+StatementProduction* buildTreeUnit(StatementProduction *base) {
     ITEImpurityNode *impurity;
-    SequenceNode *sequence;
-    vector<ASTNode*> sequence_children(3);
+    SequenceNode *impurity_else;
+    ITENoPhiNode *nophi;
+    UsePhiSequenceNode *nophi_else;
     ITEModelsNode *models;
 
     models = new ITEModelsNode(new FilterNode(true), new FilterNode(false));
-
-    sequence_children[0] = new BestSplitNode();
-    sequence_children[1] = models;
-    sequence_children[2] = base;
-
-    sequence = new SequenceNode(sequence_children);
-    
-    impurity = new ITEImpurityNode(new SummaryNode, sequence);
+    nophi_else = new UsePhiSequenceNode(models, base);
+    nophi = new ITENoPhiNode(new SummaryNode(), nophi_else);
+    impurity_else = new SequenceNode(new BestSplitNode(), nophi);
+    impurity = new ITEImpurityNode(new SummaryNode(), impurity_else);
 
     return impurity;
 }
 
-ASTNode* ASTNode::buildTree(int depth) {
-    vector<ASTNode*> sequence_children(2);
-    ASTNode *current = new SummaryNode();
+ProgramNode* buildTree(int depth) {
+    StatementProduction *current = new SummaryNode();
     for(int i = 0; i < depth; i++) {
         current = buildTreeUnit(current);
     }
-    sequence_children[0] = current;
-    sequence_children[1] = new ReturnNode();
-    return new SequenceNode(sequence_children);
+    return new ProgramNode(current, new ReturnNode());
 }
 
 
@@ -46,26 +40,6 @@ ASTNode* ASTNode::buildTree(int depth) {
 // providing this is necessary AND still requires subclasses to implement a destructor.
 ASTNode::~ASTNode() {}
 
-SequenceNode::SequenceNode(const vector<ASTNode*> &children) {
-    this->children = children;
-}
-
-SequenceNode::~SequenceNode() {
-    for(vector<ASTNode*>::iterator i = children.begin(); i != children.end(); i++) {
-        delete *i;
-    }
-}
-
-ITENode::ITENode(const ASTNode *then_child, const ASTNode *else_child) {
-    this->then_child = then_child;
-    this->else_child = else_child;
-}
-
-ITENode::~ITENode() {
-    delete then_child;
-    delete else_child;
-}
-
 FilterNode::FilterNode(bool mode) {
     this->mode = mode;
 }
@@ -75,10 +49,13 @@ FilterNode::FilterNode(bool mode) {
  * Visitor accept methods
  **/
 
-void SequenceNode::accept(Visitor &v) const { v.visit(*this); }
-void ITEImpurityNode::accept(Visitor &v) const { v.visit(*this); }
-void ITEModelsNode::accept(Visitor &v) const { v.visit(*this); }
-void BestSplitNode::accept(Visitor &v) const { v.visit(*this); }
-void FilterNode::accept(Visitor &v) const { v.visit(*this); }
-void SummaryNode::accept(Visitor &v) const { v.visit(*this); }
-void ReturnNode::accept(Visitor &v) const { v.visit(*this); }
+void ProgramNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void SequenceNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void ITEImpurityNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void ITENoPhiNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void BestSplitNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void SummaryNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void UsePhiSequenceNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void ITEModelsNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void FilterNode::accept(ASTVisitor &v) const { v.visit(*this); }
+void ReturnNode::accept(ASTVisitor &v) const { v.visit(*this); }

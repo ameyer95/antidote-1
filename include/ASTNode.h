@@ -5,135 +5,264 @@
 using namespace std;
 
 /**
- * The AST class hierarchy here looks like the following:
+ * The AST class hierarchy here is slightly involved;
+ * we use the C++ type system to enforce the grammar productions.
+ * Accordingly, every AST node class inherits from two sources:
+ *   1) an abstract ASTNode class, and
+ *   2) an empty abstract class corresponding to a type of production rule.
+ * To document the class hierarchy in an ascii comment,
+ * we show the inheritances of (1) and (2) separately.
+ *
  * ASTNode (abstract)
- *   SequenceNode
- *   ITENode (no constructor)
- *      ITEImpurityNode
- *      ITEModelsNode
+ *   PairNodeTemplate (template)
+ *     ProgramNode
+ *     SequenceNode
+ *     ITEImpurityNode
+ *     ITENoPhiNode
+ *     UsePhiSequenceNode
+ *     ITEModelsNode
  *   BestSplitNode
- *   FilterNode
  *   SummaryNode
+ *   FilterNode
+ *   ReturnNode
+ *
+ * ProgramProduction (abstract)
+ *   ProgramNode
+ * StatementProduction (abstract)
+ *   SequenceNode
+ *   ITEImpurityNode
+ *   ITENoPhiNode
+ *   BestSplitNode
+ *   SummaryNode
+ * UsePhiStatementProduction (abstract)
+ *   UsePhiSequenceNode
+ *   ITEModelsNode
+ *   FilterNode
+ * ReturnStatementProduction (abstract)
  *   ReturnNode
  *
  * It represents this simple Decision-Tree-Learning-Classification DSL:
- *        Statements S := S_1; S_2; ...; S_n
- *                      | if impurity(T) = 0 then S_1 else S_2
- *                      | if x models phi then S_1 else S_2
- *                      | phi <- bestsplit(T)
- *                      | T <- filter(T, phi)
- *                      | T <- filter(T, not phi)
- *                      | p <- summary(T)
- * Return Statements R := return p
- *           Program P := S; R
- * Note that x, T, phi, and p are not non-terminals---they are part of the syntax.
+ *            Program P := S ; R
+ *         Statements S := S_1 ; S_2
+ *                       | if impurity(T) = 0 then S_1 else S_2
+ *                       | if phi == bot then S else U
+ *                       | phi <- bestsplit(T)
+ *                       | p <- summary(T)
+ * Use-phi Statements U := U ; S
+ *                       | if x models phi then U_1 else U_2
+ *                       | T <- filter(T, phi)
+ *                       | T <- filter(T, not phi)
+ *  Return Statements R := return p
+ *
+ * Note that while P, S, R, and U are non-terminals,
+ * x, T, phi, and p are not---they are part of the syntax.
  * Indeed, x is fixed a priori, and the semantics of the program update a simple state
  * consisting of the (T, phi, p) triple.
  *
- * Additionally, this file includes an interface for AST traversal (Visitor).
+ * Additionally, this file includes:
+ *   1) an interface for AST traversal (ASTVisitor), and
+ *   2) a method for building tree programs of a specified depth (buildTree).
  **/
 
 
-class Visitor;
+/**
+ * The various grammar production types, as empty abstract classes.
+ * (A pure virtual destructor is included to enforce that they are abstract
+ * while being "empty" enough.)
+ */
+
+class ProgramProduction {
+public:
+    virtual ~ProgramProduction() = 0;
+};
+
+class StatementProduction {
+public:
+    virtual ~StatementProduction() = 0;
+};
+
+class UsePhiStatementProduction {
+public:
+    virtual ~UsePhiStatementProduction() = 0;
+};
+
+class ReturnStatementProduction {
+public:
+    virtual ~ReturnStatementProduction() = 0;
+};
+
+
+/**
+ * The main AST abstract base class
+ */
+
+
+// Forward declare the visitor since the ASTNode subclasses need accept(ASTVisitor...) methods
+class ASTVisitor;
 
 
 class ASTNode {
 public:
-    static ASTNode* buildTree(int depth);
-
     virtual ~ASTNode() = 0;
-    virtual void accept(Visitor &v) const = 0;
+    virtual void accept(ASTVisitor &v) const = 0;
 };
 
 
-class SequenceNode : public ASTNode {
-private:
-    vector<ASTNode*> children;
-
-public:
-    SequenceNode(const vector<ASTNode*> &children);
-    ~SequenceNode();
-    void accept(Visitor &v) const;
-
-    const vector<ASTNode*>& get_children() const { return children; }
-};
+/**
+ * Generic ASTNode templates since, e.g., there are multiple if-then-else productions.
+ */
 
 
-class ITENode : public ASTNode {
+template <typename L, typename R>
+class PairNodeTemplate : public ASTNode {
 protected:
-    const ASTNode *then_child, *else_child;
+    const L *left_child;
+    const R *right_child;
 
 public:
-    ITENode(const ASTNode *then_child, const ASTNode *else_child);
-    ~ITENode();
-    const ASTNode* get_then_child() const { return then_child; }
-    const ASTNode* get_else_child() const { return else_child; }
+    PairNodeTemplate(const L *left_child, const R *right_child) {
+        this->left_child = left_child;
+        this->right_child = right_child;
+    }
+    ~PairNodeTemplate() {
+        delete left_child;
+        delete right_child;
+    }
+
+    const L* get_left_child() const { return left_child; }
+    const R* get_right_child() const { return right_child; }
 };
 
 
-class ITEImpurityNode : public ITENode {
+/**
+ * ProgramProduction grammar productions
+ */
+
+
+class ProgramNode : public ProgramProduction, public PairNodeTemplate<StatementProduction, ReturnStatementProduction> {
 public:
-    ITEImpurityNode(const ASTNode *then_child, const ASTNode *else_child)
-        : ITENode(then_child, else_child) {};
-    void accept(Visitor &v) const;
+    ProgramNode(StatementProduction *left_child, ReturnStatementProduction *right_child)
+        : PairNodeTemplate<StatementProduction, ReturnStatementProduction>(left_child, right_child) {};
+    void accept(ASTVisitor &v) const;
 };
 
 
-class ITEModelsNode : public ITENode {
+/**
+ * StatementProduction grammar productions
+ */
+
+
+class SequenceNode : public StatementProduction, public PairNodeTemplate<StatementProduction, StatementProduction> {
 public:
-    ITEModelsNode(const ASTNode *then_child, const ASTNode *else_child)
-        : ITENode(then_child, else_child) {};
-    void accept(Visitor &v) const;
+    SequenceNode(const StatementProduction *left_child, const StatementProduction *right_child)
+        : PairNodeTemplate<StatementProduction, StatementProduction>(left_child, right_child) {};
+    void accept(ASTVisitor &v) const;
 };
 
 
-class BestSplitNode : public ASTNode {
+class ITEImpurityNode : public StatementProduction, public PairNodeTemplate<StatementProduction, StatementProduction> {
+public:
+    ITEImpurityNode(const StatementProduction *left_child, const StatementProduction *right_child)
+        : PairNodeTemplate<StatementProduction, StatementProduction>(left_child, right_child) {};
+    void accept(ASTVisitor &v) const;
+};
+
+
+class ITENoPhiNode : public StatementProduction, public PairNodeTemplate<StatementProduction, UsePhiStatementProduction> {
+public:
+    ITENoPhiNode(const StatementProduction *left_child, const UsePhiStatementProduction *right_child)
+        : PairNodeTemplate<StatementProduction, UsePhiStatementProduction>(left_child, right_child) {};
+    void accept(ASTVisitor &v) const;
+};
+
+
+class BestSplitNode : public StatementProduction, public ASTNode {
 public:
     BestSplitNode() {};
     ~BestSplitNode() {};
-    void accept(Visitor &v) const;
+    void accept(ASTVisitor &v) const;
 };
 
 
-class FilterNode : public ASTNode {
+class SummaryNode : public StatementProduction, public ASTNode {
+public:
+    SummaryNode() {};
+    ~SummaryNode() {};
+    void accept(ASTVisitor &v) const;
+};
+
+
+/**
+ * UsePhiStatmentProduction grammar productions
+ */
+
+
+class UsePhiSequenceNode : public UsePhiStatementProduction, public PairNodeTemplate<UsePhiStatementProduction, StatementProduction> {
+public:
+    UsePhiSequenceNode(const UsePhiStatementProduction *left_child, const StatementProduction *right_child)
+        : PairNodeTemplate<UsePhiStatementProduction, StatementProduction>(left_child, right_child) {};
+    void accept(ASTVisitor &v) const;
+};
+
+
+class ITEModelsNode : public UsePhiStatementProduction, public PairNodeTemplate<UsePhiStatementProduction, UsePhiStatementProduction> {
+public:
+    ITEModelsNode(const UsePhiStatementProduction *left_child, const UsePhiStatementProduction *right_child)
+        : PairNodeTemplate<UsePhiStatementProduction, UsePhiStatementProduction>(left_child, right_child) {};
+    void accept(ASTVisitor &v) const;
+};
+
+
+class FilterNode : public UsePhiStatementProduction, public ASTNode {
 private:
     bool mode; // Determines whether or not phi is negated
 
 public:
     FilterNode(bool mode);
     ~FilterNode() {};
-    void accept(Visitor &v) const;
+    void accept(ASTVisitor &v) const;
 
     bool get_mode() const { return mode; }
 };
 
 
-class SummaryNode : public ASTNode {
-public:
-    SummaryNode() {};
-    ~SummaryNode() {};
-    void accept(Visitor &v) const;
-};
+/**
+ * ReturnStatementProduction grammar productions
+ */
 
 
-class ReturnNode : public ASTNode {
+class ReturnNode : public ReturnStatementProduction, public ASTNode {
 public:
     ReturnNode() {};
     ~ReturnNode() {};
-    void accept(Visitor &v) const;
+    void accept(ASTVisitor &v) const;
 };
 
 
-class Visitor {
+/**
+ * The actual visitor for AST traversal
+ */
+
+
+class ASTVisitor {
 public:
+    virtual void visit(const ProgramNode &node) = 0;
     virtual void visit(const SequenceNode &node) = 0;
     virtual void visit(const ITEImpurityNode &node) = 0;
-    virtual void visit(const ITEModelsNode &node) = 0;
+    virtual void visit(const ITENoPhiNode &node) = 0;
     virtual void visit(const BestSplitNode &node) = 0;
-    virtual void visit(const FilterNode &node) = 0;
     virtual void visit(const SummaryNode &node) = 0;
+    virtual void visit(const UsePhiSequenceNode &node) = 0;
+    virtual void visit(const ITEModelsNode &node) = 0;
+    virtual void visit(const FilterNode &node) = 0;
     virtual void visit(const ReturnNode &node) = 0;
 };
 
+
+/**
+ * The tree-building function
+ */
+
+ProgramNode* buildTree(int depth);
 
 #endif
