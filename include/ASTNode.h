@@ -1,9 +1,6 @@
 #ifndef ASTNODE_H
 #define ASTNODE_H
 
-#include<vector>
-using namespace std;
-
 /**
  * The AST class hierarchy here is slightly involved;
  * we use the C++ type system to enforce the grammar productions.
