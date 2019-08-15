@@ -41,12 +41,17 @@ private:
     T lower_bound;
     T upper_bound;
 
+    bool empty_flag;
+
 public:
+    Interval();
     Interval(const T& single_value);
     Interval(const T& lower_bound, const T& upper_bound);
 
     T get_lower_bound() const { return lower_bound; }
     T get_upper_bound() const { return upper_bound; }
+
+    bool isEmpty() const { return empty_flag; }
 
     friend Interval<T> operator- <T> (const Interval<T>& interval);
     friend Interval<T> operator+ <T> (const Interval<T>& left, const Interval<T>& right);
@@ -61,15 +66,22 @@ public:
 
 
 template <typename T>
+Interval<T>::Interval() {
+    empty_flag = true;
+}
+
+template <typename T>
 Interval<T>::Interval(const T& single_value) {
     lower_bound = single_value;
     upper_bound = single_value;
+    empty_flag = false;
 }
 
 template <typename T>
 Interval<T>::Interval(const T& lower_bound, const T& upper_bound) {
     this->lower_bound = lower_bound;
     this->upper_bound = upper_bound;
+    empty_flag = false;
 }
 
 template <typename T>
@@ -89,6 +101,10 @@ Interval<T> operator- (const Interval<T>& interval) {
 
 template <typename T>
 Interval<T> operator+ (const Interval<T>& left, const Interval<T>& right) {
+    if(left.isEmpty() || right.isEmpty()) {
+        // Return an empty interval
+        return left;
+    }
     return Interval<T>(left.lower_bound + right.lower_bound,
                        left.upper_bound + right.upper_bound);
 }
@@ -100,6 +116,10 @@ Interval<T> operator- (const Interval<T>& left, const Interval<T>& right) {
 
 template <typename T>
 Interval<T> operator* (const Interval<T>& left, const Interval<T>& right) {
+    if(left.isEmpty() || right.isEmpty()) {
+        // Return an empty interval
+        return left;
+    }
     T points[4] = {left.lower_bound * right.lower_bound,
                    left.lower_bound * right.upper_bound,
                    left.upper_bound * right.lower_bound,
@@ -111,6 +131,10 @@ Interval<T> operator* (const Interval<T>& left, const Interval<T>& right) {
 
 template <typename T>
 Interval<T> operator/ (const Interval<T>& left, const Interval<T>& right) {
+    if(left.isEmpty() || right.isEmpty()) {
+        // Return an empty interval
+        return left;
+    }
     // XXX incorrect if division by zero is possible
     Interval<T> right_reciprocal((T)1/right.upper_bound, (T)1/right.lower_bound);
     return left * right_reciprocal;
@@ -118,8 +142,14 @@ Interval<T> operator/ (const Interval<T>& left, const Interval<T>& right) {
 
 template <typename T>
 bool operator== (const Interval<T>& left, const Interval<T>& right) {
-    return left.lower_bound == right.lower_bound &&
-           left.upper_bound == right.upper_bound;
+    if(left.isEmpty() && right.isEmpty()) {
+        return true;
+    } else if(!left.isEmpty() && !right.isEmpty()) {
+        return left.lower_bound == right.lower_bound &&
+               left.upper_bound == right.upper_bound;
+    } else {
+        return false;
+    }
 }
 
 #endif
