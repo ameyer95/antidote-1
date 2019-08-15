@@ -62,10 +62,10 @@ bool mustBeEmpty(const DropoutCounts &counts) {
 }
 
 PredicatePointers DropoutSet::bestSplit(const PredicateSet *predicates) {
-    std::map<BitVectorPredicate*, std::pair<DropoutCounts, DropoutCounts>> counts;
+    std::map<const BitVectorPredicate*, std::pair<DropoutCounts, DropoutCounts>> counts;
     PredicatePointers forall_nontrivial, exists_nontrivial;
 
-    for(PredicateSet::iterator i = predicates->begin(); i != predicates->end(); i++) {
+    for(PredicateSet::const_iterator i = predicates->begin(); i != predicates->end(); i++) {
         counts.insert(std::make_pair(&(*i), splitCounts(*i)));
         if(!couldBeEmpty(counts[&(*i)].first) && !couldBeEmpty(counts[&(*i)].second)) {
             forall_nontrivial.push_back(&(*i));
@@ -80,9 +80,9 @@ PredicatePointers DropoutSet::bestSplit(const PredicateSet *predicates) {
         return exists_nontrivial;
     }
 
-    std::map<BitVectorPredicate*, Interval<double>> scores;
+    std::map<const BitVectorPredicate*, Interval<double>> scores;
     double min_upper_bound;
-    for(PredicatePointers::iterator i = forall_nontrivial.begin(); i != forall_nontrivial.end(); i++) {
+    for(PredicatePointers::const_iterator i = forall_nontrivial.begin(); i != forall_nontrivial.end(); i++) {
         scores.insert(std::make_pair(*i, jointImpurity(std::make_pair(counts[*i].first.pos, counts[*i].first.neg),
                                                        counts[*i].first.num_dropout,
                                                        std::make_pair(counts[*i].second.pos, counts[*i].second.neg),

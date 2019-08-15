@@ -11,7 +11,7 @@
 // Everything is currently hard-coded avoiding generality
 
 typedef std::vector<BitVectorPredicate> PredicateSet;
-typedef std::vector<BitVectorPredicate*> PredicatePointers;
+typedef std::vector<const BitVectorPredicate*> PredicatePointers;
 
 struct DropoutCounts {
     int pos, neg, num_dropout;
