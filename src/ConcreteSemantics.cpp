@@ -89,6 +89,7 @@ pair<pair<int, int>, pair<int, int>> BooleanDataSet::splitCounts(const BitVector
     pair<int, int> *pair_ptr;
     int *count_ptr;
     for(int i = 0; i < data->size(); i++) {
+        // Convention here is that things that do satisfy the predicate have "index" 1; those that don't have 0
         pair_ptr = phi->evaluate(getRow(i).first) ? &(ret.second) : &(ret.first);
         count_ptr = classificationBit(i) ? &(pair_ptr->second) : &(pair_ptr->first);
         *count_ptr += 1;
@@ -106,7 +107,7 @@ void BooleanDataSet::filter(const BitVectorPredicate &phi, bool mode) {
     // XXX this iterative removal is potentially inefficient; consider a linked list
     for(int i = 0; i < data->size(); i++) {
         result = phi.evaluate((*data)[i].first);
-        remove = mode ? result : !result;
+        remove = (mode != result);
         if(remove) {
             data->remove(i);
             i--;
@@ -123,6 +124,7 @@ bool emptyCount(const pair<int, int> &counts) {
 }
 
 const BitVectorPredicate* BooleanDataSet::bestSplit(const vector<BitVectorPredicate> *predicates) {
+    // XXX uses information gain instead of (equivalently, but as in spec) joint impurity
     double best_score, current_score;
     const BitVectorPredicate *best_predicate = NULL;
     pair<pair<int, int>, pair<int, int>> counts;
