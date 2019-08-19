@@ -70,6 +70,10 @@ Interval<T>::Interval(const Interval<T> &other) {
     empty_flag = other.empty_flag;
 }
 
+/**
+ * Non-member auxiliary to_string (mimicking standard library numeric methods)
+ */
+
 template <typename T>
 std::string to_string(const Interval<T> &interval) {
     return "[" + std::to_string((T)interval.get_lower_bound()) + ", " +
