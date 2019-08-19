@@ -1,6 +1,7 @@
 #ifndef DATA_COMMON_H
 #define DATA_COMMON_H
 
+#include <algorithm> // for min_element
 #include <vector>
 using namespace std;
 
@@ -37,18 +38,25 @@ DataReferences<T>::DataReferences(const vector<T> *data) {
 template <typename T>
 DataReferences<T> DataReferences<T>::set_union(const DataReferences<T> &e1, const DataReferences<T> &e2) {
     // XXX strong assumption that e1.data == e2.data
+    // and the invariant that DataReferences::indices are sorted
     vector<int>::const_iterator i1, i2;
     vector<int> ret_indices;
     i1 = e1.indices.begin();
     i2 = e2.indices.begin();
-    for(int i = 0; i < e1.data->size(); i++) {
-        if((i1 != e1.indices.end() && *i1 == i) || (i2 != e2.indices.end() && *i2 == i)) {
-            ret_indices.push_back(i);
+    while(i1 != e1.indices.end() || i2 != e2.indices.end()) {
+        vector<int> candidates;
+        if(i1 != e1.indices.end()) {
+            candidates.push_back(*i1);
         }
-        while(i1 != e1.indices.end() && *i1 <= i) {
+        if(i2 != e2.indices.end()) {
+            candidates.push_back(*i2);
+        }
+        int current = *min_element(candidates.begin(), candidates.end());
+        ret_indices.push_back(current);
+        if(i1 != e1.indices.end() && *i1 == current) {
             i1++;
         }
-        while(i2 != e2.indices.end() && *i2 <= i) {
+        if(i2 != e2.indices.end() && *i2 == current) {
             i2++;
         }
     }
