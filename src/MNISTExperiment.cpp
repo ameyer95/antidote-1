@@ -1,6 +1,8 @@
 #include "MNISTExperiment.h"
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
+#include "DropoutSemantics.h"
+#include "Interval.h"
 #include "MNIST.h"
 #include <string>
 #include <utility>
@@ -56,13 +58,23 @@ void MNISTExperiment::loadMNIST(string mnistPrefix) {
     mnist_test = simplified(raw_mnist_test);
 }
 
-double MNISTExperiment::run(int depth, int test_index) {
+double MNISTExperiment::run_concrete(int depth, int test_index) {
     ProgramNode* program = buildTree(depth);
     // By putting all of the following on the stack, we don't have to do heap deallocation
     ConcreteSemantics sem;
     DataReferences<DataRow> training_references(mnist_training);
     BooleanDataSet training_dataset(&training_references);
     double ret = sem.execute((*mnist_test)[test_index].first, &training_dataset, predicates, program);
+    delete program;
+    return ret;
+}
+
+Interval<double> MNISTExperiment::run_abstract(int depth, int test_index, int num_dropout) {
+    ProgramNode* program = buildTree(depth);
+    DropoutSemantics sem;
+    DataReferences<DataRow> training_references(mnist_training);
+    DropoutSet training_dataset(training_references, num_dropout);
+    Interval<double> ret = sem.execute((*mnist_test)[test_index].first, &training_dataset, predicates, program);
     delete program;
     return ret;
 }

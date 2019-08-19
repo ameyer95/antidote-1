@@ -11,10 +11,13 @@
 #include <vector>
 using namespace std;
 
+// In tandem with readParams, defines the command-line flags
 struct RunParams {
     int depth;
     vector<int> test_indices;
     string mnist_prefix;
+    bool use_abstract; // When false, use concrete semantics
+    int num_dropout; // For when use_abstract == true
 };
 
 /**
@@ -43,20 +46,26 @@ void vectorizeIntStringSplit(vector<int> &items, const string &space_separated_l
     }
 }
 
+// In tandem with RunParams, defines the command-line flags
 bool readParams(RunParams &params, const int &argc, char ** const &argv) {
-    Argument *depth, *test_indices, *mnist_prefix;
+    Argument *depth, *test_indices, *mnist_prefix, *use_abstract;
     ArgParse p;
     bool success;
 
     depth = p.createArgument("-d", 1, "Depth of the tree to be built");
     test_indices = p.createArgument("-t", 1, "Space-separated list of test indices");
     mnist_prefix = p.createArgument("-m", 1, "Path to MNIST datasets");
+    use_abstract = p.createArgument("-a", 1, "Use abstract semantics (not concrete); The passed value determines n in <T,n>", true);
     p.parse(argc, argv);
 
     if(!p.failure()) {
         params.depth = stoi(depth->tokens[0]);
         vectorizeIntStringSplit(params.test_indices, test_indices->tokens[0]);
         params.mnist_prefix = mnist_prefix->tokens[0];
+        params.use_abstract = use_abstract->included;
+        if(params.use_abstract) {
+            params.num_dropout = stoi(use_abstract->tokens[0]);
+        }
         success = true;
     } else {
         cout << p.message() << endl;
@@ -67,6 +76,7 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
     delete depth;
     delete test_indices;
     delete mnist_prefix;
+    delete use_abstract;
     return success;
 }
 
@@ -74,9 +84,15 @@ void test_MNIST(const RunParams &params) {
     MNISTExperiment e(params.mnist_prefix);
     for(vector<int>::const_iterator i = params.test_indices.begin(); i != params.test_indices.end(); i++) {
         if(*i < e.test_size()) {
-            cout << "running a depth-" << params.depth << " experiment on test " << *i << endl;
-            double ret = e.run(params.depth, *i);
-            cout << "result: " << ret << endl;
+            cout << "running a depth-" << params.depth << " experiment using "
+                << (params.use_abstract ? "<T," + to_string(params.num_dropout) + ">" : "T") << " on test " << *i << endl;
+            if(params.use_abstract) {
+                Interval<double> ret = e.run_abstract(params.depth, *i, params.num_dropout);
+                cout << "result: " << to_string(ret) << endl;
+            } else {
+                double ret = e.run_concrete(params.depth, *i);
+                cout << "result: " << ret << endl;
+            }
         } else {
             cout << "skipping test " << *i << " (out of bounds)" << endl;
         }

@@ -3,6 +3,8 @@
 
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
+#include "DropoutSemantics.h"
+#include "Interval.h"
 #include <string>
 #include <vector>
 using namespace std;
@@ -22,7 +24,8 @@ public:
     ~MNISTExperiment();
 
     int test_size() { return mnist_test->size(); }
-    double run(int depth, int test_index);
+    double run_concrete(int depth, int test_index);
+    Interval<double> run_abstract(int depth, int test_index, int num_dropout);
 };
 
 
