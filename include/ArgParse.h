@@ -10,6 +10,9 @@ struct Argument {
     int num_args; // How many tokens following flag_name should be included
     string help_message;
     vector<string> tokens; // This is populated by ArgParse::parse
+
+    bool optional;
+    bool included; // Indicates that an optional argument was present
 };
 
 
@@ -27,7 +30,7 @@ public:
     
     // Keep track of the references created by this to read the values,
     // and the caller is responsible for deallocation
-    Argument* createArgument(const string &flag_name, int num_args, const string &help_message);
+    Argument* createArgument(const string &flag_name, int num_args, const string &help_message, bool optional=false);
     void parse(const int &argc, char ** const &argv); // Populates those references
 
     string help_string();
