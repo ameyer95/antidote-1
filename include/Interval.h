@@ -39,6 +39,8 @@ public:
     // Equality is checking if the intervals express the same set,
     // not if equality holds on all concretizations
     bool operator== (const Interval<T> &right) const;
+
+    static Interval<T> join(const Interval<T> &e1, const Interval<T> &e2);
 };
 
 
@@ -133,6 +135,19 @@ bool Interval<T>::operator== (const Interval<T> &right) const {
     } else {
         return false;
     }
+}
+
+template <typename T>
+Interval<T> Interval<T>::join(const Interval<T> &e1, const Interval<T> &e2) {
+    if(e1.isEmpty()) {
+        return e2;
+    } else if(e2.isEmpty()) {
+        return e1;
+    }
+    // Imprecise join if no overlap
+    T lower_bound = e1.lower_bound < e2.lower_bound ? e1.lower_bound : e2.lower_bound;
+    T upper_bound = e1.upper_bound > e2.upper_bound ? e1.upper_bound : e2.upper_bound;
+    return Interval<T>(lower_bound, upper_bound);
 }
 
 #endif

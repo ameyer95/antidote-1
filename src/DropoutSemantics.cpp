@@ -134,6 +134,11 @@ Interval<int> DropoutSet::size() {
 }
 
 DropoutSet DropoutSet::join(const DropoutSet &e1, const DropoutSet &e2) {
+    if(e1.isBottom()) {
+        return e2;
+    } else if(e2.isBottom()) {
+        return e1;
+    }
     DataReferences<DataRow> d = DataReferences<DataRow>::set_union(e1.data, e2.data);
     int n1 = d.size() - e2.data.size() + e2.num_dropout; // Note |(T1 U T2) \ T1| = |T2 \ T1|
     int n2 = d.size() - e1.data.size() + e1.num_dropout;
@@ -152,8 +157,29 @@ DropoutSet DropoutSet::join(const vector<DropoutSet> &elements) {
  * AbstractState member functions
  */
 
-AbstractState join(const AbstractState &e1, const AbstractState &e2) {
-    // TODO
+AbstractState AbstractState::join(const AbstractState &e1, const AbstractState &e2) {
+    if(e1.bot_flag) {
+        return e2;
+    } else if(e2.bot_flag) {
+        return e1;
+    }
+    AbstractState ret;
+    ret.training_set = DropoutSet::join(e1.training_set, e2.training_set);
+    ret.phis = e1.phis;
+    for(PredicatePointers::const_iterator i = e2.phis.begin(); i != e2.phis.end(); i++) {
+        bool contains_flag = false;
+        for(PredicatePointers::const_iterator j = ret.phis.begin(); j != ret.phis.end(); j++) {
+            if(*i == *j) {
+                contains_flag = true;
+                break;
+            }
+        }
+        if(!contains_flag) {
+            ret.phis.push_back(*i);
+        }
+    }
+    ret.posterior = Interval<double>::join(e1.posterior, e2.posterior);
+    ret.bot_flag = false;
 }
 
 AbstractState AbstractState::join(const vector<AbstractState> &elements) {
@@ -176,6 +202,7 @@ Interval<double> DropoutSemantics::execute(const Input test_input, DropoutSet *t
     this->test_input = test_input;
     current_state.training_set = *training_set;
     current_state.phis.clear();
+    current_state.bot_flag = false;
     this->predicates = predicates;
     program->accept(*this);
     return return_value;
