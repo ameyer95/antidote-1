@@ -1,7 +1,11 @@
 #include "ASTNode.h"
-#include <vector>
-using namespace std;
 
+// We'll have the ASTVisitor subclass output entering/exiting information
+// (by modifying the ASTNode half of dual-dispatch)
+// when -DDEBUG is given as a g++ argument
+#ifdef DEBUG
+#include <iostream>
+#endif
 
 /**
  * The program-building functions
@@ -46,6 +50,9 @@ ASTNode::~ASTNode() {}
  * Visitor accept methods
  **/
 
+// As stated at the beginning of the file,
+// We'll include entering/exiting information when debugging
+#ifndef DEBUG
 void ProgramNode::accept(ASTVisitor &v) const { v.visit(*this); }
 void SequenceNode::accept(ASTVisitor &v) const { v.visit(*this); }
 void ITEImpurityNode::accept(ASTVisitor &v) const { v.visit(*this); }
@@ -56,3 +63,55 @@ void UsePhiSequenceNode::accept(ASTVisitor &v) const { v.visit(*this); }
 void ITEModelsNode::accept(ASTVisitor &v) const { v.visit(*this); }
 void FilterNode::accept(ASTVisitor &v) const { v.visit(*this); }
 void ReturnNode::accept(ASTVisitor &v) const { v.visit(*this); }
+#else
+void ProgramNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering ProgramNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting ProgramNode" << std::endl;
+}
+void SequenceNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering SequenceNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting SequenceNode" << std::endl;
+}
+void ITEImpurityNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering ITEImpurityNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting ITEImpurityNode" << std::endl;
+}
+void ITENoPhiNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering ITENoPhiNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting ITENoPhiNode" << std::endl;
+}
+void BestSplitNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering BestSplitNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting BestSplitNode" << std::endl;
+}
+void SummaryNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering SummaryNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting SummaryNode" << std::endl;
+}
+void UsePhiSequenceNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering UsePhiSequenceNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting UsePhiSequenceNode" << std::endl;
+}
+void ITEModelsNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering ITEModelsNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting ITEModelsNode" << std::endl;
+}
+void FilterNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering FilterNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting FilterNode" << std::endl;
+}
+void ReturnNode::accept(ASTVisitor &v) const {
+    std::cout << "Entering ReturnNode" << std::endl;
+    v.visit(*this);
+    std::cout << "Exiting ReturnNode" << std::endl;
+}
+#endif

@@ -1,5 +1,7 @@
 CXX=g++
 CXXFLAGS=-O3 -std=c++11
+# Debugging flags (including the debugging macro for src/ASTNode.cpp)
+#CXXFLAGS=-g -O3 -std=c++11 -DDEBUG
 
 SRCDIR=src
 BUILDDIR=build
