@@ -1,5 +1,6 @@
 #include "information_math.h"
 #include "Interval.h"
+#include <algorithm>
 #include <utility>
 using namespace std;
 
@@ -10,11 +11,11 @@ double impurity(const pair<int, int> &counts) {
 }
 
 Interval<double> impurity(const pair<int, int> &counts, int num_dropout) {
-    Interval<double> p(0);
+    Interval<double> p;
     if(counts.first + counts.second == num_dropout) {
         p = Interval<double>(0, 1);
     } else {
-        Interval<double> num((counts.first > num_dropout ? num_dropout : 0), counts.first);
+        Interval<double> num(max(counts.first - num_dropout, 0), counts.first);
         Interval<double> den(counts.first + counts.second - num_dropout, counts.first + counts.second);
         p = num / den;
     }
