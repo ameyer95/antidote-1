@@ -4,6 +4,7 @@
 #include "data_common.h"
 #include "information_math.h"
 #include "Interval.h"
+#include <algorithm> // For std::max etc
 #include <map>
 #include <utility>
 #include <vector>
@@ -19,7 +20,7 @@ Interval<int> DropoutSet::countOnes() {
             count++;
         }
     }
-    return Interval<int>((count - num_dropout >= 0 ? count - num_dropout : 0), count);
+    return Interval<int>(std::max(count - num_dropout, 0), count);
 }
 
 std::pair<DropoutCounts, DropoutCounts> DropoutSet::splitCounts(const BitVectorPredicate &phi) {
@@ -31,8 +32,8 @@ std::pair<DropoutCounts, DropoutCounts> DropoutSet::splitCounts(const BitVectorP
         count_ptr = classificationBit(i) ? &(d_ptr->pos) : &(d_ptr->neg);
         *count_ptr += 1;
     }
-    ret.first.num_dropout = (num_dropout < ret.first.pos + ret.first.neg ? num_dropout : ret.first.pos + ret.first.neg);
-    ret.second.num_dropout = (num_dropout < ret.second.pos + ret.second.neg ? num_dropout : ret.second.pos + ret.second.neg);
+    ret.first.num_dropout = std::min(num_dropout, ret.first.pos + ret.first.neg);
+    ret.second.num_dropout = std::min(num_dropout, ret.second.pos + ret.second.neg);
     return ret;
 }
 
@@ -74,30 +75,38 @@ PredicatePointers DropoutSet::bestSplit(const PredicateSet *predicates) {
             exists_nontrivial.push_back(&(*i));
         }
     }
-    
+
     if(forall_nontrivial.size() == 0) {
         exists_nontrivial.push_back(NULL);
         return exists_nontrivial;
     }
 
+    // Compute and store all of the predicates' scores
     std::map<const BitVectorPredicate*, Interval<double>> scores;
+    for(PredicatePointers::const_iterator i = exists_nontrivial.begin(); i != exists_nontrivial.end(); i++) {
+        Interval<double> temp = jointImpurity(std::make_pair(counts[*i].first.pos, counts[*i].first.neg),
+                                              counts[*i].first.num_dropout,
+                                              std::make_pair(counts[*i].second.pos, counts[*i].second.neg),
+                                              counts[*i].second.num_dropout);
+        scores.insert(std::make_pair(*i, temp));
+    }
+
+    // Find the threshold using only predicates from forall_nontrivial
     double min_upper_bound;
     for(PredicatePointers::const_iterator i = forall_nontrivial.begin(); i != forall_nontrivial.end(); i++) {
-        scores.insert(std::make_pair(*i, jointImpurity(std::make_pair(counts[*i].first.pos, counts[*i].first.neg),
-                                                       counts[*i].first.num_dropout,
-                                                       std::make_pair(counts[*i].second.pos, counts[*i].second.neg),
-                                                       counts[*i].second.num_dropout)));
         if(i == forall_nontrivial.begin() || min_upper_bound > scores[*i].get_upper_bound()) {
             min_upper_bound = scores[*i].get_upper_bound();
         }
     }
 
+    // Return any predicates in exists_nontrivial whose score could beat the threshold
     PredicatePointers ret;
     for(PredicatePointers::iterator i = exists_nontrivial.begin(); i != exists_nontrivial.end(); i++) {
         if(scores[*i].get_lower_bound() <= min_upper_bound) {
             ret.push_back(*i);
         }
     }
+
     return ret;
 }
 
@@ -142,7 +151,7 @@ DropoutSet DropoutSet::join(const DropoutSet &e1, const DropoutSet &e2) {
     DataReferences<DataRow> d = DataReferences<DataRow>::set_union(e1.data, e2.data);
     int n1 = d.size() - e2.data.size() + e2.num_dropout; // Note |(T1 U T2) \ T1| = |T2 \ T1|
     int n2 = d.size() - e1.data.size() + e1.num_dropout;
-    return DropoutSet(d, (n1 > n2 ? n1 : n2));
+    return DropoutSet(d, std::max(n1, n2));
 }
 
 DropoutSet DropoutSet::join(const vector<DropoutSet> &elements) {
@@ -220,7 +229,7 @@ void DropoutSemantics::visit(const SequenceNode &node) {
 
 void DropoutSemantics::visit(const ITEImpurityNode &node) {
     DropoutSet *pure0, *pure1;
-    std::vector<AbstractState> joins(0);
+    std::vector<AbstractState> joins;
     AbstractState backup;
 
     pure0 = current_state.training_set.pureSets(false);
@@ -252,7 +261,7 @@ void DropoutSemantics::visit(const ITEImpurityNode &node) {
 }
 
 void DropoutSemantics::visit(const ITENoPhiNode &node) {
-    std::vector<AbstractState> joins(0);
+    std::vector<AbstractState> joins;
     PredicatePointers::iterator i;
     bool contains_bot = false;
     AbstractState backup;
@@ -298,9 +307,9 @@ void DropoutSemantics::visit(const UsePhiSequenceNode &node) {
 }
 
 void DropoutSemantics::visit(const ITEModelsNode &node) {
-    std::vector<AbstractState> joins(0);
+    std::vector<AbstractState> joins;
     AbstractState backup;
-    PredicatePointers pos(0), neg(0);
+    PredicatePointers pos, neg;
 
     for(PredicatePointers::iterator i = current_state.phis.begin(); i != current_state.phis.end(); i++) {
         if((*i)->evaluate(test_input)) {
@@ -330,7 +339,7 @@ void DropoutSemantics::visit(const ITEModelsNode &node) {
 }
 
 void DropoutSemantics::visit(const FilterNode &node) {
-    std::vector<DropoutSet> joins(0);
+    std::vector<DropoutSet> joins;
     DropoutSet temp;
     for(PredicatePointers::iterator i = current_state.phis.begin(); i != current_state.phis.end(); i++) {
         temp = current_state.training_set;
