@@ -189,6 +189,7 @@ AbstractState AbstractState::join(const AbstractState &e1, const AbstractState &
     }
     ret.posterior = Interval<double>::join(e1.posterior, e2.posterior);
     ret.bot_flag = false;
+    return ret;
 }
 
 AbstractState AbstractState::join(const vector<AbstractState> &elements) {
