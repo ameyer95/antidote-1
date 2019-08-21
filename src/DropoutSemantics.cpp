@@ -15,7 +15,7 @@
 
 Interval<int> DropoutSet::countOnes() {
     int count = 0;
-    for(int i = 0; i < data.size(); i++) {
+    for(unsigned int i = 0; i < data.size(); i++) {
         if(classificationBit(i)) {
             count++;
         }
@@ -27,7 +27,7 @@ std::pair<DropoutCounts, DropoutCounts> DropoutSet::splitCounts(const BitVectorP
     std::pair<DropoutCounts, DropoutCounts> ret({0, 0, 0}, {0, 0, 0});
     DropoutCounts *d_ptr;
     int *count_ptr;
-    for(int i = 0; i < data.size(); i++) {
+    for(unsigned int i = 0; i < data.size(); i++) {
         d_ptr = phi.evaluate(getRow(i).first) ? &(ret.second) : &(ret.first);
         count_ptr = classificationBit(i) ? &(d_ptr->pos) : &(d_ptr->neg);
         *count_ptr += 1;
@@ -40,7 +40,7 @@ std::pair<DropoutCounts, DropoutCounts> DropoutSet::splitCounts(const BitVectorP
 DropoutSet* DropoutSet::pureSets(bool classification) {
     DataReferences<DataRow> datacopy = data;
     int num_removed = 0;
-    for(int i = 0; i < datacopy.size(); i++) {
+    for(unsigned int i = 0; i < datacopy.size(); i++) {
         if(datacopy[i].second != classification) {
             datacopy.remove(i);
             num_removed++;
@@ -92,7 +92,8 @@ PredicatePointers DropoutSet::bestSplit(const PredicateSet *predicates) {
     }
 
     // Find the threshold using only predicates from forall_nontrivial
-    double min_upper_bound;
+    double min_upper_bound; // Always gets initialized unless forall_nontrivial.size() == 0,
+                            // and we prior have an if statement to check that
     for(PredicatePointers::const_iterator i = forall_nontrivial.begin(); i != forall_nontrivial.end(); i++) {
         if(i == forall_nontrivial.begin() || min_upper_bound > scores[*i].get_upper_bound()) {
             min_upper_bound = scores[*i].get_upper_bound();
@@ -112,7 +113,7 @@ PredicatePointers DropoutSet::bestSplit(const PredicateSet *predicates) {
 
 void DropoutSet::filter(const BitVectorPredicate &phi, bool mode) {
     bool remove, result;
-    for(int i = 0; i < data.size(); i++) {
+    for(unsigned int i = 0; i < data.size(); i++) {
         result = phi.evaluate(data[i].first);
         remove = (mode != result);
         if(remove) {
