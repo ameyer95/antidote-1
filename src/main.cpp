@@ -13,11 +13,12 @@ using namespace std;
 
 // In tandem with readParams, defines the command-line flags
 struct RunParams {
-    int depth;
+    vector<int> depths;
+    bool test_all; // When false, use only the indices in test_indices
     vector<int> test_indices;
     string mnist_prefix;
     bool use_abstract; // When false, use concrete semantics
-    int num_dropout; // For when use_abstract == true
+    vector<int> num_dropouts; // For when use_abstract == true
 };
 
 /**
@@ -48,25 +49,34 @@ void vectorizeIntStringSplit(vector<int> &items, const string &space_separated_l
 
 // In tandem with RunParams, defines the command-line flags
 bool readParams(RunParams &params, const int &argc, char ** const &argv) {
-    Argument *depth, *test_indices, *mnist_prefix, *use_abstract;
+    Argument *depth, *test_all, *test_indices, *mnist_prefix, *use_abstract;
     ArgParse p;
     bool success;
 
-    depth = p.createArgument("-d", 1, "Depth of the tree to be built");
-    test_indices = p.createArgument("-t", 1, "Space-separated list of test indices");
+    depth = p.createArgument("-d", 1, "Space-separated list of depths of the tree to be built");
+    test_all = p.createArgument("-T", 0, "Run on each element in the test set", true);
+    test_indices = p.createArgument("-t", 1, "Space-separated list of test indices", true);
     mnist_prefix = p.createArgument("-m", 1, "Path to MNIST datasets");
-    use_abstract = p.createArgument("-a", 1, "Use abstract semantics (not concrete); The passed value determines n in <T,n>", true);
+    use_abstract = p.createArgument("-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
     p.parse(argc, argv);
 
     if(!p.failure()) {
-        params.depth = stoi(depth->tokens[0]);
-        vectorizeIntStringSplit(params.test_indices, test_indices->tokens[0]);
-        params.mnist_prefix = mnist_prefix->tokens[0];
-        params.use_abstract = use_abstract->included;
-        if(params.use_abstract) {
-            params.num_dropout = stoi(use_abstract->tokens[0]);
+        if(!test_all->included && !test_indices->included) {
+            cout << "Must specify test cases with -t or -T" << endl;
+            success = false;
+        } else {
+            vectorizeIntStringSplit(params.depths, depth->tokens[0]);
+            params.test_all = test_all->included;
+            if(!params.test_all) {
+                vectorizeIntStringSplit(params.test_indices, test_indices->tokens[0]);
+            }
+            params.mnist_prefix = mnist_prefix->tokens[0];
+            params.use_abstract = use_abstract->included;
+            if(params.use_abstract) {
+                vectorizeIntStringSplit(params.num_dropouts, use_abstract->tokens[0]);
+            }
+            success = true;
         }
-        success = true;
     } else {
         cout << p.message() << endl;
         cout << p.help_string() << endl;
@@ -74,27 +84,42 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
     }
 
     delete depth;
+    delete test_all;
     delete test_indices;
     delete mnist_prefix;
     delete use_abstract;
     return success;
 }
 
-void test_MNIST(const RunParams &params) {
-    MNISTExperiment e(params.mnist_prefix);
-    for(vector<int>::const_iterator i = params.test_indices.begin(); i != params.test_indices.end(); i++) {
-        if(*i < e.test_size()) {
-            cout << "running a depth-" << params.depth << " experiment using "
-                << (params.use_abstract ? "<T," + to_string(params.num_dropout) + ">" : "T") << " on test " << *i << endl;
-            if(params.use_abstract) {
-                Interval<double> ret = e.run_abstract(params.depth, *i, params.num_dropout);
+inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int depth, int index) {
+    if(index < e.test_size()) {
+        if(params.use_abstract) {
+            for(vector<int>::const_iterator n = params.num_dropouts.begin(); n != params.num_dropouts.end(); n++) {
+                cout << "running a depth-" << depth << " experiment using <T," << *n << "> on test " << index << endl;
+                Interval<double> ret = e.run_abstract(depth, index, *n);
                 cout << "result: " << to_string(ret) << endl;
-            } else {
-                double ret = e.run_concrete(params.depth, *i);
-                cout << "result: " << ret << endl;
             }
         } else {
-            cout << "skipping test " << *i << " (out of bounds)" << endl;
+            cout << "running a depth-" << depth << " experiment using T on test " << index << endl;
+            double ret = e.run_concrete(depth, index);
+            cout << "result: " << ret << endl;
+        }
+    } else {
+        cout << "skipping test " << index << " (out of bounds)" << endl;
+    }
+}
+
+void test_MNIST(const RunParams &params) {
+    MNISTExperiment e(params.mnist_prefix);
+    for(vector<int>::const_iterator depth = params.depths.begin(); depth != params.depths.end(); depth++) {
+        if(params.test_all) {
+            for(int i = 0; i < e.test_size(); i++) {
+                perform_single_test(params, e, *depth, i);
+            }
+        } else {
+            for(vector<int>::const_iterator i = params.test_indices.begin(); i != params.test_indices.end(); i++) {
+                perform_single_test(params, e, *depth, *i);
+            }
         }
     }
 }
