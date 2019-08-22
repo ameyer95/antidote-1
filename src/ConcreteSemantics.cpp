@@ -76,7 +76,7 @@ void ConcreteSemantics::visit(const ReturnNode &node) {
 
 int BooleanDataSet::countOnes() {
     int count = 0;
-    for(int i = 0; i < data->size(); i++) {
+    for(unsigned int i = 0; i < data->size(); i++) {
         if(classificationBit(i)) {
             count++;
         }
@@ -88,7 +88,7 @@ pair<pair<int, int>, pair<int, int>> BooleanDataSet::splitCounts(const BitVector
     pair<pair<int, int>, pair<int, int>> ret(make_pair(0, 0), make_pair(0, 0));
     pair<int, int> *pair_ptr;
     int *count_ptr;
-    for(int i = 0; i < data->size(); i++) {
+    for(unsigned int i = 0; i < data->size(); i++) {
         // Convention here is that things that do satisfy the predicate have "index" 1; those that don't have 0
         pair_ptr = phi->evaluate(getRow(i).first) ? &(ret.second) : &(ret.first);
         count_ptr = classificationBit(i) ? &(pair_ptr->second) : &(pair_ptr->first);
@@ -105,7 +105,7 @@ bool BooleanDataSet::isPure() {
 void BooleanDataSet::filter(const BitVectorPredicate &phi, bool mode) {
     bool remove, result;
     // XXX this iterative removal is potentially inefficient; consider a linked list
-    for(int i = 0; i < data->size(); i++) {
+    for(unsigned int i = 0; i < data->size(); i++) {
         result = phi.evaluate((*data)[i].first);
         remove = (mode != result);
         if(remove) {

@@ -30,7 +30,7 @@ template <typename T>
 DataReferences<T>::DataReferences(const vector<T> *data) {
     this->data = data;
     indices.reserve(data->size());
-    for(int i = 0; i < data->size(); i++) {
+    for(unsigned int i = 0; i < data->size(); i++) {
         indices.push_back(i);
     }
 }

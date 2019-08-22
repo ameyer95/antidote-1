@@ -21,7 +21,7 @@ inline Input Image_to_Input(const Image &image) {
 // The classes pair assigns the boolean labels first -> 0 and second -> 1
 vector<DataRow>* simplified(const RawMNIST &mnist, pair<int, int> classes = make_pair(1, 7)) {
     vector<DataRow> *ret = new vector<DataRow>();
-    for(int i = 0; i < mnist.size(); i++) {
+    for(unsigned int i = 0; i < mnist.size(); i++) {
         if(mnist[i].second == classes.first || mnist[i].second == classes.second) {
             ret->push_back(make_pair(Image_to_Input(mnist[i].first), mnist[i].second == classes.second));
         }
