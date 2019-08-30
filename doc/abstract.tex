@@ -197,3 +197,111 @@ If $T' \in \langle T, n \rangle$ then $\den{P}(T') \in \den{P}^\#(\langle T, n \
 \begin{proof}
 ``Trivial,'' ``obvious,'' etc., following induction over the grammar.
 \end{proof}
+
+
+
+\subsection{More General Abstract Semantics}
+
+Here we will be more general.
+Since the concrete semantics manipulate a state triple $\sigma = (T, \varphi, p)$
+where $T \in \mathcal{T}$, $\varphi \in \Phi \cup \{ \bot \}$, and $p \in D$,
+the abstract semantics will manipulate some abstract state $\sigma^\#$
+that is an element in an abstract domain $\mathcal{L}$.
+Each abstract element represents some set of concrete elements:
+we have the concretization function
+$\gamma : \mathcal{L} \rightarrow 2^{\mathcal{T} \times (\Phi \cup \{\bot\}) \times D}$.
+
+We will require that the abstract domain over the program state
+support abstract transformers that correspond to the expressions
+in the tree-learning-classification DSL,
+as well as some particular meets-with-abstractions-of-general-sets.
+Given these, we can present abstract semantics for the DSL in more generality
+as in Figure~\ref{fig:abstractgeneral}.
+
+\begin{figure}
+\centering
+\begin{align*}
+\den[P]{S ; R}^\#(\mathcal{T}') \coloneqq&~
+\den[R]{R}^\#(\den[S]{S}^\#(\alpha(\mathcal{T}' \times \emptyset \times \emptyset))) \\
+%
+\den[S]{S_1 ; S_2}^\#(\sigma^\#) \coloneqq&~
+\den[S]{S_2}^\#(\den[S]{S_1}^\#(\sigma^\#)) \\
+%
+\den[S]{\iteimpuritynode{S_1}{S_2}}^\#(\sigma^\#) \coloneqq&~
+\den[S]{S_1}^\#(\sigma^\# \sqcap \alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) = 0\} \times (\Phi \cup \{\bot\}) \times D)) \\
+&~\sqcup
+\den[S]{S_2}^\#(\sigma^\# \sqcap \alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) \neq 0\} \times (\Phi \cup \{\bot\}) \times D)) \\
+%
+\den[S]{\itetrivialnode{S}{U}}^\#(\sigma^\#) \coloneqq&~
+\den[S]{S}^\#(\sigma^\# \sqcap \alpha(\mathcal{T} \times \{\bot\} \times D))
+\sqcup
+\den[U]{U}^\#(\sigma^\# \sqcap \alpha(\mathcal{T} \times \Phi \times D)) \\
+%
+\den[S]{\bestsplitnode}^\#(\sigma^\#) \coloneqq&~
+\mathit{applybestsplit}(\sigma^\#) \\
+%
+\den[S]{\summarynode}^\#(\sigma^\#) \coloneqq&~
+\mathit{applysummary}(\sigma^\#) \\
+%
+\den[U]{U ; S}^\#(\sigma^\#) \coloneqq&~
+\den[S]{S}^\#(\den[U]{U}^\#(\sigma^\#)) \\
+%
+\den[U]{\itemodelsnode{U_1}{U_2}}^\#(\sigma^\#) \coloneqq&~
+\den[U]{U_1}^\#(\sigma^\# \sqcap \alpha(\mathcal{T} \times \{\varphi \in \Phi : x \models \varphi\} \times D)) \\
+&~\sqcup
+\den[U]{U_2}^\#(\sigma^\# \sqcap \alpha(\mathcal{T} \times \{\varphi \in \Phi : x \not\models \varphi\} \times D)) \\
+%
+\den[U]{\filternode[(\lnot)]}^\#(\sigma^\#) \coloneqq&~
+\mathit{applyfilter}_{(\lnot)}(\sigma^\#) \\
+%
+\den[R]{\returnnode}^\#(\sigma^\#) \coloneqq&~
+\pi_D(\gamma(\sigma^\#))
+\end{align*}
+\caption{General Abstract Semantics.}
+\label{fig:abstractgeneral}
+\end{figure}
+
+Accordingly, a given abstract domain $\mathcal{L}$ must implement the following operations:
+\begin{itemize}
+    \item $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+        \alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) = 0\} \times (\Phi \cup \{\bot\}) \times D)$,
+        which should (leave the predicates and posteriors unchanged and)
+        try to restrict the possible training sets to those that are ``pure.''
+    \item $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+        \alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) \neq 0\} \times (\Phi \cup \{\bot\}) \times D)$,
+        which does similarly for mixed-classification training sets.
+    \item $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+        \alpha(\mathcal{T} \times \{\bot\} \times D)$,
+        which removes all instances of predicates other the bottom element
+        (for descending into the $\varphi = \bot$ if-then-else case).
+    \item $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+        \alpha(\mathcal{T} \times \Phi \times D)$,
+        which keeps only the non-bottom-element predicates.
+    \item $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+        \alpha(\mathcal{T} \times \{\varphi \in \Phi : x \models \varphi\} \times D)$,
+        which removes all states in which the predicate does not have $x \models \varphi$.
+    \item $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+        \alpha(\mathcal{T} \times \{\varphi \in \Phi : x \not\models \varphi\} \times D)$,
+        which behaves similarly for $x \not\models \varphi$.
+    \item $\mathit{applybestsplit}(\sigma^\#)$,
+        which updates the predicate portion of the represented states
+        to correspond to the possible best-splitting-predicate
+        based on the possible training sets.
+    \item $\mathit{applysummary}(\sigma^\#)$,
+        which updates the posterior portion of the represented states
+        to correspond to the possible summaries
+        based on the possible training sets.
+    \item $\mathit{applyfilter}_{(\lnot)}(\sigma^\#)$,
+        which updates the training set portion of the represented states
+        to correspond to the remainder that satisfy the predicate portion
+        (or $\lnot$ of the predicate portion).
+\end{itemize}
+
+One such abstract domain could be ``boxes'' formed from abstract domains
+over each individual element of the state tuple:
+if we have some abstractions $T^\#$, $\varphi^\#$, and $p^\#$,
+then we could consider a $\sigma^\# = (T^\#, \varphi^\#, p^\#)$.
+Given any suitable abstract domain for states $\mathcal{L}$,
+we can use bounded disjuncts (and a greedy joining strategy)
+to form a more precise abstract domain $\mathcal{L}_k$
+(whose elements are comprised of at most $k$ elements in $\mathcal{L}$).
