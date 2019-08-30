@@ -305,3 +305,95 @@ Given any suitable abstract domain for states $\mathcal{L}$,
 we can use bounded disjuncts (and a greedy joining strategy)
 to form a more precise abstract domain $\mathcal{L}_k$
 (whose elements are comprised of at most $k$ elements in $\mathcal{L}$).
+We'll introduce these one at a time.
+
+\begin{figure}
+\centering
+Where $\sigma^\# = (T^\#, \varphi^\#, p^\#)$,
+\begin{align*}
+\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) = 0\} \times (\Phi \cup \{\bot\}) \times D)
+\coloneqq&~
+(T^\# \sqcap_\mathcal{T} \alpha_\mathcal{T}(\{T \in \mathcal{T} : \mathit{impurity}(T) = 0\}),
+\varphi^\#, p^\#) \\
+%
+\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) \neq 0\} \times (\Phi \cup \{\bot\}) \times D)
+\coloneqq&~
+(T^\# \sqcap_\mathcal{T} \alpha_\mathcal{T}(\{T \in \mathcal{T} : \mathit{impurity}(T) \neq 0\}),
+\varphi^\#, p^\#) \\
+%
+\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\mathcal{T} \times \{\bot\} \times D)
+\coloneqq&~
+(T^\#, \alpha_{\Phi\cup\{\bot\}}(\{\bot\}), p^\#) \\
+%
+\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\mathcal{T} \times \Phi \times D)
+\coloneqq&~
+(T^\#, \alpha_{\Phi\cup\{\bot\}}(\Phi), p^\#) \\
+%
+\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\mathcal{T} \times \{\varphi \in \Phi : x \models \varphi\} \times D)
+\coloneqq&~
+(T^\#, \varphi^\# \sqcap_{\Phi\cup\{\bot\}}
+\alpha_{\Phi\cup\{\bot\}}(\{\varphi \in \Phi : x \models \varphi\}), p^\#) \\
+%
+\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\mathcal{T} \times \{\varphi \in \Phi : x \not\models \varphi\} \times D)
+\coloneqq&~
+(T^\#, \varphi^\# \sqcap_{\Phi\cup\{\bot\}}
+\alpha_{\Phi\cup\{\bot\}}(\{\varphi \in \Phi : x \not\models \varphi\}), p^\#) \\
+%
+\mathit{applybestsplit}(\sigma^\#)
+\coloneqq&~
+(T^\#, \mathit{bestsplit}^\#_\Phi(T^\#), p^\#) \\
+%
+\mathit{applysummary}(\sigma^\#)
+\coloneqq&~
+(T^\#, \varphi^\#, \mathit{summary}^\#(T^\#)) \\
+%
+\mathit{applyfilter}_{(\lnot)}(\sigma^\#)
+\coloneqq&~
+(\mathit{filter}^\#_{(\lnot)}(T^\#, \varphi^\#), \varphi^\#, p^\#) \\
+\end{align*}
+\caption{``Boxes'' domain transformers for program state}
+\label{fig:boxes}
+\end{figure}
+
+Suppose we have some abstract domain over training sets $\mathcal{L}_\mathcal{T}$,
+some abstract domain over our predicates (and null value) $\mathcal{L}_{\Phi \cup \{\bot\}}$,
+and some abstract domain over our posterior distributions $\mathcal{L}_D$.
+Our ``boxes'' abstract domain over states
+$\mathcal{L} = (\mathcal{L}_\mathcal{T}, \mathcal{L}_{\Phi \cup \{\bot\}}, \mathcal{L}_D)$
+will implement the necessary operations described prior (in the obvious way),
+given in Figure~\ref{fig:boxes}.
+Of course, Figure~\ref{fig:boxes} mostly deligates responsibilities
+to functions over its constituent domains.
+However, these functions require some interactions between the domains
+(instead of being nicely encapsulated within each, individually).
+Specifically, we now require:
+\begin{itemize}
+    \item $\mathcal{L}_\mathcal{T}$ must implement
+        $\lambda T^\# \ldotp T^\# \sqcap
+        \alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) = 0\})$
+        and
+        $\lambda T^\# \ldotp T^\# \sqcap
+        \alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) \neq 0\})$.
+    \item $\mathcal{L}_{\Phi \cup \{\bot\}}$ must implement
+        $\lambda \varphi^\# \ldotp \varphi^\# \sqcap
+        \alpha(\{\varphi \in \Phi : x \models \varphi\})$
+        and
+        $\lambda \varphi^\# \ldotp \varphi^\# \sqcap
+        \alpha(\{\varphi \in \Phi : x \not\models \varphi\})$.
+    \item Joint knowledge of $\mathcal{L}_\mathcal{T}$ and
+        $\mathcal{L}_{\Phi \cup \{\bot\}}$ is needed to implement
+        $\mathit{bestsplit}^\#_\Phi : \mathcal{L}_\mathcal{T} \rightarrow
+        \mathcal{L}_{\Phi \cup \{\bot\}}$ and
+        $\mathit{filter}^\#_{(\lnot)} :
+        \mathcal{L}_\mathcal{T} \times \mathcal{L}_{\Phi\cup\{\bot\}}
+        \rightarrow \mathcal{L}_\mathcal{T}$.
+    \item Joint knowledge of $\mathcal{L}_\mathcal{T}$ and $\mathcal{L}_D$
+        is needed to implement
+        $\mathit{summary}^\# : \mathcal{L}_\mathcal{T} \rightarrow \mathcal{L}_D$.
+\end{itemize}
