@@ -397,3 +397,16 @@ Specifically, we now require:
         is needed to implement
         $\mathit{summary}^\# : \mathcal{L}_\mathcal{T} \rightarrow \mathcal{L}_D$.
 \end{itemize}
+
+\subsection{Uh oh}
+But the precision problem occurs in that, uh, $\mathit{applybestsplit}$ and $\mathit{applyfilter}$
+need to be able to split into disjuncts to avoid precision loss, even at the first depth
+(so allowing disjuncts just when the entire state joins after if statements is not sufficient),
+so it's not this nicely compositional---%
+the disjunctive abstract state needs to ``reach into'' the internals of the
+single abstract state tuple's operations.
+But then this is especially not-compositional,
+because that means the details of $T^\#$ and $\varphi^\#$ are also important,
+so the way this is structured now won't actually improve the current precision issues.
+And this is on top of the fact that it was already inelegant in the requirements that
+``joint knowledge of \ldots is needed to implement \ldots''
