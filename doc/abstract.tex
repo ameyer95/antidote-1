@@ -70,7 +70,7 @@ Accordingly, a given abstract domain $\mathcal{L}$ must implement the following 
         which does similarly for mixed-classification training sets.
     \item $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
         \alpha(\mathcal{T} \times \{\bot\} \times D)$,
-        which removes all instances of predicates other the bottom element
+        which removes all instances of predicates other than the bottom element
         (for descending into the $\varphi = \bot$ if-then-else case).
     \item $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
         \alpha(\mathcal{T} \times \Phi \times D)$,
@@ -291,9 +291,9 @@ then we define all of the necessary $f_{\mathcal{L}^{<\omega}} : \mathcal{L}^{<\
 by applying the lower-level $f_{\mathcal{L}} : \mathcal{L} \rightarrow \mathcal{L}$
 to each element in the set,
 i.e.\ $f_{\mathcal{L}^{<\omega}}(\sigma^\#) = \{f_{\mathcal{L}}(\sigma^\#_i) : 0 \leq i < n\}$.
-The one exception is for $\mathit{applyfilter}^\#_{(\lnot)}$, which instead is defined as:
+The one exception is for $\mathit{applyfilter}$, which instead is defined as:
 \[
-    \mathit{applyfilter}^\#_{(\lnot)}(\sigma^\#) \coloneqq
+    \mathit{applyfilter}_{(\lnot)}(\sigma^\#) \coloneqq
     \bigcup_{\sigma^\#_i \in \sigma^\#} (\mathit{filter}^\#_{(\lnot)}(T^\#_i, \varphi^\#_i) \times \{p^\#_i\})
 \]
 where we now require a new definition of $\mathit{filter}^\#$
@@ -309,7 +309,7 @@ The join operation for $\mathcal{L}^{<\omega}$ is simple---simply take the union
 It should not be hard to imagine that $\mathcal{L}^{<\omega}$ will quickly comprise
 a computationally intractable number of disjuncts.
 Indeed, it never allows similar disjuncts to merge
-(whereas individual boxes always forced disimilar disjuncts to merge).
+(whereas individual boxes always forced dissimilar disjuncts to merge).
 Finally, we introduce a domain for boundedly many disjuncts, $\mathcal{L}^{\leq k}$,
 which requires only \rone the $\mathit{filter}^\#$ extension needed for $\mathcal{L}^{<\omega}$,
 and \rtwo a $\mathit{combine} : \mathcal{L}^{<\omega} \rightarrow \mathcal{L}^{\leq k}$ function
