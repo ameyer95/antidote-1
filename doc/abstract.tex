@@ -137,7 +137,9 @@ T \upharpoonright \varphi \coloneqq&~ \{(x,y) \in T \mid x \models \varphi\} \\
 \label{fig:abstract}
 \end{figure}
 
-
+\todo{$\mathit{summary}^\#$ can be more precise---%
+imagine it's computing an average, where extremal values
+are obtained by removing extremal elements.}
 Again, we have that $\bot \not \in \Phi'$ when we need to use it.
 \begin{proposition}[todo]
 \todo{Write the analog of the concrete one}
@@ -296,16 +298,72 @@ Accordingly, a given abstract domain $\mathcal{L}$ must implement the following 
         to correspond to the remainder that satisfy the predicate portion
         (or $\lnot$ of the predicate portion).
 \end{itemize}
+This is repeated in Figure~\ref{fig:obligations},
+which also includes the necessary components for the
+specific domains discussed in the remainder of this section.
 
+\begin{figure}
+\centering
+\begin{tabular}{cl}
+Domain & Obligations \\
+\toprule
+\multirow{9}{*}{General State Domain $\mathcal{L}$} &
+$\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) = 0\} \times (\Phi \cup \{\bot\}) \times D)$ \\
+& $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) \neq 0\} \times (\Phi \cup \{\bot\}) \times D)$ \\
+& $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\mathcal{T} \times \{\bot\} \times D)$ \\
+& $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\mathcal{T} \times \Phi \times D)$ \\
+& $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\mathcal{T} \times \{\varphi \in \Phi : x \models \varphi\} \times D)$ \\
+& $\lambda \sigma^\# \ldotp \sigma^\# \sqcap
+\alpha(\mathcal{T} \times \{\varphi \in \Phi : x \not\models \varphi\} \times D)$ \\
+& $\mathit{applybestsplit}(\sigma^\#)$ \\
+& $\mathit{applysummary}(\sigma^\#)$ \\
+& $\mathit{applyfilter}_{(\lnot)}(\sigma^\#)$ \\
+\midrule
+\multirow{7}{*}{Box Domain $(\mathcal{L}_\mathcal{T}, \mathcal{L}_{\Phi\cup\{\bot\}}, \mathcal{L}_D)$} &
+$\lambda T^\# \ldotp T^\# \sqcap
+\alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) = 0\}) :
+\mathcal{L}_\mathcal{T} \rightarrow \mathcal{L}_\mathcal{T}$ \\
+& $\lambda T^\# \ldotp T^\# \sqcap
+\alpha(\{T \in \mathcal{T} : \mathit{impurity}(T) \neq 0\}) :
+\mathcal{L}_\mathcal{T} \rightarrow \mathcal{L}_\mathcal{T}$ \\
+& $\lambda \varphi^\# \ldotp \varphi^\# \sqcap
+\alpha(\{\varphi \in \Phi : x \models \varphi\}) :
+\mathcal{L}_{\Phi\cup\{\bot\}} \rightarrow \mathcal{L}_{\Phi\cup\{\bot\}}$\\
+& $\lambda \varphi^\# \ldotp \varphi^\# \sqcap
+\alpha(\{\varphi \in \Phi : x \not\models \varphi\}) :
+\mathcal{L}_{\Phi\cup\{\bot\}} \rightarrow \mathcal{L}_{\Phi\cup\{\bot\}}$\\
+& $\mathit{bestsplit}^\#_\Phi : \mathcal{L}_\mathcal{T} \rightarrow
+\mathcal{L}_{\Phi \cup \{\bot\}}$ \\
+& $\mathit{filter}^\#_{(\lnot)} :
+\mathcal{L}_\mathcal{T} \times \mathcal{L}_{\Phi\cup\{\bot\}}
+\rightarrow \mathcal{L}_\mathcal{T}$ \\
+& $\mathit{summary}^\# : \mathcal{L}_\mathcal{T} \rightarrow \mathcal{L}_D$ \\
+\midrule
+\multirow{2}{*}{Disjuncts of Boxes Domain $\mathcal{L}^{<\omega}$}
+& The underlying box domain $(\mathcal{L}_\mathcal{T}, \mathcal{L}_{\Phi\cup\{\bot\}}, \mathcal{L}_D)$ \\
+& $\mathit{filter}^\#_{(\lnot)} :
+\mathcal{L}_\mathcal{T} \times \mathcal{L}_{\Phi\cup\{\bot\}} \rightarrow
+(\mathcal{L}_\mathcal{T} \times \mathcal{L}_{\Phi\cup\{\bot\}})^*$ \\
+\midrule
+\multirow{2}{*}{Bounded Disjuncts $\mathcal{L}^{\leq k}$}
+& The unbounded disjuncts domain $\mathcal{L}^{<\omega}$ \\
+& $\mathit{combine} : \mathcal{L}^{<\omega} \rightarrow \mathcal{L}^{\leq k}$ \\
+\bottomrule
+\end{tabular}
+\caption{Various obligations for abstract domains/transformers.}
+\label{fig:obligations}
+\end{figure}
+
+\paragraph{Box Domain}
 One such abstract domain could be ``boxes'' formed from abstract domains
 over each individual element of the state tuple:
 if we have some abstractions $T^\#$, $\varphi^\#$, and $p^\#$,
 then we could consider a $\sigma^\# = (T^\#, \varphi^\#, p^\#)$.
-Given any suitable abstract domain for states $\mathcal{L}$,
-we can use bounded disjuncts (and a greedy joining strategy)
-to form a more precise abstract domain $\mathcal{L}_k$
-(whose elements are comprised of at most $k$ elements in $\mathcal{L}$).
-We'll introduce these one at a time.
 
 \begin{figure}
 \centering
@@ -366,8 +424,8 @@ some abstract domain over our predicates (and null value) $\mathcal{L}_{\Phi \cu
 and some abstract domain over our posterior distributions $\mathcal{L}_D$.
 Our ``boxes'' abstract domain over states
 $\mathcal{L} = (\mathcal{L}_\mathcal{T}, \mathcal{L}_{\Phi \cup \{\bot\}}, \mathcal{L}_D)$
-will implement the necessary operations described prior (in the obvious way),
-given in Figure~\ref{fig:boxes}.
+will implement the necessary operations described prior in the largely obvious way:
+the details are showin in Figure~\ref{fig:boxes}.
 Of course, Figure~\ref{fig:boxes} mostly deligates responsibilities
 to functions over its constituent domains.
 However, these functions require some interactions between the domains
@@ -397,16 +455,69 @@ Specifically, we now require:
         is needed to implement
         $\mathit{summary}^\# : \mathcal{L}_\mathcal{T} \rightarrow \mathcal{L}_D$.
 \end{itemize}
+These requirements, too, are included in Figure~\ref{fig:obligations}.
+Implementing them for the ``hard-coded'' case presented in the earlier
+portions of the document directly follows from the semantics presented in Figure~\ref{fig:abstract}.
+Hopefully it is a bit clearer how to handle some increases to expressivity;
+for example, to support categorical output,
+the only thing that must be updated is
+$\mathit{summary}^\# : \mathcal{L}_\mathcal{T} \rightarrow \mathcal{L}_D$
+(well, and $\mathcal{L}_D$ itself).
 
-\subsection{Uh oh}
-But the precision problem occurs in that, uh, $\mathit{applybestsplit}$ and $\mathit{applyfilter}$
-need to be able to split into disjuncts to avoid precision loss, even at the first depth
-(so allowing disjuncts just when the entire state joins after if statements is not sufficient),
-so it's not this nicely compositional---%
-the disjunctive abstract state needs to ``reach into'' the internals of the
-single abstract state tuple's operations.
-But then this is especially not-compositional,
-because that means the details of $T^\#$ and $\varphi^\#$ are also important,
-so the way this is structured now won't actually improve the current precision issues.
-And this is on top of the fact that it was already inelegant in the requirements that
-``joint knowledge of \ldots is needed to implement \ldots''
+\paragraph{Increasing Precision via Disjuncts}
+The main problems with boxes are
+\rone that they do not allow us to track joint information
+between individual components of the state and
+\rtwo that they force us to be very imprecise when combining
+largely disjoint sets of concretizations.
+This leads to precision loss when, for example,
+we perform a join between very different training set abstractions
+(e.g.\ during $\mathit{filter^\#}$ when $\gamma(\varphi^\#)$
+contains very extensionally different predicates).
+We will amend this by
+\rone allowing for \emph{disjuncts} of boxes,
+which achieves both goals, requiring us to
+\rtwo modify the box domain's obligation of $\mathit{applyfilter}$
+(and possibly $\mathit{applybestsplit}$ and $\mathit{applysummary}$,
+although these are empirically not as urgent for increasing precision)---%
+specifially, the underlying $\mathit{filter}^\#$ function
+will be allowed to introduce disjuncts.
+
+Accordingly, we will define $\mathcal{L}^{<\omega}$ as
+unboundedly many disjuncts of some given box domain
+$(\mathcal{L}_\mathcal{T}, \mathcal{L}_{\Phi\cup\{\bot\}}, \mathcal{L}_D)$.
+Defining the necessary state domain functions is done in terms of the
+lower-level box domain's functions:
+if $\sigma^\# \in \mathcal{L}^{<\omega}$ is represented as a finite set
+$\sigma^\# = \{\sigma^\#_i : 0 \leq i < n\}$ where each component is in the box domain
+(i.e.\ $\sigma^\#_i \in \mathcal{L}$),
+then we define all of the necessary $f_{\mathcal{L}^{<\omega}} : \mathcal{L}^{<\omega} \rightarrow \mathcal{L}^{<\omega}$
+by applying the lower-level $f_{\mathcal{L}} : \mathcal{L} \rightarrow \mathcal{L}$
+to each element in the set,
+i.e.\ $f_{\mathcal{L}^{<\omega}}(\sigma^\#) = \{f_{\mathcal{L}}(\sigma^\#_i) : 0 \leq i < n\}$.
+The one exception is for $\mathit{applyfilter}^\#_{(\lnot)}$, which instead is defined as:
+\[
+    \mathit{applyfilter}^\#_{(\lnot)}(\sigma^\#) \coloneqq
+    \bigcup_{\sigma^\#_i \in \sigma^\#} (\mathit{filter}^\#_{(\lnot)}(T^\#_i, \varphi^\#_i) \times \{p^\#_i\})
+\]
+where we now require a new definition of $\mathit{filter}^\#$
+that is allowed to introduce additional disjuncts!---%
+indeed, the function signature is
+$\mathit{filter}^\#_{(\lnot)} : \mathcal{L}_\mathcal{T} \times \mathcal{L}_{\Phi\cup\{\bot\}}
+\rightarrow (\mathcal{L}_\mathcal{T} \times \mathcal{L}_{\Phi\cup\{\bot\}})^*$.
+This is easy to provide when $\varphi^\#$ is represented as a finite set:
+$\mathit{filter}^\#$ then typically involves a large join over all such $\varphi$,
+but we simply use the individual elements as a set of disjuncts instead of taking their join.
+The join operation for $\mathcal{L}^{<\omega}$ is simple---simply take the union of all the disjuncts.
+
+It should not be hard to imagine that $\mathcal{L}^{<\omega}$ will quickly comprise
+a computationally intractable number of disjuncts.
+Indeed, it never allows similar disjuncts to merge
+(whereas individual boxes always forced disimilar disjuncts to merge).
+Finally, we introduce a domain for boundedly many disjuncts, $\mathcal{L}^{\leq k}$,
+which requires only \rone the $\mathit{filter}^\#$ extension needed for $\mathcal{L}^{<\omega}$,
+and \rtwo a $\mathit{combine} : \mathcal{L}^{<\omega} \rightarrow \mathcal{L}^{\leq k}$ function
+that (perhaps greedily) performs the lower-level box domain join operations
+to maintain at most $k$-many disjuncts.
+This $\mathit{combine}$ method need only be applied after taking joins
+and after $\mathit{applyfilter}$.
