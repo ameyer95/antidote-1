@@ -1,33 +1,24 @@
 #ifndef STATEDOMAIN_H
 #define STATEDOMAIN_H
 
+#include "AbstractDomain.h"
 #include <vector>
 
 
-template <typename T, typename P, typename D>
-class StateAbstraction {
+// A should be some appropriate AbstractElement class
+template <typename A>
+class StateDomain : public AbstractDomain<A> {
 public:
-    bool isBottomElement() const;
-};
-
-
-// E should be some StateAbstraction<T, P, D>
-template <typename E, typename T, typename P, typename D>
-class StateDomain {
-public:
-    E meetImpurityEqualsZero(const E &element) const;
-    E meetImpurityNotEqualsZero(const E &element) const;
-    E meetPhiIsBottom(const E &element) const;
-    E meetPhiIsNotBottom(const E &element) const;
-    E meetXModelsPhi(const E &element) const;
-    E meetXNotModelsPhi(const E &element) const;
-    E applyBestSplit(const E &element) const;
-    E applySummary(const E &element) const;
-    E applyFilter(const E &element) const;
-    E applyFilterNegated(const E &element) const;
-
-    E join(const E &e1, const E &e2) const;
-    E join(const std::vector<E> &elements) const; 
+    virtual A meetImpurityEqualsZero(const A &element) const = 0;
+    virtual A meetImpurityNotEqualsZero(const A &element) const = 0;
+    virtual A meetPhiIsBottom(const A &element) const = 0;
+    virtual A meetPhiIsNotBottom(const A &element) const = 0;
+    virtual A meetXModelsPhi(const A &element) const = 0;
+    virtual A meetXNotModelsPhi(const A &element) const = 0;
+    virtual A applyBestSplit(const A &element) const = 0;
+    virtual A applySummary(const A &element) const = 0;
+    virtual A applyFilter(const A &element) const = 0;
+    virtual A applyFilterNegated(const A &element) const = 0;
 };
 
 

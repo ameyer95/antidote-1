@@ -9,19 +9,14 @@
 /**
  * Very general abstract semantics class.
  *
- * Template parameters are:
- * E - state abstraction class
- * T - concrete training set class
- * P - concrete predicate class
- * D - concrete posterior distribution class
- *
- * The actual abstract domain over E is a member of the class.
+ * Template parameter A is the state abstraction class.
+ * L is the abstract domain class---should be StateDomain<A>.
  */
-template <typename E, typename T, typename P, typename D>
+template <typename L, typename A>
 class AbstractSemantics : public ASTVisitor {
 private:
-    E current_state;
-    StateDomain<E,T,P,D> state_domain;
+    A current_state;
+    L state_domain;
 public:
     void visit(const ProgramNode &node);
     void visit(const SequenceNode &node);
@@ -43,21 +38,21 @@ public:
  * to the state abstract domain instance.
  */
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const ProgramNode &node) {
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const ProgramNode &node) {
     // TODO it's simple composition, but the starting point is awkward.
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const SequenceNode &node) {
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const SequenceNode &node) {
     node.get_left_child()->accept(*this);
     node.get_right_child()->accept(*this);
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const ITEImpurityNode &node) {
-    std::vector<E> joins;
-    E pass_to_then, pass_to_else, backup;
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const ITEImpurityNode &node) {
+    std::vector<A> joins;
+    A pass_to_then, pass_to_else, backup;
 
     pass_to_then = state_domain.meetImpurityEqualsZero(current_state);
     if(!pass_to_then.isBottomElement()) {
@@ -78,10 +73,10 @@ void AbstractSemantics<E,T,P,D>::visit(const ITEImpurityNode &node) {
     current_state = state_domain.join(joins);
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const ITENoPhiNode &node) {
-    std::vector<E> joins;
-    E pass_to_then, pass_to_else, backup;
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const ITENoPhiNode &node) {
+    std::vector<A> joins;
+    A pass_to_then, pass_to_else, backup;
 
     pass_to_then = state_domain.meetPhiIsBottom(current_state);
     if(!pass_to_then.isBottomElement()) {
@@ -102,26 +97,26 @@ void AbstractSemantics<E,T,P,D>::visit(const ITENoPhiNode &node) {
     current_state = state_domain.join(joins);
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const BestSplitNode &node) {
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const BestSplitNode &node) {
     current_state = state_domain.applyBestSplit(current_state);
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const SummaryNode &node) {
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const SummaryNode &node) {
     current_state = state_domain.applySummary(current_state);
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const UsePhiSequenceNode &node) {
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const UsePhiSequenceNode &node) {
     node.get_left_child()->accept(*this);
     node.get_right_child()->accept(*this);
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const ITEModelsNode &node) {
-    std::vector<E> joins;
-    E pass_to_then, pass_to_else, backup;
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const ITEModelsNode &node) {
+    std::vector<A> joins;
+    A pass_to_then, pass_to_else, backup;
 
     pass_to_then = state_domain.meetXModelsPhi(current_state);
     if(!pass_to_then.isBottomElement()) {
@@ -142,8 +137,8 @@ void AbstractSemantics<E,T,P,D>::visit(const ITEModelsNode &node) {
     current_state = state_domain.join(joins);
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const FilterNode &node) {
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const FilterNode &node) {
     if(node.get_mode()) {
         current_state = state_domain.applyFilter(current_state);
     } else {
@@ -151,8 +146,8 @@ void AbstractSemantics<E,T,P,D>::visit(const FilterNode &node) {
     }
 }
 
-template <typename E, typename T, typename P, typename D>
-void AbstractSemantics<E,T,P,D>::visit(const ReturnNode &node) {
+template <typename L, typename A>
+void AbstractSemantics<L,A>::visit(const ReturnNode &node) {
     // TODO it should just involve storing a value
 }
 
