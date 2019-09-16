@@ -8,7 +8,7 @@
 template <typename T, typename P, typename D>
 class BoxStateAbstraction : public AbstractElement {
 private:
-    bool is_bottom_element_flag;
+    bool is_bottom_element_flag; // XXX handle this correctly
 
 public:
     BoxStateAbstraction() { is_bottom_element_flag = false; }

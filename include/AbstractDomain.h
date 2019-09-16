@@ -15,6 +15,7 @@
 class AbstractElement {
 public:
     virtual bool isBottomElement() const = 0;
+    // TODO include more logic for common things with the bottom element flag / check
 };
 
 
