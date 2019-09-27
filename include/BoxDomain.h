@@ -54,8 +54,8 @@ template <typename D>
 class PosteriorDistributionDomain : public AbstractDomain<D> {
 public:
     // BoxStateDomain doesn't actually require anything from this,
-    // so we just repeat the pure virtual join from AbstractDomain
-    virtual D join(const D &e1, const D &e2) const = 0;
+    // so we just repeat the pure virtual binary_join from AbstractDomain
+    virtual D binary_join(const D &e1, const D &e2) const = 0;
 };
 
 
@@ -90,7 +90,7 @@ public:
     A applyFilter(const A &element) const;
     A applyFilterNegated(const A &element) const;
 
-    A join(const A &e1, const A &e2) const;
+    A binary_join(const A &e1, const A &e2) const;
 };
 
 
@@ -186,15 +186,15 @@ A BoxStateDomain<A,LT,T,LP,P,LD,D>::applyFilterNegated(const A &element) const {
 }
 
 template <typename A, typename LT, typename T, typename LP, typename P, typename LD, typename D>
-A BoxStateDomain<A,LT,T,LP,P,LD,D>::join(const A &e1, const A &e2) const {
+A BoxStateDomain<A,LT,T,LP,P,LD,D>::binary_join(const A &e1, const A &e2) const {
     if(e1.isBottomElement()) {
         return e2;
     } else if(e2.isBottomElement()) {
         return e1;
     } else {
-        return A(training_set_domain.join(e1.training_set_abstraction, e2.training_set_abstraction),
-                 predicate_domain.join(e1.predicate_abstraction, e2.predicate_abstraction),
-                 posterior_distribution_domain.join(e1.posterior_distribution_abstraction, e2.posterior_distribution_abstraction));
+        return A(training_set_domain.binary_join(e1.training_set_abstraction, e2.training_set_abstraction),
+                 predicate_domain.binary_join(e1.predicate_abstraction, e2.predicate_abstraction),
+                 posterior_distribution_domain.binary_join(e1.posterior_distribution_abstraction, e2.posterior_distribution_abstraction));
     }
 }
 

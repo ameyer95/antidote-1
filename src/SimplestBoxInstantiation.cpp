@@ -15,7 +15,7 @@ BooleanDropoutSet BooleanDropoutDomain::meetImpurityNotEqualsZero(const BooleanD
     // TODO
 }
 
-BooleanDropoutSet BooleanDropoutDomain::join(const BooleanDropoutSet &e1, const BooleanDropoutSet &e2) const {
+BooleanDropoutSet BooleanDropoutDomain::binary_join(const BooleanDropoutSet &e1, const BooleanDropoutSet &e2) const {
     // TODO
 }
 
@@ -35,11 +35,11 @@ std::vector<std::optional<int>> BitvectorPredicateDomain::meetXNotModelsPhi(cons
     // TODO
 }
 
-std::vector<std::optional<int>> BitvectorPredicateDomain::join(const std::vector<std::optional<int>> &e1, const std::vector<std::optional<int>> &e2) const {
+std::vector<std::optional<int>> BitvectorPredicateDomain::binary_join(const std::vector<std::optional<int>> &e1, const std::vector<std::optional<int>> &e2) const {
     // TODO
 }
 
-Interval<double> SingleIntervalDomain::join(const Interval<double> &e1, const Interval<double> &e2) const {
+Interval<double> SingleIntervalDomain::binary_join(const Interval<double> &e1, const Interval<double> &e2) const {
     // TODO
 }
 

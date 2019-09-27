@@ -40,7 +40,7 @@ public:
     BooleanDropoutSet meetImpurityEqualsZero(const BooleanDropoutSet &element) const;
     BooleanDropoutSet meetImpurityNotEqualsZero(const BooleanDropoutSet &element) const;
 
-    BooleanDropoutSet join(const BooleanDropoutSet &e1, const BooleanDropoutSet &e2) const;
+    BooleanDropoutSet binary_join(const BooleanDropoutSet &e1, const BooleanDropoutSet &e2) const;
 };
 
 
@@ -51,13 +51,13 @@ public:
     std::vector<std::optional<int>> meetXModelsPhi(const std::vector<std::optional<int>> &element) const;
     std::vector<std::optional<int>> meetXNotModelsPhi(const std::vector<std::optional<int>> &element) const;
 
-    std::vector<std::optional<int>> join(const std::vector<std::optional<int>> &e1, const std::vector<std::optional<int>> &e2) const;
+    std::vector<std::optional<int>> binary_join(const std::vector<std::optional<int>> &e1, const std::vector<std::optional<int>> &e2) const;
 };
 
 
 class SingleIntervalDomain : public PosteriorDistributionDomain<Interval<double>> {
 public:
-    Interval<double> join(const Interval<double> &e1, const Interval<double> &e2) const;
+    Interval<double> binary_join(const Interval<double> &e1, const Interval<double> &e2) const;
 };
 
 

@@ -22,18 +22,20 @@ public:
 template <typename A>
 class AbstractDomain {
 public:
-    virtual A join(const A &e1, const A &e2) const = 0;
+    // We must give them different names; overriding one in a subclass
+    // causes the compiler to skip over any functions in the same name as the base class
+    virtual A binary_join(const A &e1, const A &e2) const = 0;
     A join(const std::vector<A> &elements) const; 
 };
 
 
 /**
  * In creating the abstract class,
- * we must leave at least one of join(e1, e2) or join([es]) as pure virtual.
+ * we must leave at least one of binary_join(e1, e2) or join([es]) as pure virtual.
  * We can provide a default implementation for either
- * join(e1, e2) in terms of join([es]):
+ * binary_join(e1, e2) in terms of join([es]):
  *      template <typename A>
- *      A AbstractDomain<A>::join(const A &e1, const A &e2) const {
+ *      A AbstractDomain<A>::binary_join(const A &e1, const A &e2) const {
  *          return join({e1, e2});
  *      }
  * or vice-versa (which is more complicated and thus left uncommented):
@@ -41,8 +43,8 @@ public:
 template <typename A>
 A AbstractDomain<A>::join(const std::vector<A> &elements) const {
     A ret;
-    for(typename std::vector<A>::const_iterator i = elements.begin(); i != elements.end; i++) {
-        ret = join(ret, *i);
+    for(typename std::vector<A>::const_iterator i = elements.begin(); i != elements.end(); i++) {
+        ret = binary_join(ret, *i);
     }
     return ret;
 }

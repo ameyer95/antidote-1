@@ -51,7 +51,7 @@ public:
     A applyFilter(const A &element) const { return filterAndUnion(element, false); }
     A applyFilterNegated(const A &element) const { return filterAndUnion(element, true); }
 
-    A join(const A &e1, const A &e2) const;
+    A binary_join(const A &e1, const A &e2) const;
     A join(const std::vector<A> &elements) const; // We can override the aggregate to be more efficient
 };
 
@@ -96,7 +96,7 @@ A BoxDisjunctsDomain<A,LB,B,T,P>::filterAndUnion(const A &element, bool negated)
 }
 
 template <typename A, typename LB, typename B, typename T, typename P>
-A BoxDisjunctsDomain<A,LB,B,T,P>::join(const A &e1, const A &e2) const {
+A BoxDisjunctsDomain<A,LB,B,T,P>::binary_join(const A &e1, const A &e2) const {
     std::vector<B> ret = e1.disjuncts;
     for(typename std::vector<B>::const_iterator i = e2.disjuncts.begin(); i != e2.disjuncts.end(); i++) {
         ret.push_beck(*i);
