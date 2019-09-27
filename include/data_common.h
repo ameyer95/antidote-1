@@ -1,6 +1,8 @@
 #ifndef DATA_COMMON_H
 #define DATA_COMMON_H
 
+//TODO this file houses a single class, perhaps rename?
+
 #include <algorithm> // for min_element
 #include <vector>
 using namespace std;

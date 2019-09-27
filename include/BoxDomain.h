@@ -5,6 +5,7 @@
 #include "StateDomain.h"
 
 
+// TODO could this (and the superclass) be replaced with some combination of std::optional and std::tuple
 template <typename T, typename P, typename D>
 class BoxStateAbstraction : public AbstractElement {
 private:
