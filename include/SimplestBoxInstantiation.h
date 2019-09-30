@@ -21,7 +21,22 @@ typedef std::pair<std::vector<bool>, bool> BooleanXYPair;
 // Predicates are just integer indices or a NULL value, thus std::optional<int>
 // Posterior is just a double.
 
-typedef std::pair<DataReferences<BooleanXYPair>, int> BooleanDropoutSet;
+class BooleanDropoutSet : public AbstractElement { // TODO properly handle isBottomElement etc
+private:
+    bool bottom_element_flag;
+
+public:
+    DataReferences<BooleanXYPair> training_set;
+    int num_dropout;
+
+    BooleanDropoutSet(); // Initializer as a bottom element
+    BooleanDropoutSet(DataReferences<BooleanXYPair> training_set, int num_dropout);
+
+    std::pair<int, int> baseCounts() const; // Returns a pair of (0 counts, 1 counts) not accounting for num_dropout
+    BooleanDropoutSet pureSet(bool classification) const;
+
+    bool isBottomElement() const { return bottom_element_flag; }
+};
 // Training set abstraction will be a DataReferences<BooleanXYPair> coupled with an integer
 // (denoting how many elements could be missing from the set);
 // Predicate abstraction will be a finite set of possibilities, so std::vector<std::optional<int>>;
