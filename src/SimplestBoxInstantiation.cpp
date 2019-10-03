@@ -111,7 +111,7 @@ BooleanDropoutSet BooleanDropoutDomain::binary_join(const BooleanDropoutSet &e1,
     return BooleanDropoutSet(d, std::max(n1, n2));
 }
 
-BitvectorPredicateDomain::BitvectorPredicateDomain(int num_X_indices, const std::vector<bool> &x) {
+void BitvectorPredicateDomain::setExecutionDetails(int num_X_indices, const std::vector<bool> &x) {
     this->num_X_indices = num_X_indices;
     this->x = x;
 }

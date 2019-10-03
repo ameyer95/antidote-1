@@ -83,7 +83,10 @@ private:
     std::vector<bool> x; // The fixed input to the program
 
 public:
-    BitvectorPredicateDomain(int num_X_indices, const std::vector<bool> &x);
+    // We unfortunately cannot easily put these in the constructor
+    // since the hierarchy of subclassing templates then has malformed constructors
+    // XXX make sure this gets instantiated somewhere
+    void setExecutionDetails(int num_X_indices, const std::vector<bool> &x);
 
     BitvectorPredicateAbstraction abstractBottomPhi() const;
     BitvectorPredicateAbstraction abstractNotBottomPhi() const;
