@@ -21,6 +21,7 @@ typedef std::pair<std::vector<bool>, bool> BooleanXYPair;
 // Predicates are just integer indices or a NULL value, thus std::optional<int>
 // Posterior is just a double.
 
+
 class BooleanDropoutSet : public AbstractElement { // TODO properly handle isBottomElement etc
 private:
     bool bottom_element_flag;
@@ -37,12 +38,29 @@ public:
 
     bool isBottomElement() const { return bottom_element_flag; }
 };
+
+
+class BitvectorPredicateAbstraction : public AbstractElement { // TODO properly handle isBottomElement
+private:
+    bool bottom_element_flag;
+
+public:
+    std::vector<std::optional<int>> predicates;
+
+    BitvectorPredicateAbstraction(); // Initializer as a bottom element
+    BitvectorPredicateAbstraction(const std::vector<std::optional<int>> &predicates);
+
+    bool isBottomElement() const { return bottom_element_flag; }
+};
 // Training set abstraction will be a DataReferences<BooleanXYPair> coupled with an integer
 // (denoting how many elements could be missing from the set);
-// Predicate abstraction will be a finite set of possibilities, so std::vector<std::optional<int>>;
+// Predicate abstraction will be a finite set of possibilities, so BitvectorPredicateAbstraction;
 // Posterior abstraction will be a single interval of the possible Bernoulli values, so Interval<double>.
+// Note that for everything except Interval<double>, we ended up making a subclass of AbstractElement.
+// Interval<>::isEmpty takes the place of isBottomElement,
+// and Interval<>::join is already defined in Interval.h, but at some point we may refactor this.
 
-typedef BoxStateAbstraction<BooleanDropoutSet, std::vector<std::optional<int>>, Interval<double>> SimplestBoxAbstraction;
+typedef BoxStateAbstraction<BooleanDropoutSet, BitvectorPredicateAbstraction, Interval<double>> SimplestBoxAbstraction;
 
 
 /**
@@ -59,14 +77,20 @@ public:
 };
 
 
-class BitvectorPredicateDomain : public PredicateDomain<std::vector<std::optional<int>>> {
-public:
-    std::vector<std::optional<int>> abstractBottomPhi() const;
-    std::vector<std::optional<int>> abstractNotBottomPhi() const;
-    std::vector<std::optional<int>> meetXModelsPhi(const std::vector<std::optional<int>> &element) const;
-    std::vector<std::optional<int>> meetXNotModelsPhi(const std::vector<std::optional<int>> &element) const;
+class BitvectorPredicateDomain : public PredicateDomain<BitvectorPredicateAbstraction> {
+private:
+    int num_X_indices;
+    std::vector<bool> x; // The fixed input to the program
 
-    std::vector<std::optional<int>> binary_join(const std::vector<std::optional<int>> &e1, const std::vector<std::optional<int>> &e2) const;
+public:
+    BitvectorPredicateDomain(int num_X_indices, const std::vector<bool> &x);
+
+    BitvectorPredicateAbstraction abstractBottomPhi() const;
+    BitvectorPredicateAbstraction abstractNotBottomPhi() const;
+    BitvectorPredicateAbstraction meetXModelsPhi(const BitvectorPredicateAbstraction &element) const;
+    BitvectorPredicateAbstraction meetXNotModelsPhi(const BitvectorPredicateAbstraction &element) const;
+
+    BitvectorPredicateAbstraction binary_join(const BitvectorPredicateAbstraction &e1, const BitvectorPredicateAbstraction &e2) const;
 };
 
 
@@ -81,11 +105,11 @@ public:
  */
 
 
-class SimplestBoxDomain : public BoxStateDomain<SimplestBoxAbstraction, BooleanDropoutDomain, BooleanDropoutSet, BitvectorPredicateDomain, std::vector<std::optional<int>>, SingleIntervalDomain, Interval<double>> {
+class SimplestBoxDomain : public BoxStateDomain<SimplestBoxAbstraction, BooleanDropoutDomain, BooleanDropoutSet, BitvectorPredicateDomain, BitvectorPredicateAbstraction, SingleIntervalDomain, Interval<double>> {
 public:
-    std::vector<std::optional<int>> bestSplit(const BooleanDropoutSet &training_set_abstraction) const;
-    BooleanDropoutSet filter(const BooleanDropoutSet &training_set_abstraction, const std::vector<std::optional<int>> &predicate_abstraction) const;
-    BooleanDropoutSet filterNegated(const BooleanDropoutSet &training_set_abstraction, const std::vector<std::optional<int>> &predicate_abstraction) const;
+    BitvectorPredicateAbstraction bestSplit(const BooleanDropoutSet &training_set_abstraction) const;
+    BooleanDropoutSet filter(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;
+    BooleanDropoutSet filterNegated(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;
     Interval<double> summary(const BooleanDropoutSet &training_set_abstraction) const;
 };
 

@@ -47,6 +47,19 @@ BooleanDropoutSet BooleanDropoutSet::pureSet(bool classification) const {
 }
 
 /**
+ * BitvectorPredicateAbstraction members
+ */
+
+BitvectorPredicateAbstraction::BitvectorPredicateAbstraction() {
+    bottom_element_flag = true;
+}
+
+BitvectorPredicateAbstraction::BitvectorPredicateAbstraction(const std::vector<std::optional<int>> &predicates) {
+    this->predicates = predicates;
+    bottom_element_flag = this->predicates.size() > 0; // not a bottom element when there are non-zero predicates
+}
+
+/**
  * Constituent domain member functions
  */
 
@@ -98,28 +111,78 @@ BooleanDropoutSet BooleanDropoutDomain::binary_join(const BooleanDropoutSet &e1,
     return BooleanDropoutSet(d, std::max(n1, n2));
 }
 
-std::vector<std::optional<int>> BitvectorPredicateDomain::abstractBottomPhi() const {
-    // TODO
+BitvectorPredicateDomain::BitvectorPredicateDomain(int num_X_indices, const std::vector<bool> &x) {
+    this->num_X_indices = num_X_indices;
+    this->x = x;
 }
 
-std::vector<std::optional<int>> BitvectorPredicateDomain::abstractNotBottomPhi() const {
-    // TODO
+BitvectorPredicateAbstraction BitvectorPredicateDomain::abstractBottomPhi() const {
+    std::optional<int> bottom = {};
+    return BitvectorPredicateAbstraction({bottom});
 }
 
-std::vector<std::optional<int>> BitvectorPredicateDomain::meetXModelsPhi(const std::vector<std::optional<int>> &element) const {
-    // TODO
+BitvectorPredicateAbstraction BitvectorPredicateDomain::abstractNotBottomPhi() const {
+    std::vector<std::optional<int>> phis(num_X_indices);
+    for(int i = 0; i < num_X_indices; i++) {
+        phis[i] = i;
+    }
+    return BitvectorPredicateAbstraction(phis);
 }
 
-std::vector<std::optional<int>> BitvectorPredicateDomain::meetXNotModelsPhi(const std::vector<std::optional<int>> &element) const {
-    // TODO
+BitvectorPredicateAbstraction BitvectorPredicateDomain::meetXModelsPhi(const BitvectorPredicateAbstraction &element) const {
+    if(element.isBottomElement()) {
+        return element;
+    }
+    std::vector<std::optional<int>> phis;
+    for(std::vector<std::optional<int>>::const_iterator i = element.predicates.begin(); i != element.predicates.end(); i++) {
+        // The grammar should enforce that we always have i->has_value()
+        int index = i->value();
+        if(x[index]) {
+            phis.push_back(*i);
+        }
+    }
+    return BitvectorPredicateAbstraction(phis);
 }
 
-std::vector<std::optional<int>> BitvectorPredicateDomain::binary_join(const std::vector<std::optional<int>> &e1, const std::vector<std::optional<int>> &e2) const {
-    // TODO
+BitvectorPredicateAbstraction BitvectorPredicateDomain::meetXNotModelsPhi(const BitvectorPredicateAbstraction &element) const {
+    if(element.isBottomElement()) {
+        return element;
+    }
+    std::vector<std::optional<int>> phis;
+    for(std::vector<std::optional<int>>::const_iterator i = element.predicates.begin(); i != element.predicates.end(); i++) {
+        // The grammar should enforce that we always have i->has_value()
+        int index = i->value();
+        if(!x[index]) { // This is the only line that differs from meetXModelsPhi
+            phis.push_back(*i);
+        }
+    }
+    return BitvectorPredicateAbstraction(phis);
+}
+
+BitvectorPredicateAbstraction BitvectorPredicateDomain::binary_join(const BitvectorPredicateAbstraction &e1, const BitvectorPredicateAbstraction &e2) const {
+    if(e1.isBottomElement()) {
+        return e2;
+    } else if(e2.isBottomElement()) {
+        return e1;
+    }
+    std::vector<std::optional<int>> phis = e1.predicates;
+    for(std::vector<std::optional<int>>::const_iterator i = e2.predicates.begin(); i != e2.predicates.end(); i++) {
+        bool contains_flag = false;
+        for(std::vector<std::optional<int>>::const_iterator j = phis.begin(); j != phis.end(); j++) {
+            if(*i == *j) {
+                contains_flag = true;
+                break;
+            }
+        }
+        if(!contains_flag) {
+            phis.push_back(*i);
+        }
+    }
+    return BitvectorPredicateAbstraction(phis);
 }
 
 Interval<double> SingleIntervalDomain::binary_join(const Interval<double> &e1, const Interval<double> &e2) const {
-    // TODO
+    return Interval<double>::join(e1, e2);
 }
 
 /**
@@ -127,15 +190,15 @@ Interval<double> SingleIntervalDomain::binary_join(const Interval<double> &e1, c
  */
 
 
-std::vector<std::optional<int>> SimplestBoxDomain::bestSplit(const BooleanDropoutSet &training_set_abstraction) const {
+BitvectorPredicateAbstraction SimplestBoxDomain::bestSplit(const BooleanDropoutSet &training_set_abstraction) const {
     // TODO
 }
 
-BooleanDropoutSet SimplestBoxDomain::filter(const BooleanDropoutSet &training_set_abstraction, const std::vector<std::optional<int>> &predicate_abstraction) const {
+BooleanDropoutSet SimplestBoxDomain::filter(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const {
     // TODO
 }
 
-BooleanDropoutSet SimplestBoxDomain::filterNegated(const BooleanDropoutSet &training_set_abstraction, const std::vector<std::optional<int>> &predicate_abstraction) const {
+BooleanDropoutSet SimplestBoxDomain::filterNegated(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const {
     // TODO
 }
 
