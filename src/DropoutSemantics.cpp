@@ -127,15 +127,10 @@ void DropoutSet::filter(const BitVectorPredicate &phi, bool mode) {
 }
 
 Interval<double> DropoutSet::summary() {
-    if(num_dropout == data.size()) {
-        return Interval<double>(0, 1);
-    }
-
     Interval<int> c1 = countOnes();
-    Interval<double> c1d(c1.get_lower_bound(), c1.get_upper_bound());
-    Interval<int> t = size();
-    Interval<double> td(t.get_lower_bound(), t.get_upper_bound());
-    return c1d / td;
+    int num_ones = c1.get_upper_bound();
+    int num_total = data.size();
+    return estimateBernoulli(num_total - num_ones, num_ones, num_dropout);
 }
 
 // In this (and other places), we're assuming an invariant that data.size() >= num_dropout

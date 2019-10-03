@@ -303,16 +303,6 @@ BooleanDropoutSet SimplestBoxDomain::filterNegated(const BooleanDropoutSet &trai
 }
 
 Interval<double> SimplestBoxDomain::summary(const BooleanDropoutSet &training_set_abstraction) const {
-    if(training_set_abstraction.num_dropout == training_set_abstraction.training_set.size()) {
-        return Interval<double>(0, 1);
-    }
-
     std::pair<int, int> counts = training_set_abstraction.baseCounts();
-    int total = counts.first + counts.second; // == training_set_abstraction.training_set.size()
-    int c1_upper_bound = counts.second;
-    int c1_lower_bound = std::max(0, c1_upper_bound - training_set_abstraction.num_dropout);
-    Interval<double> c1(c1_lower_bound, c1_upper_bound);
-    Interval<double> ct(total - training_set_abstraction.num_dropout, total);
-    // already checked non-0 divisor
-    return c1 / ct;
+    return estimateBernoulli(counts.first, counts.second, training_set_abstraction.num_dropout);
 }

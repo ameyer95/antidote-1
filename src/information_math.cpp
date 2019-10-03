@@ -1,24 +1,36 @@
 #include "information_math.h"
 #include "Interval.h"
-#include <algorithm>
+#include <algorithm> // for std::max
 #include <utility>
 using namespace std;
 
+double estimateBernoulli(int num_zeros, int num_ones) {
+    return (double)num_ones / (num_zeros + num_ones);
+}
+
+Interval<double> estimateBernoulli(int num_zeros, int num_ones, int num_dropout) {
+    // When num_dropout >= num_zeros + num_ones, anything is possible.
+    // In the == case, this is because we assume estimating from an empty set is undefined behavior.
+    if(num_zeros + num_ones <= num_dropout) {
+        return Interval<double>(0, 1);
+    }
+
+    int total = num_zeros + num_ones;
+    int c1_lower_bound = max(0, num_ones - num_dropout);
+    Interval<double> c1(c1_lower_bound, num_ones);
+    // At this point, we know num_zeros + num_ones > num_dropout, so no 0-divisor
+    Interval<double> ct(total - num_dropout, total);
+    return c1 / ct;
+}
+
 double impurity(const pair<int, int> &counts) {
     // Assume pair::first is 0 and pair::second is 1, but equivalent either way
-    double p = (double)counts.second / (counts.first + counts.second);
+    double p = estimateBernoulli(counts.first, counts.second);
     return p * (1-p) / 2; // Gini impurity
 }
 
 Interval<double> impurity(const pair<int, int> &counts, int num_dropout) {
-    Interval<double> p;
-    if(counts.first + counts.second == num_dropout) {
-        p = Interval<double>(0, 1);
-    } else {
-        Interval<double> num(max(counts.first - num_dropout, 0), counts.first);
-        Interval<double> den(counts.first + counts.second - num_dropout, counts.first + counts.second);
-        p = num / den;
-    }
+    Interval<double> p = estimateBernoulli(counts.first, counts.second, num_dropout);
     return p * (Interval<double>(1) - p) * Interval<double>(2);
 }
 

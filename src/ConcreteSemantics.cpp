@@ -116,7 +116,9 @@ void BooleanDataSet::filter(const BitVectorPredicate &phi, bool mode) {
 }
 
 double BooleanDataSet::summary() {
-    return (double)countOnes() / data->size();
+    int num_ones = countOnes();
+    int num_zeros = data->size() - num_ones;
+    return estimateBernoulli(num_zeros, num_ones);
 }
 
 bool emptyCount(const pair<int, int> &counts) {
