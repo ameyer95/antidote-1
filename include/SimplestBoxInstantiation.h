@@ -27,6 +27,10 @@ private:
     bool bottom_element_flag;
 
 public:
+    struct DropoutCounts {
+        int pos, neg, num_dropout;
+    };
+
     DataReferences<BooleanXYPair> training_set;
     int num_dropout;
 
@@ -34,7 +38,10 @@ public:
     BooleanDropoutSet(DataReferences<BooleanXYPair> training_set, int num_dropout);
 
     std::pair<int, int> baseCounts() const; // Returns a pair of (0 counts, 1 counts) not accounting for num_dropout
+    std::pair<DropoutCounts, DropoutCounts> splitCounts(int bit_index) const;
+
     BooleanDropoutSet pureSet(bool classification) const;
+    BooleanDropoutSet filter(int bit_index, bool positive_flag) const; // Returns a new object
 
     bool isBottomElement() const { return bottom_element_flag; }
 };
@@ -109,6 +116,9 @@ public:
 
 
 class SimplestBoxDomain : public BoxStateDomain<SimplestBoxAbstraction, BooleanDropoutDomain, BooleanDropoutSet, BitvectorPredicateDomain, BitvectorPredicateAbstraction, SingleIntervalDomain, Interval<double>> {
+private:
+    int num_X_indices; // TODO initialize this somewhere
+
 public:
     BitvectorPredicateAbstraction bestSplit(const BooleanDropoutSet &training_set_abstraction) const;
     BooleanDropoutSet filter(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;

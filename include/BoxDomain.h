@@ -68,7 +68,7 @@ public:
  */
 template <typename A, typename LT, typename T, typename LP, typename P, typename LD, typename D>
 class BoxStateDomain : public StateDomain<A> {
-private:
+protected:
     LT training_set_domain;
     LP predicate_domain;
     LD posterior_distribution_domain;

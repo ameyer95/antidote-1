@@ -1,5 +1,8 @@
 #include "SimplestBoxInstantiation.h"
+#include "information_math.h"
 #include "Interval.h"
+#include <algorithm> // for std::max
+#include <map>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -31,6 +34,20 @@ std::pair<int, int> BooleanDropoutSet::baseCounts() const {
     return counts;
 }
 
+std::pair<BooleanDropoutSet::DropoutCounts, BooleanDropoutSet::DropoutCounts> BooleanDropoutSet::splitCounts(int bit_index) const {
+    std::pair<BooleanDropoutSet::DropoutCounts, BooleanDropoutSet::DropoutCounts> ret({0, 0, 0}, {0, 0, 0});
+    BooleanDropoutSet::DropoutCounts *d_ptr;
+    int *count_ptr;
+    for(unsigned int i = 0; i < training_set.size(); i++) {
+        d_ptr = training_set[i].first[bit_index] ? &(ret.second) : &(ret.first);
+        count_ptr = training_set[i].second ? &(d_ptr->pos) : &(d_ptr->neg);
+        *count_ptr += 1;
+    }
+    ret.first.num_dropout = std::min(num_dropout, ret.first.pos + ret.first.neg);
+    ret.second.num_dropout = std::min(num_dropout, ret.second.pos + ret.second.neg);
+    return ret;
+};
+
 BooleanDropoutSet BooleanDropoutSet::pureSet(bool classification) const {
     DataReferences<BooleanXYPair> training_set_copy = training_set;
     int num_removed = 0;
@@ -44,6 +61,22 @@ BooleanDropoutSet BooleanDropoutSet::pureSet(bool classification) const {
     // We will only call this when it's guaranteed to be non-trivial,
     // so we need not check that num_removed <= num_dropout
     return BooleanDropoutSet(training_set_copy, num_dropout - num_removed);
+}
+
+BooleanDropoutSet BooleanDropoutSet::filter(int bit_index, bool positive_flag) const {
+    BooleanDropoutSet ret(*this);
+    bool remove, result;
+    for(unsigned int i = 0; i < ret.training_set.size(); i++) {
+        result = ret.training_set[i].first[bit_index];
+        remove = (positive_flag != result);
+        if(remove) {
+            ret.training_set.remove(i);
+            i--;
+        }
+    }
+    if(ret.num_dropout > ret.training_set.size()) {
+        ret.num_dropout = ret.training_set.size();
+    }
 }
 
 /**
@@ -189,19 +222,97 @@ Interval<double> SingleIntervalDomain::binary_join(const Interval<double> &e1, c
  * Actual box domain instantiation member functions
  */
 
+bool couldBeEmpty(const BooleanDropoutSet::DropoutCounts &counts) {
+    return counts.pos + counts.neg <= counts.num_dropout;
+}
+
+bool mustBeEmpty(const BooleanDropoutSet::DropoutCounts &counts) {
+    return counts.pos + counts.neg == 0;
+}
 
 BitvectorPredicateAbstraction SimplestBoxDomain::bestSplit(const BooleanDropoutSet &training_set_abstraction) const {
-    // TODO
+    std::vector<std::pair<BooleanDropoutSet::DropoutCounts, BooleanDropoutSet::DropoutCounts>> counts;
+    std::vector<std::optional<int>> forall_nontrivial, exists_nontrivial;
+
+    for(int i = 0; i < num_X_indices; i++) {
+        counts.push_back(training_set_abstraction.splitCounts(i));
+        if(!couldBeEmpty(counts[i].first) && !couldBeEmpty(counts[i].second)) {
+            forall_nontrivial.push_back(i);
+        }
+        if(!mustBeEmpty(counts[i].first) && !mustBeEmpty(counts[i].second)) {
+            exists_nontrivial.push_back(i);
+        }
+    }
+
+    if(forall_nontrivial.size() == 0) {
+        exists_nontrivial.push_back({}); // The none option type value
+        return BitvectorPredicateAbstraction(exists_nontrivial);
+    }
+
+    // Compute and store all of the predicates' scores
+    std::map<const int, Interval<double>> scores;
+    for(std::vector<std::optional<int>>::const_iterator i = exists_nontrivial.begin(); i != exists_nontrivial.end(); i++) {
+        int index = i->value(); // Prior for loop guarantees i->has_value()
+        Interval<double> temp = jointImpurity(std::make_pair(counts[index].first.pos, counts[index].first.neg),
+                                              counts[index].first.num_dropout,
+                                              std::make_pair(counts[index].second.pos, counts[index].second.neg),
+                                              counts[index].second.num_dropout);
+        scores.insert(std::make_pair(index, temp));
+    }
+
+    // Find the threshold using only predicates from forall_nontrivial
+    double min_upper_bound; // Always gets initialized unless forall_nontrivial.size() == 0,
+                            // and we prior have an if statement to check that
+    for(std::vector<std::optional<int>>::const_iterator i = forall_nontrivial.begin(); i != forall_nontrivial.end(); i++) {
+        int index = i->value(); // Again, guaranteed i->has_value()
+        if(i == forall_nontrivial.begin() || min_upper_bound > scores[index].get_upper_bound()) {
+            min_upper_bound = scores[index].get_upper_bound();
+        }
+    }
+
+    // Return any predicates in exists_nontrivial whose score could beat the threshold
+    std::vector<std::optional<int>> ret;
+    for(std::vector<std::optional<int>>::const_iterator i = exists_nontrivial.begin(); i != exists_nontrivial.end(); i++) {
+        int index = i->value(); // Again again, guaranteed i->has_value()
+        if(scores[index].get_lower_bound() <= min_upper_bound) {
+            ret.push_back(*i);
+        }
+    }
+    return BitvectorPredicateAbstraction(ret);
 }
 
 BooleanDropoutSet SimplestBoxDomain::filter(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const {
-    // TODO
+    std::vector<BooleanDropoutSet> joins;
+    for(std::vector<std::optional<int>>::const_iterator i = predicate_abstraction.predicates.begin(); i != predicate_abstraction.predicates.end(); i++) {
+        // The grammar should enforce that each i->has_value()
+        BooleanDropoutSet temp = training_set_abstraction.filter(i->value(), true);
+        joins.push_back(temp);
+    }
+    return training_set_domain.join(joins);
 }
 
 BooleanDropoutSet SimplestBoxDomain::filterNegated(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const {
-    // TODO
+    // XXX copy and pasted previous method with one change; refactor with common method
+    std::vector<BooleanDropoutSet> joins;
+    for(std::vector<std::optional<int>>::const_iterator i = predicate_abstraction.predicates.begin(); i != predicate_abstraction.predicates.end(); i++) {
+        // The grammar should enforce that each i->has_value()
+        BooleanDropoutSet temp = training_set_abstraction.filter(i->value(), false);
+        joins.push_back(temp);
+    }
+    return training_set_domain.join(joins);
 }
 
 Interval<double> SimplestBoxDomain::summary(const BooleanDropoutSet &training_set_abstraction) const {
-    // TODO
+    if(training_set_abstraction.num_dropout == training_set_abstraction.training_set.size()) {
+        return Interval<double>(0, 1);
+    }
+
+    std::pair<int, int> counts = training_set_abstraction.baseCounts();
+    int total = counts.first + counts.second; // == training_set_abstraction.training_set.size()
+    int c1_upper_bound = counts.second;
+    int c1_lower_bound = std::max(0, c1_upper_bound - training_set_abstraction.num_dropout);
+    Interval<double> c1(c1_lower_bound, c1_upper_bound);
+    Interval<double> ct(total - training_set_abstraction.num_dropout, total);
+    // already checked non-0 divisor
+    return c1 / ct;
 }
