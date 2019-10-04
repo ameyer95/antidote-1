@@ -104,10 +104,11 @@ BoxStateAbstraction<T,P,D>::BoxStateAbstraction(const T &training_set_abstractio
     this->predicate_abstraction = predicate_abstraction;
     this->posterior_distribution_abstraction = posterior_distribution_abstraction;
 
-    // XXX this logic is incorrect:
-    // 1) should check if the consituents are bottom elements
-    // 2) becomes potentially incorrect if the constituents are mutated
-    is_bottom_element_flag = false;
+    // XXX becomes potentially incorrect if the constituents are mutated
+    // (same problem everywhere else)
+    is_bottom_element_flag = training_set_abstraction.isBottomElement()
+                             || predicate_abstraction.isBottomElement()
+                             || posterior_distribution_abstraction.isBottomElement();
 }
 
 

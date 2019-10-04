@@ -61,15 +61,24 @@ public:
 
     bool isBottomElement() const { return bottom_element_flag; }
 };
+
+class BernoulliParameterAbstraction : public AbstractElement { // TODO same
+public:
+    Interval<double> interval;
+
+    BernoulliParameterAbstraction() {}
+    BernoulliParameterAbstraction(const Interval<double> &interval) { this->interval = interval; }
+
+    bool isBottomElement() const { return interval.isEmpty(); }
+};
+
 // Training set abstraction will be a DataReferences<BooleanXYPair> coupled with an integer
 // (denoting how many elements could be missing from the set);
 // Predicate abstraction will be a finite set of possibilities, so BitvectorPredicateAbstraction;
 // Posterior abstraction will be a single interval of the possible Bernoulli values, so Interval<double>.
-// Note that for everything except Interval<double>, we ended up making a subclass of AbstractElement.
-// Interval<>::isEmpty takes the place of isBottomElement,
-// and Interval<>::join is already defined in Interval.h, but at some point we may refactor this.
+// Note that for everything we ended up making a subclass of AbstractElement.
 
-typedef BoxStateAbstraction<BooleanDropoutSet, BitvectorPredicateAbstraction, Interval<double>> SimplestBoxAbstraction;
+typedef BoxStateAbstraction<BooleanDropoutSet, BitvectorPredicateAbstraction, BernoulliParameterAbstraction> SimplestBoxAbstraction;
 
 
 /**
@@ -107,9 +116,9 @@ public:
 };
 
 
-class SingleIntervalDomain : public PosteriorDistributionDomain<Interval<double>> {
+class SingleIntervalDomain : public PosteriorDistributionDomain<BernoulliParameterAbstraction> {
 public:
-    Interval<double> binary_join(const Interval<double> &e1, const Interval<double> &e2) const;
+    BernoulliParameterAbstraction binary_join(const BernoulliParameterAbstraction &e1, const BernoulliParameterAbstraction &e2) const;
 };
 
 
@@ -118,9 +127,9 @@ public:
  */
 
 
-class SimplestBoxDomain : public BoxStateDomain<SimplestBoxAbstraction, BooleanDropoutDomain, BooleanDropoutSet, BitvectorPredicateDomain, BitvectorPredicateAbstraction, SingleIntervalDomain, Interval<double>> {
+class SimplestBoxDomain : public BoxStateDomain<SimplestBoxAbstraction, BooleanDropoutDomain, BooleanDropoutSet, BitvectorPredicateDomain, BitvectorPredicateAbstraction, SingleIntervalDomain, BernoulliParameterAbstraction> {
 private:
-    int num_X_indices; // TODO initialize this somewhere
+    int num_X_indices;
 
 public:
     SimplestBoxDomain(const std::vector<bool> &test_input);
@@ -128,7 +137,7 @@ public:
     BitvectorPredicateAbstraction bestSplit(const BooleanDropoutSet &training_set_abstraction) const;
     BooleanDropoutSet filter(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;
     BooleanDropoutSet filterNegated(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;
-    Interval<double> summary(const BooleanDropoutSet &training_set_abstraction) const;
+    BernoulliParameterAbstraction summary(const BooleanDropoutSet &training_set_abstraction) const;
 };
 
 

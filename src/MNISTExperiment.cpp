@@ -77,9 +77,12 @@ Interval<double> MNISTExperiment::run_abstract(int depth, int test_index, int nu
     AbstractSemantics<SimplestBoxDomain, SimplestBoxAbstraction, vector<bool>> sem(&box_domain);
     DataReferences<BooleanXYPair> training_references(mnist_training);
     SimplestBoxAbstraction initial_state(BooleanDropoutSet(training_references, num_dropout),
-                                         BitvectorPredicateAbstraction(),
-                                         Interval<double>());
+                                         BitvectorPredicateAbstraction({0,{}}), // XXX any non-bot value, ideally top?
+                                         BernoulliParameterAbstraction(Interval<double>(0, 1))); // XXX any non-bot value, ideally top?
+    // the ite nodes check if their conditional meet is not-bottom before they execute,
+    // hence why we don't want any portion of the state tuple to be a bottom element
+    // given the logic of BoxStateAbstraction's constructor's bottom_element computation
     SimplestBoxAbstraction ret = sem.execute(test_input, initial_state, program);
     delete program;
-    return ret.posterior_distribution_abstraction;
+    return ret.posterior_distribution_abstraction.interval;
 }

@@ -19,12 +19,12 @@ BooleanDropoutSet::BooleanDropoutSet() {
 BooleanDropoutSet::BooleanDropoutSet(DataReferences<BooleanXYPair> training_set, int num_dropout) {
     this->training_set = training_set;
     this->num_dropout = num_dropout;
-    bottom_element_flag = false; // XXX this is only correct when the passed parameters behave nicely
+    bottom_element_flag = training_set.size() == 0;
 }
 
 BinarySamples BooleanDropoutSet::baseCounts() const {
     BinarySamples counts = {0, 0};
-    for(int i = 0; i < training_set.size(); i++) {
+    for(unsigned int i = 0; i < training_set.size(); i++) {
         if(training_set[i].second) {
             counts.num_ones++;
         } else {
@@ -93,7 +93,7 @@ BitvectorPredicateAbstraction::BitvectorPredicateAbstraction() {
 
 BitvectorPredicateAbstraction::BitvectorPredicateAbstraction(const std::vector<std::optional<int>> &predicates) {
     this->predicates = predicates;
-    bottom_element_flag = this->predicates.size() > 0; // not a bottom element when there are non-zero predicates
+    bottom_element_flag = this->predicates.size() == 0; // not a bottom element when there are non-zero predicates
 }
 
 /**
@@ -218,8 +218,8 @@ BitvectorPredicateAbstraction BitvectorPredicateDomain::binary_join(const Bitvec
     return BitvectorPredicateAbstraction(phis);
 }
 
-Interval<double> SingleIntervalDomain::binary_join(const Interval<double> &e1, const Interval<double> &e2) const {
-    return Interval<double>::join(e1, e2);
+BernoulliParameterAbstraction SingleIntervalDomain::binary_join(const BernoulliParameterAbstraction &e1, const BernoulliParameterAbstraction &e2) const {
+    return BernoulliParameterAbstraction(Interval<double>::join(e1.interval, e2.interval));
 }
 
 
@@ -313,6 +313,6 @@ BooleanDropoutSet SimplestBoxDomain::filterNegated(const BooleanDropoutSet &trai
     return training_set_domain.join(joins);
 }
 
-Interval<double> SimplestBoxDomain::summary(const BooleanDropoutSet &training_set_abstraction) const {
-    return estimateBernoulli(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout);
+BernoulliParameterAbstraction SimplestBoxDomain::summary(const BooleanDropoutSet &training_set_abstraction) const {
+    return BernoulliParameterAbstraction(estimateBernoulli(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout));
 }
