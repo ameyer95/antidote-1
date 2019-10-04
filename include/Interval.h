@@ -3,8 +3,6 @@
 
 #include <algorithm> // For std::min_element (and max)
 #include <string>
-// Cannot 'using namespace std' since there is some namespace collision
-// with the operator+ overload.
 
 
 // Template for closed intervals.

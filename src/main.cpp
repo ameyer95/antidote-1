@@ -18,6 +18,7 @@ struct RunParams {
     vector<int> test_indices;
     string mnist_prefix;
     bool use_abstract; // When false, use concrete semantics
+    bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
     vector<int> num_dropouts; // For when use_abstract == true
 };
 
@@ -49,7 +50,7 @@ void vectorizeIntStringSplit(vector<int> &items, const string &space_separated_l
 
 // In tandem with RunParams, defines the command-line flags
 bool readParams(RunParams &params, const int &argc, char ** const &argv) {
-    Argument *depth, *test_all, *test_indices, *mnist_prefix, *use_abstract;
+    Argument *depth, *test_all, *test_indices, *mnist_prefix, *use_abstract, *use_disjuncts;
     ArgParse p;
     bool success;
 
@@ -58,11 +59,15 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
     test_indices = p.createArgument("-t", 1, "Space-separated list of test indices", true);
     mnist_prefix = p.createArgument("-m", 1, "Path to MNIST datasets");
     use_abstract = p.createArgument("-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
+    use_disjuncts = p.createArgument("-V", 1, "Like -a, but with disjuncts", true);
     p.parse(argc, argv);
 
     if(!p.failure()) {
         if(!test_all->included && !test_indices->included) {
             cout << "Must specify test cases with -t or -T" << endl;
+            success = false;
+        } else if(use_abstract->included && use_disjuncts->included) {
+            cout << "Must specify only one of -a and -V" << endl;
             success = false;
         } else {
             vectorizeIntStringSplit(params.depths, depth->tokens[0]);
@@ -71,9 +76,13 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
                 vectorizeIntStringSplit(params.test_indices, test_indices->tokens[0]);
             }
             params.mnist_prefix = mnist_prefix->tokens[0];
-            params.use_abstract = use_abstract->included;
-            if(params.use_abstract) {
+            params.use_abstract = use_abstract->included || use_disjuncts->included;
+            if(use_abstract->included) {
                 vectorizeIntStringSplit(params.num_dropouts, use_abstract->tokens[0]);
+                params.with_disjuncts = false;
+            } else if(use_disjuncts->included) {
+                vectorizeIntStringSplit(params.num_dropouts, use_disjuncts->tokens[0]);
+                params.with_disjuncts = true;
             }
             success = true;
         }
@@ -83,11 +92,13 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
         success = false;
     }
 
+    // TODO make ArgParse maintain some kind of map to avoid this
     delete depth;
     delete test_all;
     delete test_indices;
     delete mnist_prefix;
     delete use_abstract;
+    delete use_disjuncts;
     return success;
 }
 
@@ -95,8 +106,17 @@ inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int
     if(index < e.test_size()) {
         if(params.use_abstract) {
             for(vector<int>::const_iterator n = params.num_dropouts.begin(); n != params.num_dropouts.end(); n++) {
-                cout << "running a depth-" << depth << " experiment using <T," << *n << "> on test " << index << endl;
-                Interval<double> ret = e.run_abstract(depth, index, *n);
+                cout << "running a depth-" << depth << " experiment using <T," << *n << "> ";
+                if(params.with_disjuncts) {
+                    cout << "(with disjuncts) ";
+                }
+                cout << "on test " << index << endl;
+                Interval<double> ret;
+                if(!params.with_disjuncts) {
+                    ret = e.run_abstract(depth, index, *n);
+                } else {
+                    ret = e.run_abstract_disjuncts(depth, index, *n);
+                }
                 cout << "result: " << to_string(ret) << endl;
             }
         } else {

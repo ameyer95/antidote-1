@@ -68,12 +68,11 @@ public:
  */
 template <typename A, typename LT, typename T, typename LP, typename P, typename LD, typename D>
 class BoxStateDomain : public StateDomain<A> {
-protected:
+public:
     LT training_set_domain;
     LP predicate_domain;
     LD posterior_distribution_domain;
 
-public:
     virtual P bestSplit(const T &training_set_abstraction) const = 0;
     virtual T filter(const T &training_set_abstraction, const P &predicate_abstraction) const = 0;
     virtual T filterNegated(const T &training_set_abstraction, const P &predicate_abstraction) const = 0;

@@ -1,7 +1,7 @@
 #ifndef MNISTEXPERIMENT_H
 #define MNISTEXPERIMENT_H
 
-#include "AbstractSemantics.h"
+#include "AbstractSemantics.h" // TODO a lot of these includes probably aren't necessary here
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
 #include "Interval.h"
@@ -26,6 +26,7 @@ public:
     int test_size() { return mnist_test->size(); }
     double run_concrete(int depth, int test_index);
     Interval<double> run_abstract(int depth, int test_index, int num_dropout);
+    Interval<double> run_abstract_disjuncts(int depth, int test_index, int num_dropout);
 };
 
 

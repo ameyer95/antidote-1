@@ -12,10 +12,13 @@
 template <typename B>
 class BoxDisjunctsStateAbstraction : public AbstractElement {
 private:
-    bool is_bottom_element_flag; // XXX this is not handled at all, basically
+    bool is_bottom_element_flag; // XXX this is not handled very rigorously, as usual
+
 public:
-    BoxDisjunctsStateAbstraction(const std::vector<B> &disjuncts) { this->disjuncts = disjuncts; }
     std::vector<B> disjuncts;
+
+    BoxDisjunctsStateAbstraction();
+    BoxDisjunctsStateAbstraction(const std::vector<B> &disjuncts);
     bool isBottomElement() const { return is_bottom_element_flag; }
 };
 
@@ -27,19 +30,22 @@ public:
 template <typename A, typename LB, typename B, typename T, typename P>
 class BoxDisjunctsDomain : public StateDomain<A> {
 private:
-    LB box_domain;
-
     // Since most transformers just apply the underlying box domain's transformers
     // to each disjunct, we have an auxiliary method for that
     // that takes an appropriate function pointer as the second argument.
     inline A transformEachDisjunct(const A &element, B (LB::*fptr)(const B&) const) const;
     // The filter cases are slightly different
     inline A filterAndUnion(const A &element, bool negated) const;
-    
+
+protected:
+    const LB *box_domain; // XXX the subclass needs to populate this
+
 public:
     virtual std::vector<std::pair<T, P>> filter(const T &training_set_abstraction, const P &predicate_abstraction) const = 0;
     virtual std::vector<std::pair<T, P>> filterNegated(const T &training_set_abstraction, const P &predicate_abstraction) const = 0;
 
+    // TODO it is easy to imagine cases where the meetImpurity(Not)EqualsZero computations
+    // should be able to split into individual disjuncts as well
     A meetImpurityEqualsZero(const A &element) const { return transformEachDisjunct(element, &LB::meetImpurityEqualsZero); }
     A meetImpurityNotEqualsZero(const A &element) const { return transformEachDisjunct(element, &LB::meetImpurityNotEqualsZero); }
     A meetPhiIsBottom(const A &element) const { return transformEachDisjunct(element, &LB::meetPhiIsBottom); }
@@ -57,6 +63,25 @@ public:
 
 
 /**
+ * BoxDisjunctsStateAbstraction members
+ */
+
+template <typename B>
+BoxDisjunctsStateAbstraction<B>::BoxDisjunctsStateAbstraction() {
+    is_bottom_element_flag = true;
+}
+
+template <typename B>
+BoxDisjunctsStateAbstraction<B>::BoxDisjunctsStateAbstraction(const std::vector<B> &disjuncts) {
+    for(typename std::vector<B>::const_iterator i = disjuncts.begin(); i != disjuncts.end(); i++) {
+        if(!i->isBottomElement()) {
+            this->disjuncts.push_back(*i);
+        }
+    }
+    is_bottom_element_flag = this->disjuncts.size() == 0;
+}
+
+/**
  * BoxDisjunctsDomain member functions.
  */
 
@@ -64,7 +89,7 @@ template <typename A, typename LB, typename B, typename T, typename P>
 inline A BoxDisjunctsDomain<A,LB,B,T,P>::transformEachDisjunct(const A &element, B (LB::*fptr)(const B&) const) const {
     std::vector<B> ret;
     for(typename std::vector<B>::const_iterator i = element.disjuncts.begin(); i != element.disjuncts.end(); i++) {
-        B temp = (box_domain.*fptr)(*i);
+        B temp = (box_domain->*fptr)(*i);
         if(!temp.isBottomElement()) {
             ret.push_back(temp);
         }
@@ -99,7 +124,7 @@ template <typename A, typename LB, typename B, typename T, typename P>
 A BoxDisjunctsDomain<A,LB,B,T,P>::binary_join(const A &e1, const A &e2) const {
     std::vector<B> ret = e1.disjuncts;
     for(typename std::vector<B>::const_iterator i = e2.disjuncts.begin(); i != e2.disjuncts.end(); i++) {
-        ret.push_beck(*i);
+        ret.push_back(*i);
     }
     return A(ret);
 }

@@ -4,6 +4,7 @@
 #include "ConcreteSemantics.h"
 #include "Interval.h"
 #include "MNIST.h"
+#include "SimplestBoxDisjunctsInstantiation.h"
 #include "SimplestBoxInstantiation.h"
 #include <string>
 #include <utility>
@@ -85,4 +86,27 @@ Interval<double> MNISTExperiment::run_abstract(int depth, int test_index, int nu
     SimplestBoxAbstraction ret = sem.execute(test_input, initial_state, program);
     delete program;
     return ret.posterior_distribution_abstraction.interval;
+}
+
+Interval<double> MNISTExperiment::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
+    ProgramNode* program = buildTree(depth);
+    vector<bool> test_input = (*mnist_test)[test_index].first;
+    SimplestBoxDomain box_domain(test_input); // XXX there is probably a more proper way to pass around this information, especially since the predicatedomain's top element computation then uses test_input.size()
+    SimplestBoxDisjunctsDomain box_disjuncts_domain(&box_domain);
+    AbstractSemantics<SimplestBoxDisjunctsDomain, SimplestBoxDisjunctsAbstraction, vector<bool>> sem(&box_disjuncts_domain);
+    DataReferences<BooleanXYPair> training_references(mnist_training);
+    SimplestBoxAbstraction initial_box(BooleanDropoutSet(training_references, num_dropout),
+                                       BitvectorPredicateAbstraction({0,{}}), // XXX any non-bot value, ideally top?
+                                       BernoulliParameterAbstraction(Interval<double>(0, 1))); // XXX any non-bot value, ideally top?
+    // the ite nodes check if their conditional meet is not-bottom before they execute,
+    // hence why we don't want any portion of the state tuple to be a bottom element
+    // given the logic of BoxStateAbstraction's constructor's bottom_element computation
+    SimplestBoxDisjunctsAbstraction initial_state({initial_box});
+    SimplestBoxDisjunctsAbstraction ret = sem.execute(test_input, initial_state, program);
+    delete program;
+    vector<BernoulliParameterAbstraction> posteriors;
+    for(vector<SimplestBoxAbstraction>::const_iterator i = ret.disjuncts.begin(); i != ret.disjuncts.end(); i++) {
+        posteriors.push_back(i->posterior_distribution_abstraction);
+    }
+    return box_domain.posterior_distribution_domain.join(posteriors).interval;
 }
