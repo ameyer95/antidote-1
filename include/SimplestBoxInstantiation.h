@@ -29,8 +29,8 @@ private:
 
 public:
     struct DropoutCounts {
-        BinarySamples bsamples;
-        int num_dropout;
+        BinarySamples bsamples = {0, 0};
+        int num_dropout = 0;
     };
 
     DataReferences<BooleanXYPair> training_set;

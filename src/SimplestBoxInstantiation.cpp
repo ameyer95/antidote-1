@@ -23,7 +23,7 @@ BooleanDropoutSet::BooleanDropoutSet(DataReferences<BooleanXYPair> training_set,
 }
 
 BinarySamples BooleanDropoutSet::baseCounts() const {
-    BinarySamples counts;
+    BinarySamples counts = {0, 0};
     for(int i = 0; i < training_set.size(); i++) {
         if(training_set[i].second) {
             counts.num_ones++;

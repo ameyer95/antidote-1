@@ -6,8 +6,8 @@
 
 // Give them names instead of having to assume a std::pair convention
 struct BinarySamples {
-    int num_zeros;
-    int num_ones;
+    int num_zeros = 0;
+    int num_ones = 0;
 };
 
 
