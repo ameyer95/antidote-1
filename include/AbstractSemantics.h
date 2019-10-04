@@ -73,6 +73,7 @@ void AbstractSemantics<L,A,X>::visit(const ITEImpurityNode &node) {
     pass_to_then = state_domain->meetImpurityEqualsZero(current_state);
     if(!pass_to_then.isBottomElement()) {
         backup = current_state;
+        current_state = pass_to_then;
         node.get_left_child()->accept(*this);
         joins.push_back(current_state);
         current_state = backup;
@@ -81,6 +82,7 @@ void AbstractSemantics<L,A,X>::visit(const ITEImpurityNode &node) {
     pass_to_else = state_domain->meetImpurityNotEqualsZero(current_state);
     if(!pass_to_else.isBottomElement()) {
         backup = current_state;
+        current_state = pass_to_else;
         node.get_right_child()->accept(*this);
         joins.push_back(current_state);
         current_state = backup;
@@ -97,6 +99,7 @@ void AbstractSemantics<L,A,X>::visit(const ITENoPhiNode &node) {
     pass_to_then = state_domain->meetPhiIsBottom(current_state);
     if(!pass_to_then.isBottomElement()) {
         backup = current_state;
+        current_state = pass_to_then;
         node.get_left_child()->accept(*this);
         joins.push_back(current_state);
         current_state = backup;
@@ -105,6 +108,7 @@ void AbstractSemantics<L,A,X>::visit(const ITENoPhiNode &node) {
     pass_to_else = state_domain->meetPhiIsNotBottom(current_state);
     if(!pass_to_else.isBottomElement()) {
         backup = current_state;
+        current_state = pass_to_else;
         node.get_right_child()->accept(*this);
         joins.push_back(current_state);
         current_state = backup;
@@ -137,6 +141,7 @@ void AbstractSemantics<L,A,X>::visit(const ITEModelsNode &node) {
     pass_to_then = state_domain->meetXModelsPhi(current_state);
     if(!pass_to_then.isBottomElement()) {
         backup = current_state;
+        current_state = pass_to_then;
         node.get_left_child()->accept(*this);
         joins.push_back(current_state);
         current_state = backup;
@@ -145,6 +150,7 @@ void AbstractSemantics<L,A,X>::visit(const ITEModelsNode &node) {
     pass_to_else = state_domain->meetXNotModelsPhi(current_state);
     if(!pass_to_else.isBottomElement()) {
         backup = current_state;
+        current_state = pass_to_else;
         node.get_right_child()->accept(*this);
         joins.push_back(current_state);
         current_state = backup;
