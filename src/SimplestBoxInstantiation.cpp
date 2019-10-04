@@ -80,6 +80,7 @@ BooleanDropoutSet BooleanDropoutSet::filter(int bit_index, bool positive_flag) c
     if(ret.num_dropout > ret.training_set.size()) {
         ret.num_dropout = ret.training_set.size();
     }
+    return ret;
 }
 
 /**
@@ -221,9 +222,16 @@ Interval<double> SingleIntervalDomain::binary_join(const Interval<double> &e1, c
     return Interval<double>::join(e1, e2);
 }
 
+
 /**
  * Actual box domain instantiation member functions
  */
+
+
+SimplestBoxDomain::SimplestBoxDomain(const std::vector<bool> &test_input) {
+    num_X_indices = test_input.size();
+    predicate_domain.setExecutionDetails(num_X_indices, test_input);
+}
 
 bool couldBeEmpty(const BooleanDropoutSet::DropoutCounts &counts) {
     return counts.bsamples.num_zeros + counts.bsamples.num_ones <= counts.num_dropout;

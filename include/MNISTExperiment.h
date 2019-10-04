@@ -1,26 +1,26 @@
 #ifndef MNISTEXPERIMENT_H
 #define MNISTEXPERIMENT_H
 
+#include "AbstractSemantics.h"
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
-#include "DropoutSemantics.h"
 #include "Interval.h"
+#include "SimplestBoxInstantiation.h"
 #include <string>
 #include <vector>
-using namespace std;
 
 
 class MNISTExperiment {
 private:
-    const vector<DataRow> *mnist_training;
-    const vector<DataRow> *mnist_test;
-    const vector<BitVectorPredicate> *predicates;
+    const std::vector<DataRow> *mnist_training;
+    const std::vector<DataRow> *mnist_test;
+    const std::vector<BitVectorPredicate> *predicates;
 
-    void loadMNIST(string mnistPrefix);
-    vector<BitVectorPredicate>* createPredicates();
+    void loadMNIST(std::string mnistPrefix);
+    std::vector<BitVectorPredicate>* createPredicates();
 
 public:
-    MNISTExperiment(string mnistPrefix);
+    MNISTExperiment(std::string mnistPrefix);
     ~MNISTExperiment();
 
     int test_size() { return mnist_test->size(); }

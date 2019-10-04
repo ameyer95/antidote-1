@@ -94,7 +94,8 @@ private:
 public:
     // We unfortunately cannot easily put these in the constructor
     // since the hierarchy of subclassing templates then has malformed constructors
-    // XXX make sure this gets instantiated somewhere
+    // XXX this needs to be instantiated somewhere,
+    // currently done in SimplestBoxDomain::SimplestBoxDomain(...)
     void setExecutionDetails(int num_X_indices, const std::vector<bool> &x);
 
     BitvectorPredicateAbstraction abstractBottomPhi() const;
@@ -122,6 +123,8 @@ private:
     int num_X_indices; // TODO initialize this somewhere
 
 public:
+    SimplestBoxDomain(const std::vector<bool> &test_input);
+
     BitvectorPredicateAbstraction bestSplit(const BooleanDropoutSet &training_set_abstraction) const;
     BooleanDropoutSet filter(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;
     BooleanDropoutSet filterNegated(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;
