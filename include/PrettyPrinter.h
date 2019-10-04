@@ -3,22 +3,21 @@
 
 #include "ASTNode.h"
 #include <string>
-using namespace std;
 
 
 class PrettyPrinter : public ASTVisitor {
 private:
     int indent;
-    string code_string;
+    std::string code_string;
 
     void printIndent();
-    void printLine(string s);
+    void printLine(std::string s);
 
 public:
     PrettyPrinter();
 
     void reset();
-    string getString() { return code_string; }
+    std::string getString() { return code_string; }
 
     void visit(const ProgramNode &node);
     void visit(const SequenceNode &node);

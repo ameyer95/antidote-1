@@ -3,20 +3,19 @@
 
 #include <algorithm> // for min_element
 #include <vector>
-using namespace std;
 
 
 // T is the type of each data element
 template <typename T>
 class DataReferences {
 private:
-    const vector<T> *data;
-    vector<int> indices;
+    const std::vector<T> *data;
+    std::vector<int> indices;
 
 public:
     DataReferences() { data = NULL; indices = {}; }
-    DataReferences(const vector<T> *data); // Does not handle deallocation
-    DataReferences(const vector<T> *data, const vector<int> &indices) { this->data = data; this->indices = indices; }
+    DataReferences(const std::vector<T> *data); // Does not handle deallocation
+    DataReferences(const std::vector<T> *data, const std::vector<int> &indices) { this->data = data; this->indices = indices; }
 
     const T& operator [](unsigned int i) const { return (*data)[indices[i]]; }
     void remove(int index) { indices.erase(indices.begin() + index); }
@@ -27,7 +26,7 @@ public:
 
 
 template <typename T>
-DataReferences<T>::DataReferences(const vector<T> *data) {
+DataReferences<T>::DataReferences(const std::vector<T> *data) {
     this->data = data;
     indices.reserve(data->size());
     for(unsigned int i = 0; i < data->size(); i++) {
@@ -39,19 +38,19 @@ template <typename T>
 DataReferences<T> DataReferences<T>::set_union(const DataReferences<T> &e1, const DataReferences<T> &e2) {
     // XXX strong assumption that e1.data == e2.data
     // and the invariant that DataReferences::indices are sorted
-    vector<int>::const_iterator i1, i2;
-    vector<int> ret_indices;
+    std::vector<int>::const_iterator i1, i2;
+    std::vector<int> ret_indices;
     i1 = e1.indices.begin();
     i2 = e2.indices.begin();
     while(i1 != e1.indices.end() || i2 != e2.indices.end()) {
-        vector<int> candidates;
+        std::vector<int> candidates;
         if(i1 != e1.indices.end()) {
             candidates.push_back(*i1);
         }
         if(i2 != e2.indices.end()) {
             candidates.push_back(*i2);
         }
-        int current = *min_element(candidates.begin(), candidates.end());
+        int current = *std::min_element(candidates.begin(), candidates.end());
         ret_indices.push_back(current);
         if(i1 != e1.indices.end() && *i1 == current) {
             i1++;

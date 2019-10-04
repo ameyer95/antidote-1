@@ -5,12 +5,11 @@
 #include <cstdint>
 #include <utility>
 #include <string>
-using namespace std;
 
-const string MNIST_TRAINING_LABEL_FILE = "train-labels-idx1-ubyte";
-const string MNIST_TRAINING_IMAGE_FILE = "train-images-idx3-ubyte";
-const string MNIST_TEST_LABEL_FILE = "t10k-labels-idx1-ubyte";
-const string MNIST_TEST_IMAGE_FILE = "t10k-images-idx3-ubyte";
+const std::string MNIST_TRAINING_LABEL_FILE = "train-labels-idx1-ubyte";
+const std::string MNIST_TRAINING_IMAGE_FILE = "train-images-idx3-ubyte";
+const std::string MNIST_TEST_LABEL_FILE = "t10k-labels-idx1-ubyte";
+const std::string MNIST_TEST_IMAGE_FILE = "t10k-images-idx3-ubyte";
 
 const int32_t MNIST_LABEL_MAGIC_NUMBER = 0x00000801;
 const int32_t MNIST_IMAGE_MAGIC_NUMBER = 0x00000803;
@@ -44,15 +43,15 @@ private:
     LabelFile label_file;
 
 public:
-    RawMNIST(MNISTMode mode, const string prefix);
+    RawMNIST(MNISTMode mode, const std::string prefix);
     const Image getImage(unsigned int i) const;
     const Label getLabel(unsigned int i) const;
-    const pair<const Image, const Label> operator [](unsigned int i) const;
+    const std::pair<const Image, const Label> operator [](unsigned int i) const;
     unsigned int size() const;
 };
 
 
-pair<LabelFile, ImageFile> MNIST_readTrainingSet(const string prefix);
-pair<LabelFile, ImageFile> MNIST_readTestSet(const string prefix);
+std::pair<LabelFile, ImageFile> MNIST_readTrainingSet(const std::string prefix);
+std::pair<LabelFile, ImageFile> MNIST_readTestSet(const std::string prefix);
 
 #endif
