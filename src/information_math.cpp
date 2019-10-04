@@ -1,6 +1,6 @@
 #include "information_math.h"
 #include "Interval.h"
-#include <algorithm> // for std::max
+#include <algorithm> // for std::max/min
 #include <utility>
 using namespace std;
 
@@ -15,11 +15,17 @@ Interval<double> estimateBernoulli(const BinarySamples &counts, int num_dropout)
         return Interval<double>(0, 1);
     }
 
-    int total = counts.num_zeros + counts.num_ones;
-    Interval<double> c1(max(0, counts.num_ones - num_dropout), counts.num_ones);
-    // At this point, we know num_zeros + num_ones > num_dropout, so no 0-divisor
-    Interval<double> ct(total - num_dropout, total);
-    return c1 / ct;
+    // Since this is effectively computing an average of a collection of 0s and 1s,
+    // extremal behavior occurs either when maximally many 1s are removed
+    // or when maximally many 0s are removed.
+    // (This is more precise than the obvious count-interval division)
+    BinarySamples minimizer, maximizer;
+    minimizer.num_zeros = counts.num_zeros;
+    minimizer.num_ones = max(0, counts.num_ones - num_dropout);
+    maximizer.num_zeros = max(0, counts.num_zeros - num_dropout);
+    maximizer.num_ones = counts.num_ones;
+
+    return Interval<double>(estimateBernoulli(minimizer), estimateBernoulli(maximizer));
 }
 
 double impurity(const BinarySamples &counts) {
