@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include "data_common.h"
+#include "DataReferences.h"
 #include <vector>
 using namespace std;
 
