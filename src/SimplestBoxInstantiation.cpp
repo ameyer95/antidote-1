@@ -148,20 +148,32 @@ BooleanDropoutSet BooleanDropoutDomain::binary_join(const BooleanDropoutSet &e1,
     return BooleanDropoutSet(d, std::max(n1, n2));
 }
 
-void BitvectorPredicateDomain::setExecutionDetails(int num_X_indices, const std::vector<bool> &x) {
-    this->num_X_indices = num_X_indices;
+void BitvectorPredicateDomain::setExecutionDetails(const std::vector<bool> &x) {
     this->x = x;
 }
 
-BitvectorPredicateAbstraction BitvectorPredicateDomain::abstractBottomPhi() const {
+BitvectorPredicateAbstraction BitvectorPredicateDomain::meetPhiIsBottom(const BitvectorPredicateAbstraction &element) const {
     std::optional<int> bottom = {};
-    return BitvectorPredicateAbstraction({bottom});
+    bool contains_bottom_flag = false;
+    for(std::vector<std::optional<int>>::const_iterator i = element.predicates.begin(); i != element.predicates.end(); i++) {
+        if(!i->has_value()) {
+            contains_bottom_flag = true;
+            break;
+        }
+    }
+    if(contains_bottom_flag) {
+        return BitvectorPredicateAbstraction({bottom});
+    } else {
+        return BitvectorPredicateAbstraction();
+    }
 }
 
-BitvectorPredicateAbstraction BitvectorPredicateDomain::abstractNotBottomPhi() const {
-    std::vector<std::optional<int>> phis(num_X_indices);
-    for(int i = 0; i < num_X_indices; i++) {
-        phis[i] = i;
+BitvectorPredicateAbstraction BitvectorPredicateDomain::meetPhiIsNotBottom(const BitvectorPredicateAbstraction &element) const {
+    std::vector<std::optional<int>> phis(element.predicates);
+    for(std::vector<std::optional<int>>::const_iterator i = phis.begin(); i != phis.end(); i++) {
+        if(!i->has_value()) {
+            phis.erase(i--);
+        }
     }
     return BitvectorPredicateAbstraction(phis);
 }
@@ -230,7 +242,7 @@ BernoulliParameterAbstraction SingleIntervalDomain::binary_join(const BernoulliP
 
 SimplestBoxDomain::SimplestBoxDomain(const std::vector<bool> &test_input) {
     num_X_indices = test_input.size();
-    predicate_domain.setExecutionDetails(num_X_indices, test_input);
+    predicate_domain.setExecutionDetails(test_input);
 }
 
 bool couldBeEmpty(const BooleanDropoutSet::DropoutCounts &counts) {

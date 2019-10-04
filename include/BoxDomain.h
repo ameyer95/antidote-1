@@ -43,8 +43,8 @@ public:
 template <typename P>
 class PredicateDomain : public AbstractDomain<P> {
 public:
-    virtual P abstractBottomPhi() const = 0;
-    virtual P abstractNotBottomPhi() const = 0;
+    virtual P meetPhiIsBottom(const P &element) const = 0;
+    virtual P meetPhiIsNotBottom(const P &element) const = 0;
     virtual P meetXModelsPhi(const P &element) const = 0;
     virtual P meetXNotModelsPhi(const P &element) const = 0;
 };
@@ -133,14 +133,14 @@ A BoxStateDomain<A,LT,T,LP,P,LD,D>::meetImpurityNotEqualsZero(const A &element) 
 template <typename A, typename LT, typename T, typename LP, typename P, typename LD, typename D>
 A BoxStateDomain<A,LT,T,LP,P,LD,D>::meetPhiIsBottom(const A &element) const {
     return A(element.training_set_abstraction,
-             predicate_domain.abstractBottomPhi(),
+             predicate_domain.meetPhiIsBottom(element.predicate_abstraction),
              element.posterior_distribution_abstraction);
 }
 
 template <typename A, typename LT, typename T, typename LP, typename P, typename LD, typename D>
 A BoxStateDomain<A,LT,T,LP,P,LD,D>::meetPhiIsNotBottom(const A &element) const {
     return A(element.training_set_abstraction,
-             predicate_domain.abstractNotBottomPhi(),
+             predicate_domain.meetPhiIsNotBottom(element.predicate_abstraction),
              element.posterior_distribution_abstraction);
 }
 

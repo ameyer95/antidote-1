@@ -97,7 +97,6 @@ public:
 
 class BitvectorPredicateDomain : public PredicateDomain<BitvectorPredicateAbstraction> {
 private:
-    int num_X_indices;
     std::vector<bool> x; // The fixed input to the program
 
 public:
@@ -105,10 +104,10 @@ public:
     // since the hierarchy of subclassing templates then has malformed constructors
     // XXX this needs to be instantiated somewhere,
     // currently done in SimplestBoxDomain::SimplestBoxDomain(...)
-    void setExecutionDetails(int num_X_indices, const std::vector<bool> &x);
+    void setExecutionDetails(const std::vector<bool> &x);
 
-    BitvectorPredicateAbstraction abstractBottomPhi() const;
-    BitvectorPredicateAbstraction abstractNotBottomPhi() const;
+    BitvectorPredicateAbstraction meetPhiIsBottom(const BitvectorPredicateAbstraction &element) const;
+    BitvectorPredicateAbstraction meetPhiIsNotBottom(const BitvectorPredicateAbstraction &element) const;
     BitvectorPredicateAbstraction meetXModelsPhi(const BitvectorPredicateAbstraction &element) const;
     BitvectorPredicateAbstraction meetXNotModelsPhi(const BitvectorPredicateAbstraction &element) const;
 
