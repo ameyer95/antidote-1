@@ -24,16 +24,18 @@ Interval<int> DropoutSet::countOnes() {
 }
 
 std::pair<DropoutCounts, DropoutCounts> DropoutSet::splitCounts(const BitVectorPredicate &phi) {
-    std::pair<DropoutCounts, DropoutCounts> ret({0, 0, 0}, {0, 0, 0});
+    std::pair<DropoutCounts, DropoutCounts> ret({{0, 0}, 0}, {{0, 0}, 0});
     DropoutCounts *d_ptr;
     int *count_ptr;
     for(unsigned int i = 0; i < data.size(); i++) {
         d_ptr = phi.evaluate(getRow(i).first) ? &(ret.second) : &(ret.first);
-        count_ptr = classificationBit(i) ? &(d_ptr->pos) : &(d_ptr->neg);
+        count_ptr = classificationBit(i) ? &(d_ptr->bsamples.num_ones) : &(d_ptr->bsamples.num_zeros);
         *count_ptr += 1;
     }
-    ret.first.num_dropout = std::min(num_dropout, ret.first.pos + ret.first.neg);
-    ret.second.num_dropout = std::min(num_dropout, ret.second.pos + ret.second.neg);
+    std::vector<DropoutCounts*> iters = {&(ret.first), &(ret.second)};
+    for(std::vector<DropoutCounts*>::iterator i = iters.begin(); i != iters.end(); i++) {
+        (*i)->num_dropout = std::min(num_dropout, (*i)->bsamples.num_ones + (*i)->bsamples.num_zeros);
+    }
     return ret;
 }
 
@@ -55,11 +57,11 @@ DropoutSet* DropoutSet::pureSets(bool classification) {
 };
 
 bool couldBeEmpty(const DropoutCounts &counts) {
-    return counts.pos + counts.neg <= counts.num_dropout;
+    return counts.bsamples.num_zeros + counts.bsamples.num_ones <= counts.num_dropout;
 }
 
 bool mustBeEmpty(const DropoutCounts &counts) {
-    return counts.pos + counts.neg == 0;
+    return counts.bsamples.num_zeros + counts.bsamples.num_ones == 0;
 }
 
 PredicatePointers DropoutSet::bestSplit(const PredicateSet *predicates) {
@@ -84,9 +86,9 @@ PredicatePointers DropoutSet::bestSplit(const PredicateSet *predicates) {
     // Compute and store all of the predicates' scores
     std::map<const BitVectorPredicate*, Interval<double>> scores;
     for(PredicatePointers::const_iterator i = exists_nontrivial.begin(); i != exists_nontrivial.end(); i++) {
-        Interval<double> temp = jointImpurity(std::make_pair(counts[*i].first.pos, counts[*i].first.neg),
+        Interval<double> temp = jointImpurity(counts[*i].first.bsamples,
                                               counts[*i].first.num_dropout,
-                                              std::make_pair(counts[*i].second.pos, counts[*i].second.neg),
+                                              counts[*i].second.bsamples,
                                               counts[*i].second.num_dropout);
         scores.insert(std::make_pair(*i, temp));
     }
@@ -127,10 +129,10 @@ void DropoutSet::filter(const BitVectorPredicate &phi, bool mode) {
 }
 
 Interval<double> DropoutSet::summary() {
-    Interval<int> c1 = countOnes();
-    int num_ones = c1.get_upper_bound();
-    int num_total = data.size();
-    return estimateBernoulli(num_total - num_ones, num_ones, num_dropout);
+    BinarySamples counts;
+    counts.num_ones = countOnes().get_upper_bound();
+    counts.num_zeros = data.size() - counts.num_ones;
+    return estimateBernoulli(counts, num_dropout);
 }
 
 // In this (and other places), we're assuming an invariant that data.size() >= num_dropout

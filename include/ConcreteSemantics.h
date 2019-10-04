@@ -3,9 +3,9 @@
 
 #include "ASTNode.h"
 #include "data_common.h"
+#include "information_math.h"
 #include <utility>
 #include <vector>
-using namespace std;
 
 /**
  * Some templated abstract classes for "generality."
@@ -40,8 +40,8 @@ public:
  * Hard-coded instantiations for binary classification, boolean features.
  */
 
-typedef vector<bool> Input;
-typedef pair<Input, bool> DataRow;
+typedef std::vector<bool> Input;
+typedef std::pair<Input, bool> DataRow;
 
 
 class BitVectorPredicate : public Predicate<Input> {
@@ -54,14 +54,14 @@ public:
 };
 
 
-class BooleanDataSet : public DataSetInterface<BitVectorPredicate, vector<BitVectorPredicate>, double> {
+class BooleanDataSet : public DataSetInterface<BitVectorPredicate, std::vector<BitVectorPredicate>, double> {
 private:
     DataReferences<DataRow> *data;
 
     const DataRow& getRow(int row_index) const { return (*data)[row_index]; }
     bool classificationBit(int row_index) { return (*data)[row_index].second; }
     int countOnes();
-    pair<pair<int, int>, pair<int, int>> splitCounts(const BitVectorPredicate *phi);
+    std::pair<BinarySamples, BinarySamples> splitCounts(const BitVectorPredicate *phi);
 
 public:
     // Does not handle deallocation
@@ -70,7 +70,7 @@ public:
     bool isPure();
     void filter(const BitVectorPredicate &phi, bool mode);
     double summary();
-    const BitVectorPredicate* bestSplit(const vector<BitVectorPredicate> *predicates);
+    const BitVectorPredicate* bestSplit(const std::vector<BitVectorPredicate> *predicates);
 };
 
 
@@ -86,14 +86,14 @@ private:
     BooleanDataSet *training_set;
     double posterior;
     const BitVectorPredicate *phi;
-    const vector<BitVectorPredicate> *predicates;
+    const std::vector<BitVectorPredicate> *predicates;
     double return_value; // Largely a proxy for posterior
 
 public:
     ConcreteSemantics();
     // This class doesn't do any dynamic allocation and accordingly does not handle any deallocation
 
-    double execute(const Input test_input, BooleanDataSet *training_set, const vector<BitVectorPredicate> *predicates, const ProgramNode *program);
+    double execute(const Input test_input, BooleanDataSet *training_set, const std::vector<BitVectorPredicate> *predicates, const ProgramNode *program);
 
     void visit(const ProgramNode &node);
     void visit(const SequenceNode &node);

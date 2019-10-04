@@ -84,14 +84,14 @@ int BooleanDataSet::countOnes() {
     return count;
 }
 
-pair<pair<int, int>, pair<int, int>> BooleanDataSet::splitCounts(const BitVectorPredicate *phi) {
-    pair<pair<int, int>, pair<int, int>> ret(make_pair(0, 0), make_pair(0, 0));
-    pair<int, int> *pair_ptr;
+pair<BinarySamples, BinarySamples> BooleanDataSet::splitCounts(const BitVectorPredicate *phi) {
+    pair<BinarySamples, BinarySamples> ret({0, 0}, {0, 0});
+    BinarySamples *b_ptr;
     int *count_ptr;
     for(unsigned int i = 0; i < data->size(); i++) {
         // Convention here is that things that do satisfy the predicate have "index" 1; those that don't have 0
-        pair_ptr = phi->evaluate(getRow(i).first) ? &(ret.second) : &(ret.first);
-        count_ptr = classificationBit(i) ? &(pair_ptr->second) : &(pair_ptr->first);
+        b_ptr = phi->evaluate(getRow(i).first) ? &(ret.second) : &(ret.first);
+        count_ptr = classificationBit(i) ? &(b_ptr->num_ones) : &(b_ptr->num_zeros);
         *count_ptr += 1;
     }
     return ret;
@@ -116,25 +116,25 @@ void BooleanDataSet::filter(const BitVectorPredicate &phi, bool mode) {
 }
 
 double BooleanDataSet::summary() {
-    int num_ones = countOnes();
-    int num_zeros = data->size() - num_ones;
-    return estimateBernoulli(num_zeros, num_ones);
+    BinarySamples counts;
+    counts.num_ones = countOnes();
+    counts.num_zeros = data->size() - counts.num_ones;
+    return estimateBernoulli(counts);
 }
 
-bool emptyCount(const pair<int, int> &counts) {
-    return counts.first == 0 && counts.second == 0;
+bool emptyCount(const BinarySamples &counts) {
+    return counts.num_zeros == 0 && counts.num_ones == 0;
 }
 
 const BitVectorPredicate* BooleanDataSet::bestSplit(const vector<BitVectorPredicate> *predicates) {
-    // XXX uses information gain instead of (equivalently, but as in spec) joint impurity
     double best_score, current_score;
     const BitVectorPredicate *best_predicate = NULL;
-    pair<pair<int, int>, pair<int, int>> counts;
+    pair<BinarySamples, BinarySamples> counts;
     for(vector<BitVectorPredicate>::const_iterator i = predicates->begin(); i != predicates->end(); i++) {
         counts = splitCounts(&(*i));
         if(!emptyCount(counts.first) && !emptyCount(counts.second)) {
-            current_score = informationGain(counts.first, counts.second);
-            if(best_predicate == NULL || best_score < current_score) {
+            current_score = jointImpurity(counts.first, counts.second);
+            if(best_predicate == NULL || current_score < best_score) { // Minimize joint impurity
                 best_score = current_score;
                 best_predicate = &(*i); // Need the address of the iterator's current element
             }

@@ -14,7 +14,8 @@ typedef std::vector<BitVectorPredicate> PredicateSet;
 typedef std::vector<const BitVectorPredicate*> PredicatePointers;
 
 struct DropoutCounts {
-    int pos, neg, num_dropout;
+    BinarySamples bsamples;
+    int num_dropout;
 };
 
 class DropoutSet {

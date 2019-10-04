@@ -22,29 +22,32 @@ BooleanDropoutSet::BooleanDropoutSet(DataReferences<BooleanXYPair> training_set,
     bottom_element_flag = false; // XXX this is only correct when the passed parameters behave nicely
 }
 
-std::pair<int, int> BooleanDropoutSet::baseCounts() const {
-    std::pair<int, int> counts;
+BinarySamples BooleanDropoutSet::baseCounts() const {
+    BinarySamples counts;
     for(int i = 0; i < training_set.size(); i++) {
         if(training_set[i].second) {
-            counts.second++;
+            counts.num_ones++;
         } else {
-            counts.first++;
+            counts.num_zeros++;
         }
     }
     return counts;
 }
 
 std::pair<BooleanDropoutSet::DropoutCounts, BooleanDropoutSet::DropoutCounts> BooleanDropoutSet::splitCounts(int bit_index) const {
-    std::pair<BooleanDropoutSet::DropoutCounts, BooleanDropoutSet::DropoutCounts> ret({0, 0, 0}, {0, 0, 0});
+    std::pair<BooleanDropoutSet::DropoutCounts, BooleanDropoutSet::DropoutCounts> ret({{0, 0}, 0}, {{0, 0}, 0});
     BooleanDropoutSet::DropoutCounts *d_ptr;
     int *count_ptr;
     for(unsigned int i = 0; i < training_set.size(); i++) {
         d_ptr = training_set[i].first[bit_index] ? &(ret.second) : &(ret.first);
-        count_ptr = training_set[i].second ? &(d_ptr->pos) : &(d_ptr->neg);
+        count_ptr = training_set[i].second ? &(d_ptr->bsamples.num_ones) : &(d_ptr->bsamples.num_zeros);
         *count_ptr += 1;
     }
-    ret.first.num_dropout = std::min(num_dropout, ret.first.pos + ret.first.neg);
-    ret.second.num_dropout = std::min(num_dropout, ret.second.pos + ret.second.neg);
+    std::vector<BooleanDropoutSet::DropoutCounts*> iters = {&(ret.first), &(ret.second)};
+    for(std::vector<BooleanDropoutSet::DropoutCounts*>::iterator i = iters.begin(); i != iters.end(); i++) {
+        // Ensure the num_dropout does not exceed the total counts
+        (*i)->num_dropout = std::min(num_dropout, (*i)->bsamples.num_ones + (*i)->bsamples.num_zeros);
+    }
     return ret;
 };
 
@@ -100,13 +103,13 @@ BooleanDropoutSet BooleanDropoutDomain::meetImpurityEqualsZero(const BooleanDrop
     if(element.isBottomElement()) {
         return element;
     }
-    std::pair<int, int> counts = element.baseCounts();
+    BinarySamples counts = element.baseCounts();
     bool pure_0_possible = false, pure_1_possible = false;
-    if(counts.first <= element.num_dropout) {
+    if(counts.num_zeros <= element.num_dropout) {
         // It's possible that all of the 0-classification elements could be removed
         pure_1_possible = true;
     }
-    if(counts.second <= element.num_dropout) {
+    if(counts.num_ones <= element.num_dropout) {
         pure_0_possible = true;
     }
 
@@ -223,11 +226,11 @@ Interval<double> SingleIntervalDomain::binary_join(const Interval<double> &e1, c
  */
 
 bool couldBeEmpty(const BooleanDropoutSet::DropoutCounts &counts) {
-    return counts.pos + counts.neg <= counts.num_dropout;
+    return counts.bsamples.num_zeros + counts.bsamples.num_ones <= counts.num_dropout;
 }
 
 bool mustBeEmpty(const BooleanDropoutSet::DropoutCounts &counts) {
-    return counts.pos + counts.neg == 0;
+    return counts.bsamples.num_zeros + counts.bsamples.num_ones == 0;
 }
 
 BitvectorPredicateAbstraction SimplestBoxDomain::bestSplit(const BooleanDropoutSet &training_set_abstraction) const {
@@ -253,9 +256,9 @@ BitvectorPredicateAbstraction SimplestBoxDomain::bestSplit(const BooleanDropoutS
     std::map<const int, Interval<double>> scores;
     for(std::vector<std::optional<int>>::const_iterator i = exists_nontrivial.begin(); i != exists_nontrivial.end(); i++) {
         int index = i->value(); // Prior for loop guarantees i->has_value()
-        Interval<double> temp = jointImpurity(std::make_pair(counts[index].first.pos, counts[index].first.neg),
+        Interval<double> temp = jointImpurity(counts[index].first.bsamples,
                                               counts[index].first.num_dropout,
-                                              std::make_pair(counts[index].second.pos, counts[index].second.neg),
+                                              counts[index].second.bsamples,
                                               counts[index].second.num_dropout);
         scores.insert(std::make_pair(index, temp));
     }
@@ -303,6 +306,5 @@ BooleanDropoutSet SimplestBoxDomain::filterNegated(const BooleanDropoutSet &trai
 }
 
 Interval<double> SimplestBoxDomain::summary(const BooleanDropoutSet &training_set_abstraction) const {
-    std::pair<int, int> counts = training_set_abstraction.baseCounts();
-    return estimateBernoulli(counts.first, counts.second, training_set_abstraction.num_dropout);
+    return estimateBernoulli(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout);
 }

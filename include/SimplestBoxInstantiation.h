@@ -11,6 +11,7 @@
 
 #include "BoxDomain.h"
 #include "data_common.h"
+#include "information_math.h"
 #include "Interval.h"
 #include <optional> // option types, requires c++17
 #include <utility>
@@ -28,7 +29,8 @@ private:
 
 public:
     struct DropoutCounts {
-        int pos, neg, num_dropout;
+        BinarySamples bsamples;
+        int num_dropout;
     };
 
     DataReferences<BooleanXYPair> training_set;
@@ -37,7 +39,7 @@ public:
     BooleanDropoutSet(); // Initializer as a bottom element
     BooleanDropoutSet(DataReferences<BooleanXYPair> training_set, int num_dropout);
 
-    std::pair<int, int> baseCounts() const; // Returns a pair of (0 counts, 1 counts) not accounting for num_dropout
+    BinarySamples baseCounts() const; // Returns a pair of (0 counts, 1 counts) not accounting for num_dropout
     std::pair<DropoutCounts, DropoutCounts> splitCounts(int bit_index) const;
 
     BooleanDropoutSet pureSet(bool classification) const;
