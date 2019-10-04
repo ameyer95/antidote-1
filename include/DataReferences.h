@@ -1,7 +1,5 @@
-#ifndef DATA_COMMON_H
-#define DATA_COMMON_H
-
-//TODO this file houses a single class, perhaps rename?
+#ifndef DATAREFERENCES_H
+#define DATAREFERENCES_H
 
 #include <algorithm> // for min_element
 #include <vector>

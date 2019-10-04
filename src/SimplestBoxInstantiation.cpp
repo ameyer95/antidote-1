@@ -1,4 +1,5 @@
 #include "SimplestBoxInstantiation.h"
+#include "DataReferences.h"
 #include "information_math.h"
 #include "Interval.h"
 #include <algorithm> // for std::max

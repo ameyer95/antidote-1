@@ -1,6 +1,6 @@
 #include "ConcreteSemantics.h"
 #include "ASTNode.h"
-#include "data_common.h"
+#include "DataReferences.h"
 #include "information_math.h"
 #include <utility>
 #include <vector>

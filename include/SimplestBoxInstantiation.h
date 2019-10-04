@@ -10,7 +10,7 @@
  */
 
 #include "BoxDomain.h"
-#include "data_common.h"
+#include "DataReferences.h"
 #include "information_math.h"
 #include "Interval.h"
 #include <optional> // option types, requires c++17
