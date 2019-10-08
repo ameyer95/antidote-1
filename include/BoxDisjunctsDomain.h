@@ -37,10 +37,9 @@ private:
     // The filter cases are slightly different
     inline A filterAndUnion(const A &element, bool negated) const;
 
-protected:
+public:
     const LB *box_domain; // XXX the subclass needs to populate this
 
-public:
     virtual std::vector<std::pair<T, P>> filter(const T &training_set_abstraction, const P &predicate_abstraction) const = 0;
     virtual std::vector<std::pair<T, P>> filterNegated(const T &training_set_abstraction, const P &predicate_abstraction) const = 0;
 
