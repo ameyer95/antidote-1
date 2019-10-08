@@ -1,7 +1,12 @@
 #include "SimplestBoxDisjunctsInstantiation.h"
 #include "SimplestBoxInstantiation.h"
+#include <algorithm> // for std::max
 #include <utility>
 #include <vector>
+
+/**
+ * Unbounded domain member functions
+ */
 
 std::vector<std::pair<BooleanDropoutSet, BitvectorPredicateAbstraction>> SimplestBoxDisjunctsDomain::filter(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const {
     // This is a simple adaptation of the SimplestBoxDomain::filter.
@@ -23,4 +28,25 @@ std::vector<std::pair<BooleanDropoutSet, BitvectorPredicateAbstraction>> Simples
         joins.push_back(std::make_pair(temp, BitvectorPredicateAbstraction({*i})));
     }
     return joins;
+}
+
+/**
+ * Bounded domain member functions
+ */
+
+SimplestBoxBoundedDisjunctsDomain::SimplestBoxBoundedDisjunctsDomain(const SimplestBoxDomain *box_domain, unsigned int max_num_disjuncts) {
+    disjuncts_domain = new SimplestBoxDisjunctsDomain(box_domain);
+    this->max_num_disjuncts = max_num_disjuncts;
+}
+
+SimplestBoxBoundedDisjunctsDomain::~SimplestBoxBoundedDisjunctsDomain() {
+    delete disjuncts_domain;
+}
+
+double SimplestBoxBoundedDisjunctsDomain::joinPrecisionLoss(const SimplestBoxAbstraction &e1, const SimplestBoxAbstraction &e2) const {
+    SimplestBoxAbstraction ej = disjuncts_domain->box_domain->binary_join(e1, e2);
+    // We'll approximate the raw number of erroneous concrete training sets introduced by the join
+    // by looking at the increase in the num_dropout (relative to the size of the resultant base training set)
+    int dropout_increase = ej.training_set_abstraction.num_dropout - std::max(e1.training_set_abstraction.num_dropout, e2.training_set_abstraction.num_dropout);
+    return (double)dropout_increase / ej.training_set_abstraction.training_set.size();
 }

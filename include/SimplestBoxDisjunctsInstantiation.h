@@ -1,6 +1,13 @@
 #ifndef SIMPLESTBOXDISJUNCTSINSTANTIATION_H
 #define SIMPLESTBOXDISJUNCTSINSTANTIATION_H
 
+/**
+ * In this file, we'll handle the simplest instantiations for both the
+ * (unbounded) disjuncts of box abstractions and the
+ * bounded disjuncts of box abstractions.
+ */
+
+#include "BoxBoundedDisjunctsDomain.h"
 #include "BoxDisjunctsDomain.h"
 #include "SimplestBoxInstantiation.h"
 #include <utility>
@@ -15,6 +22,15 @@ public:
 
     std::vector<std::pair<BooleanDropoutSet, BitvectorPredicateAbstraction>> filter(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;
     std::vector<std::pair<BooleanDropoutSet, BitvectorPredicateAbstraction>> filterNegated(const BooleanDropoutSet &training_set_abstraction, const BitvectorPredicateAbstraction &predicate_abstraction) const;
+};
+
+
+class SimplestBoxBoundedDisjunctsDomain : public BoxBoundedDisjunctsDomain<SimplestBoxDisjunctsDomain, SimplestBoxDisjunctsAbstraction, SimplestBoxAbstraction, double> {
+public:
+    SimplestBoxBoundedDisjunctsDomain(const SimplestBoxDomain *box_domain, unsigned int max_num_disjuncts);
+    ~SimplestBoxBoundedDisjunctsDomain();
+
+    double joinPrecisionLoss(const SimplestBoxAbstraction &e1, const SimplestBoxAbstraction &e2) const;
 };
 
 
