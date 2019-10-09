@@ -27,6 +27,7 @@ public:
     double run_concrete(int depth, int test_index);
     Interval<double> run_abstract(int depth, int test_index, int num_dropout);
     Interval<double> run_abstract_disjuncts(int depth, int test_index, int num_dropout);
+    Interval<double> run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound);
 };
 
 

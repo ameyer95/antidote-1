@@ -110,3 +110,23 @@ Interval<double> MNISTExperiment::run_abstract_disjuncts(int depth, int test_ind
     }
     return box_domain.posterior_distribution_domain.join(posteriors).interval;
 }
+
+Interval<double> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound) {
+    ProgramNode* program = buildTree(depth);
+    vector<bool> test_input = (*mnist_test)[test_index].first;
+    SimplestBoxDomain box_domain(test_input);
+    SimplestBoxBoundedDisjunctsDomain box_bounded_disjuncts_domain(&box_domain, disjunct_bound);
+    AbstractSemantics<SimplestBoxBoundedDisjunctsDomain, SimplestBoxDisjunctsAbstraction, vector<bool>> sem(&box_bounded_disjuncts_domain);
+    DataReferences<BooleanXYPair> training_references(mnist_training);
+    SimplestBoxAbstraction initial_box(BooleanDropoutSet(training_references, num_dropout),
+                                       BitvectorPredicateAbstraction({0,{}}),
+                                       BernoulliParameterAbstraction(Interval<double>(0, 1)));
+    SimplestBoxDisjunctsAbstraction initial_state({initial_box});
+    SimplestBoxDisjunctsAbstraction ret = sem.execute(test_input, initial_state, program);
+    delete program;
+    vector<BernoulliParameterAbstraction> posteriors;
+    for(vector<SimplestBoxAbstraction>::const_iterator i = ret.disjuncts.begin(); i != ret.disjuncts.end(); i++) {
+        posteriors.push_back(i->posterior_distribution_abstraction);
+    }
+    return box_domain.posterior_distribution_domain.join(posteriors).interval;
+}

@@ -5,6 +5,7 @@
 #include "PrettyPrinter.h"
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -20,6 +21,7 @@ struct RunParams {
     bool use_abstract; // When false, use concrete semantics
     bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
     vector<int> num_dropouts; // For when use_abstract == true
+    optional<int> disjunct_bound; // Optionally, has_value only when with_disjuncts is true
 };
 
 /**
@@ -50,7 +52,7 @@ void vectorizeIntStringSplit(vector<int> &items, const string &space_separated_l
 
 // In tandem with RunParams, defines the command-line flags
 bool readParams(RunParams &params, const int &argc, char ** const &argv) {
-    Argument *depth, *test_all, *test_indices, *mnist_prefix, *use_abstract, *use_disjuncts;
+    Argument *depth, *test_all, *test_indices, *mnist_prefix, *use_abstract, *use_disjuncts, *disjunct_bound;
     ArgParse p;
     bool success;
 
@@ -60,6 +62,8 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
     mnist_prefix = p.createArgument("-m", 1, "Path to MNIST datasets");
     use_abstract = p.createArgument("-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
     use_disjuncts = p.createArgument("-V", 1, "Like -a, but with disjuncts", true);
+    disjunct_bound = p.createArgument("-b", 1, "When -V is used, an integer bound on the number of disjuncts", true);
+    
     p.parse(argc, argv);
 
     if(!p.failure()) {
@@ -83,6 +87,11 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
             } else if(use_disjuncts->included) {
                 vectorizeIntStringSplit(params.num_dropouts, use_disjuncts->tokens[0]);
                 params.with_disjuncts = true;
+                if(disjunct_bound->included) {
+                    params.disjunct_bound = stoi(disjunct_bound->tokens[0]);
+                } else {
+                    params.disjunct_bound = {};
+                }
             }
             success = true;
         }
@@ -99,6 +108,7 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
     delete mnist_prefix;
     delete use_abstract;
     delete use_disjuncts;
+    delete disjunct_bound;
     return success;
 }
 
@@ -108,14 +118,22 @@ inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int
             for(vector<int>::const_iterator n = params.num_dropouts.begin(); n != params.num_dropouts.end(); n++) {
                 cout << "running a depth-" << depth << " experiment using <T," << *n << "> ";
                 if(params.with_disjuncts) {
-                    cout << "(with disjuncts) ";
+                    if(params.disjunct_bound.has_value()) {
+                        cout << "(with disjuncts # <= " << params.disjunct_bound.value() << ") ";
+                    } else {
+                        cout << "(with disjuncts) ";
+                    }
                 }
                 cout << "on test " << index << endl;
                 Interval<double> ret;
                 if(!params.with_disjuncts) {
                     ret = e.run_abstract(depth, index, *n);
                 } else {
-                    ret = e.run_abstract_disjuncts(depth, index, *n);
+                    if(params.disjunct_bound.has_value()) {
+                        ret = e.run_abstract_bounded_disjuncts(depth, index, *n, params.disjunct_bound.value());
+                    } else {
+                        ret = e.run_abstract_disjuncts(depth, index, *n);
+                    }
                 }
                 cout << "result: " << to_string(ret) << endl;
             }
