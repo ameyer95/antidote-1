@@ -128,7 +128,7 @@ typename BoxBoundedDisjunctsDomain<LA,A,B,S>::ScoreTuple BoxBoundedDisjunctsDoma
     do {
         ret = score_queue.top();
         score_queue.pop();
-    } while(included.find(ret.e1) != included.end() && included.find(ret.e2) != included.end());
+    } while(included.find(ret.e1) == included.end() || included.find(ret.e2) == included.end());
     // XXX it should be an invariant that this loop always terminates in a correct fashion, but could be cleaner
     return ret;
 }
