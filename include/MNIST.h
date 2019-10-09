@@ -44,6 +44,8 @@ private:
 
 public:
     RawMNIST(MNISTMode mode, const std::string prefix);
+    ~RawMNIST();
+
     const Image getImage(unsigned int i) const;
     const Label getLabel(unsigned int i) const;
     const std::pair<const Image, const Label> operator [](unsigned int i) const;

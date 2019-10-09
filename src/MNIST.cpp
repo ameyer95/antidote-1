@@ -93,6 +93,11 @@ RawMNIST::RawMNIST(MNISTMode mode, const string prefix) {
     label_file = files.first;
 }
 
+RawMNIST::~RawMNIST() {
+    delete[] image_file.pixels;
+    delete[] label_file.labels;
+}
+
 const Image RawMNIST::getImage(unsigned int i) const {
     int offset = i * image_file.num_rows * image_file.num_columns * sizeof(uint8_t);
     return image_file.pixels + offset;
