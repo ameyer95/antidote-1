@@ -3,6 +3,7 @@
 
 #include "StateDomain.h"
 #include "BoxDomain.h"
+#include <forward_list>
 #include <queue> // for priority_queue
 #include <set>
 #include <utility>
@@ -77,7 +78,7 @@ A BoxBoundedDisjunctsDomain<LA,A,B,S>::combined(const A &element) const {
     }
 
     ScoreQueue score_queue;
-    std::vector<B> new_disjuncts;
+    std::forward_list<B> new_disjuncts; // We keep track of pointers to elements in this container, so we can't use vector, since when the vector is resized etc the memory locations of the objects can change
     std::set<const B *> included; // Pointers to elements.disjuncts and new_disjuncts
     // Initially, included has a pointer to each disjuncts in element.disjuncts
     for(typename std::vector<B>::const_iterator i = element.disjuncts.begin(); i != element.disjuncts.end(); i++) {
@@ -92,14 +93,14 @@ A BoxBoundedDisjunctsDomain<LA,A,B,S>::combined(const A &element) const {
         ScoreTuple to_merge = greedySelection(included, score_queue);
         included.erase(to_merge.e1);
         included.erase(to_merge.e2);
-        new_disjuncts.push_back(disjuncts_domain->box_domain->binary_join(*to_merge.e1, *to_merge.e2));
+        new_disjuncts.push_front(disjuncts_domain->box_domain->binary_join(*to_merge.e1, *to_merge.e2));
         // We first compute the relevant scores to add the priority queue
         // before adding the new disjunct to included
         for(typename std::set<const B *>::const_iterator i = included.begin(); i != included.end(); i++) {
-            ScoreTuple temp = {*i, &new_disjuncts.back(), joinPrecisionLoss(**i, new_disjuncts.back())};
+            ScoreTuple temp = {*i, &new_disjuncts.front(), joinPrecisionLoss(**i, new_disjuncts.front())};
             score_queue.push(temp);
         }
-        included.insert(&new_disjuncts.back());
+        included.insert(&new_disjuncts.front());
     }
 
     // Finally, we construct the return object from the disjuncts to be included
