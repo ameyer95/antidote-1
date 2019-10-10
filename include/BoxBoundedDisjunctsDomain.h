@@ -31,14 +31,15 @@ private:
         const B *e2;
         S score;
     };
-    struct LessThanForScoreTuple { // The comparator for the priority queue
+    struct GreaterThanForScoreTuple { // The comparator for the priority queue
         bool operator()(const ScoreTuple &a, const ScoreTuple &b) const {
-            // Returns true when a is higher piority than b;
-            // in our case, this is when a's imprecision increase/score is less than b's.
-            return a.score < b.score;
+            // std::priority_queue prioritizes the maximal element by this ordering;
+            // we would like b to be higher priority than a (i.e. this function returns true)
+            // exactly when a's imprecision increase/score is greater than b's.
+            return a.score > b.score;
         }
     };
-    typedef std::priority_queue<ScoreTuple, std::vector<ScoreTuple>, LessThanForScoreTuple> ScoreQueue;
+    typedef std::priority_queue<ScoreTuple, std::vector<ScoreTuple>, GreaterThanForScoreTuple> ScoreQueue;
 
     inline void populateInitialScores(const std::set<const B *> &included, ScoreQueue &score_queue) const;
     inline ScoreTuple greedySelection(const std::set<const B *> &included, ScoreQueue &score_queue) const;
