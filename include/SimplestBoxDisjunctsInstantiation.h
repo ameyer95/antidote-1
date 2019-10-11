@@ -27,7 +27,7 @@ public:
 
 class SimplestBoxBoundedDisjunctsDomain : public BoxBoundedDisjunctsDomain<SimplestBoxDisjunctsDomain, SimplestBoxDisjunctsAbstraction, SimplestBoxAbstraction, double> {
 public:
-    SimplestBoxBoundedDisjunctsDomain(const SimplestBoxDomain *box_domain, unsigned int max_num_disjuncts);
+    SimplestBoxBoundedDisjunctsDomain(const SimplestBoxDomain *box_domain, unsigned int max_num_disjuncts, MergeMode merge_mode);
     ~SimplestBoxBoundedDisjunctsDomain();
 
     double joinPrecisionLoss(const SimplestBoxAbstraction &e1, const SimplestBoxAbstraction &e2) const;

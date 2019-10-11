@@ -34,9 +34,10 @@ std::vector<std::pair<BooleanDropoutSet, BitvectorPredicateAbstraction>> Simples
  * Bounded domain member functions
  */
 
-SimplestBoxBoundedDisjunctsDomain::SimplestBoxBoundedDisjunctsDomain(const SimplestBoxDomain *box_domain, unsigned int max_num_disjuncts) {
+SimplestBoxBoundedDisjunctsDomain::SimplestBoxBoundedDisjunctsDomain(const SimplestBoxDomain *box_domain, unsigned int max_num_disjuncts, MergeMode merge_mode) {
     disjuncts_domain = new SimplestBoxDisjunctsDomain(box_domain);
     this->max_num_disjuncts = max_num_disjuncts;
+    this->merge_mode = merge_mode;
 }
 
 SimplestBoxBoundedDisjunctsDomain::~SimplestBoxBoundedDisjunctsDomain() {

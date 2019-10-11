@@ -22,6 +22,7 @@ struct RunParams {
     bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
     vector<int> num_dropouts; // For when use_abstract == true
     optional<int> disjunct_bound; // Optionally, has_value only when with_disjuncts is true
+    string merge_mode; // For when disjunct_bound.has_value(), takes value "greedy" or "optimal"
 };
 
 /**
@@ -62,11 +63,12 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
     mnist_prefix = p.createArgument("-m", 1, "Path to MNIST datasets");
     use_abstract = p.createArgument("-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
     use_disjuncts = p.createArgument("-V", 1, "Like -a, but with disjuncts", true);
-    disjunct_bound = p.createArgument("-b", 1, "When -V is used, an integer bound on the number of disjuncts", true);
+    disjunct_bound = p.createArgument("-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) \"greedy\" or \"optimal\" to specify the merging strategy", true);
     
     p.parse(argc, argv);
 
     if(!p.failure()) {
+        success = true;
         if(!test_all->included && !test_indices->included) {
             cout << "Must specify test cases with -t or -T" << endl;
             success = false;
@@ -89,11 +91,15 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
                 params.with_disjuncts = true;
                 if(disjunct_bound->included) {
                     params.disjunct_bound = stoi(disjunct_bound->tokens[0]);
+                    params.merge_mode = disjunct_bound->tokens[1];
+                    if(params.merge_mode != "greedy" && params.merge_mode != "optimal") {
+                        cout << "second argument of -b must be either \"greedy\" or \"optimal\"" << endl;
+                        success = false;
+                    }
                 } else {
                     params.disjunct_bound = {};
                 }
             }
-            success = true;
         }
     } else {
         cout << p.message() << endl;
@@ -130,7 +136,7 @@ inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int
                     ret = e.run_abstract(depth, index, *n);
                 } else {
                     if(params.disjunct_bound.has_value()) {
-                        ret = e.run_abstract_bounded_disjuncts(depth, index, *n, params.disjunct_bound.value());
+                        ret = e.run_abstract_bounded_disjuncts(depth, index, *n, params.disjunct_bound.value(), params.merge_mode);
                     } else {
                         ret = e.run_abstract_disjuncts(depth, index, *n);
                     }

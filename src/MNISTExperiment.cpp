@@ -111,11 +111,13 @@ Interval<double> MNISTExperiment::run_abstract_disjuncts(int depth, int test_ind
     return box_domain.posterior_distribution_domain.join(posteriors).interval;
 }
 
-Interval<double> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound) {
+Interval<double> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const string &merge_mode) {
     ProgramNode* program = buildTree(depth);
     vector<bool> test_input = (*mnist_test)[test_index].first;
     SimplestBoxDomain box_domain(test_input);
-    SimplestBoxBoundedDisjunctsDomain box_bounded_disjuncts_domain(&box_domain, disjunct_bound);
+    typedef SimplestBoxBoundedDisjunctsDomain::MergeMode MMode;
+    MMode merge_mode_enum = (merge_mode == "optimal" ? MMode::OPTIMAL : MMode::GREEDY);
+    SimplestBoxBoundedDisjunctsDomain box_bounded_disjuncts_domain(&box_domain, disjunct_bound, merge_mode_enum);
     AbstractSemantics<SimplestBoxBoundedDisjunctsDomain, SimplestBoxDisjunctsAbstraction, vector<bool>> sem(&box_bounded_disjuncts_domain);
     DataReferences<BooleanXYPair> training_references(mnist_training);
     SimplestBoxAbstraction initial_box(BooleanDropoutSet(training_references, num_dropout),
