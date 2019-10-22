@@ -24,6 +24,7 @@ public:
     ~MNISTExperiment();
 
     int test_size() { return mnist_test->size(); }
+    bool groundTruth(int test_index) { return (*mnist_test)[test_index].second; }
     double run_concrete(int depth, int test_index);
     Interval<double> run_abstract(int depth, int test_index, int num_dropout);
     Interval<double> run_abstract_disjuncts(int depth, int test_index, int num_dropout);
