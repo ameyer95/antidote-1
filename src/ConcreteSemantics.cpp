@@ -1,11 +1,11 @@
 #include "ConcreteSemantics.h"
 #include "ASTNode.h"
-#include "CategoricalDistribution.h"
+#include "CategoricalDistribution.hpp"
 #include "ConcreteTrainingReferences.h"
 #include "Predicate.hpp"
 using namespace std;
 
-CategoricalDistribution ConcreteSemantics::execute(const FeatureVector &test_input, const DataSet *training_set, const ProgramNode *program) {
+CategoricalDistribution<double> ConcreteSemantics::execute(const FeatureVector &test_input, const DataSet *training_set, const ProgramNode *program) {
     this->test_input = test_input;
     current_state.training_references = ConcreteTrainingReferences(training_set);
     current_state.phi = {};

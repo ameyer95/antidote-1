@@ -1,9 +1,9 @@
 #include "catch.hpp"
-#include "CategoricalDistribution.h"
+#include "CategoricalDistribution.hpp"
 #include <vector>
 
 TEST_CASE("Check CategoricalDistribution::operator [] appropriately wraps underlying vector") {
-    CategoricalDistribution p(3); // Should have 3 values
+    CategoricalDistribution<float> p(3); // Should have 3 values
     std::vector<float> values = {.2, .5, .3};
 
     // Make sure basic assignment and accessing are consistent

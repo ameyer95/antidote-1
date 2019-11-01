@@ -2,7 +2,7 @@
 #define CONCRETESEMANTICS_H
 
 #include "ASTNode.h"
-#include "CategoricalDistribution.h"
+#include "CategoricalDistribution.hpp"
 #include "ConcreteTrainingReferences.h"
 #include "Feature.hpp"
 #include "Predicate.hpp"
@@ -15,7 +15,7 @@
 struct ConcreteState {
     ConcreteTrainingReferences training_references;
     std::optional<Predicate> phi;
-    CategoricalDistribution posterior;
+    CategoricalDistribution<double> posterior;
 };
 
 
@@ -24,13 +24,13 @@ class ConcreteSemantics : public ASTVisitor {
 private:
     FeatureVector test_input;
     ConcreteState current_state;
-    CategoricalDistribution return_value; // Largely a proxy for current_state.posterior
+    CategoricalDistribution<double> return_value; // Largely a proxy for current_state.posterior
 
 public:
     ConcreteSemantics() {}
     // This class doesn't do any dynamic allocation and accordingly does not handle any deallocation
 
-    CategoricalDistribution execute(const FeatureVector &test_input, const DataSet *training_set, const ProgramNode *program);
+    CategoricalDistribution<double> execute(const FeatureVector &test_input, const DataSet *training_set, const ProgramNode *program);
 
     void visit(const ProgramNode &node);
     void visit(const SequenceNode &node);

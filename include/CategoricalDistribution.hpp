@@ -1,5 +1,5 @@
-#ifndef CATEGORICALDISTRIBUTION_H
-#define CATEGORICALDISTRIBUTION_H
+#ifndef CATEGORICALDISTRIBUTION_HPP
+#define CATEGORICALDISTRIBUTION_HPP
 
 /**
  * In general, we imagine that a training set T has rows consisting of elements
@@ -12,7 +12,6 @@
  * for categorical distributions (over Y).
  */
 
-#include <string>
 #include <vector>
 
 // We don't need a specific class for Y itself,
@@ -20,28 +19,25 @@
 
 
 /**
- * For a k-categorical output, stores k doubles.
+ * For a k-categorical output, stores k doubles (or Interval<double>, etc).
  * It does no checking to ensure this distribution is well-defined.
  * This class just incompletely wraps a std::vector,
  * hiding ways to change size,
  * because there's otherwise no appropriately polymorphic tuple.
  */
+template<typename T>
 class CategoricalDistribution {
 private:
-    std::vector<double> p; // Will be a fixed size, as determined by constructor.
+    std::vector<T> p; // Will be a fixed size, as determined by constructor.
 
 public:
-    // Initializes to size-many 0's:
-    CategoricalDistribution(unsigned int size) { p = std::vector<double>(size, 0); }
-    CategoricalDistribution() { p = std::vector<double>({0}); }
+    // Initializes to size-many uninitialized elements:
+    CategoricalDistribution(unsigned int size) { p = std::vector<T>(size); }
+    CategoricalDistribution() {}
 
     unsigned int size() const { return p.size(); }
-    double& operator [](unsigned int i) { return p[i]; } // Note: no bounds check.
-    const double& operator [](unsigned int i) const { return p[i]; }
-
-    std::string toString() const;
-
-    static CategoricalDistribution estimateFrom(std::vector<int> counts);
+    T& operator [](unsigned int i) { return p[i]; } // Note: no bounds check.
+    const T& operator [](unsigned int i) const { return p[i]; }
 };
 
 

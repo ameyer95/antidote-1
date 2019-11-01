@@ -1,7 +1,7 @@
 #ifndef CONCRETETRAININGREFERENCES_H
 #define CONCRETETRAININGREFERENCES_H
 
-#include "CategoricalDistribution.h"
+#include "CategoricalDistribution.hpp"
 #include "DataReferences.h"
 #include "DataSet.hpp"
 #include "Predicate.hpp"
@@ -28,7 +28,7 @@ public:
 
     bool isPure() const;
     void filter(const Predicate &phi, bool mode);
-    CategoricalDistribution summary() const;
+    CategoricalDistribution<double> summary() const;
     std::optional<Predicate> bestSplit() const;
 };
 

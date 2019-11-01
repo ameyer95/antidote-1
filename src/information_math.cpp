@@ -1,5 +1,5 @@
 #include "information_math.h"
-#include "CategoricalDistribution.h"
+#include "CategoricalDistribution.hpp"
 #include "Interval.h"
 #include <algorithm> // for std::max/min
 #include <numeric> // for std::accumulate (easy summations)
@@ -54,8 +54,17 @@ Interval<double> jointImpurity(const BinarySamples &counts1, int num_dropout1, c
     return size1 * impurity(counts1, num_dropout1) + size2 * impurity(counts2, num_dropout2);
 }
 
+CategoricalDistribution<double> estimateCategorical(const std::vector<int> &counts) {
+    CategoricalDistribution<double> ret(counts.size());
+    int total = accumulate(counts.begin(), counts.end(), 0);
+    for(unsigned int i = 0; i < counts.size(); i++) {
+        ret[i] = (double)counts[i] / total;
+    }
+    return ret;
+}
+
 double impurity(const vector<int> &counts) {
-    CategoricalDistribution p = CategoricalDistribution::estimateFrom(counts);
+    CategoricalDistribution<double> p = estimateCategorical(counts);
     double total = 0;
     for(unsigned int i = 0; i < p.size(); i++) {
         total += p[i] * (1 - p[i]);

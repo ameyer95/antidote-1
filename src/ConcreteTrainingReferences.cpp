@@ -1,5 +1,5 @@
 #include "ConcreteTrainingReferences.h"
-#include "CategoricalDistribution.h"
+#include "CategoricalDistribution.hpp"
 #include "DataReferences.h"
 #include "Feature.hpp"
 #include "information_math.h"
@@ -94,9 +94,9 @@ void ConcreteTrainingReferences::filter(const Predicate &phi, bool mode) {
     }
 }
 
-CategoricalDistribution ConcreteTrainingReferences::summary() const {
+CategoricalDistribution<double> ConcreteTrainingReferences::summary() const {
     vector<int> counts = sampleCounts();
-    return CategoricalDistribution::estimateFrom(counts);
+    return estimateCategorical(counts);
 }
 
 optional<Predicate> ConcreteTrainingReferences::bestSplit() const {

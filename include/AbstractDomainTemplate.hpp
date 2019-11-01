@@ -5,23 +5,17 @@
 
 
 /**
- * The following two classes form a very generic framework for abstract domains.
- * Subclassing AbstractElement gives you the representation of the abstraction,
- * and subclassing AbstractDomain (using the AbstractElement subclass as the template parameter)
- * gives you the abstract domain object.
+ * A very generic framework for abstract domains.
+ * The template parameter should be the underlying type
+ * of the abstract element class.
  */
-
-// TODO should we include a template <typename C> here for the concrete type?
-class AbstractElement {
-public:
-    virtual bool isBottomElement() const = 0;
-    // TODO include more logic for common things with the bottom element flag / check
-};
 
 
 template <typename A>
 class AbstractDomainTemplate {
 public:
+    virtual bool isBottomElement(const A &element) const = 0;
+
     // We must give them different names; overriding one in a subclass
     // causes the compiler to skip over any functions in the same name as the base class
     virtual A binary_join(const A &e1, const A &e2) const = 0;
