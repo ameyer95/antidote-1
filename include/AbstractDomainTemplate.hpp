@@ -1,5 +1,5 @@
-#ifndef ABSTRACTDOMAIN_H
-#define ABSTRACTDOMAIN_H
+#ifndef ABSTRACTDOMAINTEMPLATE_HPP
+#define ABSTRACTDOMAINTEMPLATE_HPP
 
 #include <vector>
 
@@ -20,7 +20,7 @@ public:
 
 
 template <typename A>
-class AbstractDomain {
+class AbstractDomainTemplate {
 public:
     // We must give them different names; overriding one in a subclass
     // causes the compiler to skip over any functions in the same name as the base class
@@ -41,9 +41,9 @@ public:
  * or vice-versa (which is more complicated and thus left uncommented):
  */
 template <typename A>
-A AbstractDomain<A>::join(const std::vector<A> &elements) const {
+A AbstractDomainTemplate<A>::join(const std::vector<A> &elements) const {
     A ret;
-    for(typename std::vector<A>::const_iterator i = elements.begin(); i != elements.end(); i++) {
+    for(auto i = elements.cbegin(); i != elements.cend(); i++) {
         ret = binary_join(ret, *i);
     }
     return ret;

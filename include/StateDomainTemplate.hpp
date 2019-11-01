@@ -1,13 +1,23 @@
-#ifndef STATEDOMAIN_H
-#define STATEDOMAIN_H
+#ifndef STATEDOMAINTEMPLATE_HPP
+#define STATEDOMAINTEMPLATE_HPP
 
-#include "AbstractDomain.h"
+#include "AbstractDomainTemplate.hpp"
 #include <vector>
 
 
-// A should be some appropriate AbstractElement class
+/**
+ * An abstract class that sets up the abstract transformers
+ * the our abstract semantics require of the state abstraction.
+ *
+ * The AbstractDomainTemplate base class is normally instantiated in pairs
+ * with the AbstractElementTemplate base class;
+ * since this is effectively just an interface,
+ * any actual instantations of the state domain should be accompanied
+ * by the instantiated abstract element.
+ * Accordingly, the template parameter A should be that element subclass.
+ */
 template <typename A>
-class StateDomain : public AbstractDomain<A> {
+class StateDomainTemplate : public AbstractDomainTemplate<A> {
 public:
     virtual A meetImpurityEqualsZero(const A &element) const = 0;
     virtual A meetImpurityNotEqualsZero(const A &element) const = 0;
