@@ -141,12 +141,12 @@ inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int
                         ret = e.run_abstract_disjuncts(depth, index, *n);
                     }
                 }
-                cout << "result: " << to_string(ret) << endl;
+                cout << "result: " << to_string(ret) << " (ground truth: " << e.groundTruth(index) << ")" << endl;
             }
         } else {
             cout << "running a depth-" << depth << " experiment using T on test " << index << endl;
             double ret = e.run_concrete(depth, index);
-            cout << "result: " << ret << endl;
+            cout << "result: " << ret << " (ground truth: " << e.groundTruth(index) << ")" << endl;
         }
     } else {
         cout << "skipping test " << index << " (out of bounds)" << endl;
