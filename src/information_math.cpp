@@ -1,7 +1,10 @@
 #include "information_math.h"
+#include "CategoricalDistribution.h"
 #include "Interval.h"
 #include <algorithm> // for std::max/min
+#include <numeric> // for std::accumulate (easy summations)
 #include <utility>
+#include <vector>
 using namespace std;
 
 double estimateBernoulli(const BinarySamples &counts) {
@@ -49,4 +52,19 @@ Interval<double> jointImpurity(const BinarySamples &counts1, int num_dropout1, c
     Interval<double> size1(total1 - num_dropout1, total1);
     Interval<double> size2(total2 - num_dropout2, total2);
     return size1 * impurity(counts1, num_dropout1) + size2 * impurity(counts2, num_dropout2);
+}
+
+double impurity(const vector<int> &counts) {
+    CategoricalDistribution p = CategoricalDistribution::estimateFrom(counts);
+    double total = 0;
+    for(unsigned int i = 0; i < p.size(); i++) {
+        total += p[i] * (1 - p[i]);
+    }
+    return total;
+}
+
+double jointImpurity(const vector<int> &counts1, const vector<int> &counts2) {
+    int total1 = accumulate(counts1.begin(), counts1.end(), 0);
+    int total2 = accumulate(counts2.begin(), counts2.end(), 0);
+    return total1 * impurity(counts1) + total2 * impurity(counts2);
 }

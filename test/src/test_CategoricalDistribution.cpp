@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include "CategoricalDistribution.hpp"
+#include "CategoricalDistribution.h"
 #include <vector>
 
 TEST_CASE("Check CategoricalDistribution::operator [] appropriately wraps underlying vector") {

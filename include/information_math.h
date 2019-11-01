@@ -2,6 +2,7 @@
 #define INFORMATION_MATH_H
 
 #include "Interval.h"
+#include <vector>
 
 
 // Give them names instead of having to assume a std::pair convention
@@ -9,7 +10,6 @@ struct BinarySamples {
     int num_zeros = 0;
     int num_ones = 0;
 };
-
 
 double estimateBernoulli(const BinarySamples &counts);
 Interval<double> estimateBernoulli(const BinarySamples &counts, int num_dropout);
@@ -22,5 +22,8 @@ Interval<double> impurity(const BinarySamples &counts, int num_dropout);
 double jointImpurity(const BinarySamples &counts1, const BinarySamples &counts2);
 Interval<double> jointImpurity(const BinarySamples &counts1, int num_dropout1,
                                const BinarySamples &counts2, int num_dropout2);
+
+double impurity(const std::vector<int> &counts);
+double jointImpurity(const std::vector<int> &counts1, const std::vector<int> &counts2);
 
 #endif

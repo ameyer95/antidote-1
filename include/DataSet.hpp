@@ -8,7 +8,7 @@
  */
 
 #include "Feature.hpp"
-#include "CategoricalDistribution.hpp"
+#include "CategoricalDistribution.h"
 #include <vector>
 
 // For now, X is always a FeatureVector and Y is always an int.

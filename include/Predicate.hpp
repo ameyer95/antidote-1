@@ -48,9 +48,11 @@ inline bool Predicate::evaluate(const FeatureVector &x) const {
             return x[feature_index].getBooleanValue();
         case FeatureType::NUMERIC:
             return x[feature_index].getNumericValue() <= threshold;
+        default:
+            // XXX this shouldn't happen---it's here to suppress a warning.
+            // If adding new FeatureTypes, make sure to add remaining cases.
+            return false;
     }
-    // XXX control flow should not be able to exit the switch---
-    // if adding new FeatureTypes, make sure to add remaining cases
 }
 
 #endif

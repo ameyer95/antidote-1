@@ -22,6 +22,10 @@ public:
     DataReferences(const DataSet *data_set);
     DataReferences(const DataSet *data_set, const std::vector<int> &indices);
 
+    // Some accessors for the underlying DataSet fields
+    const FeatureVectorHeader& getFeatureTypes() const { return data_set->feature_types; }
+    int getNumCategories() const { return data_set->num_categories; }
+
     const DataRow& operator [](unsigned int i) const { return data_set->rows[indices[i]]; }
     void remove(int index) { indices.erase(indices.begin() + index); }
     unsigned int size() const { return indices.size(); }
