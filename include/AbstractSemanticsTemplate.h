@@ -19,6 +19,7 @@ template <typename A>
 class AbstractSemanticsTemplate : public ASTVisitor {
 private:
     A current_state;
+    FeatureVector test_input;
     const StateDomainTemplate<A> *state_domain;
 
 public:

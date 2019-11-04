@@ -79,9 +79,48 @@ double jointImpurity(const vector<int> &counts1, const vector<int> &counts2) {
 }
 
 CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<int> &counts, int num_dropout) {
-    // TODO
+    CategoricalDistribution <Interval<double>> ret(counts.size());
+    int count_total = accumulate(counts.cbegin(), counts.cend(), 0);
+    // When num_dropout >= count_total, anything is possible.
+    // In the == case, this is because we assume estimating from an empty set is undefined behavior.
+    if(count_total <= num_dropout) {
+        for(unsigned int i = 0; i < ret.size(); i++) {
+            ret[i] = Interval<double>(0, 1);
+        }
+        return ret;
+    }
+
+    // We estimate each component individually.
+    // Since this is effectively computing an average of a collection of 0s and 1s,
+    // extremal behavior occurs either when maximally many 1s are removed
+    // or when maximally many 0s are removed.
+    // (This is more precise than the obvious count-interval division)
+    for(unsigned int i = 0; i < ret.size(); i++) {
+        int count_not_y = count_total - counts[i];
+        BinarySamples minimizer, maximizer;
+        maximizer.num_ones = counts[i];
+        maximizer.num_zeros = max(0, count_not_y - num_dropout);
+        minimizer.num_ones = max(0, counts[i] - num_dropout);
+        minimizer.num_zeros = count_not_y;
+        ret[i] = Interval<double>(estimateBernoulli(minimizer), estimateBernoulli(maximizer));
+    }
+    return ret;
+}
+
+Interval<double> impurity(const std::vector<int> &counts, int num_dropout) {
+    // TODO can be more precise
+    CategoricalDistribution<Interval<double>> p = estimateCategorical(counts, num_dropout);
+    Interval<double> total(0);
+    for(unsigned int i = 0; i < p.size(); i++) {
+        total = total + p[i] * (Interval<double>(1) - p[i]);
+    }
+    return total;
 }
 
 Interval<double> jointImpurity(const std::vector<int> &counts1, int num_dropout1, const std::vector<int> &counts2, int num_dropout2) {
-    // TODO
+    int total1 = accumulate(counts1.cbegin(), counts1.cend(), 0);
+    int total2 = accumulate(counts2.cbegin(), counts2.cend(), 0);
+    Interval<double> size1(total1 - num_dropout1, total1);
+    Interval<double> size2(total2 - num_dropout2, total2);
+    return size1 * impurity(counts1, num_dropout1) + size2 * impurity(counts2, num_dropout2);
 }

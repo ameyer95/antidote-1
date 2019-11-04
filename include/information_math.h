@@ -29,6 +29,7 @@ double impurity(const std::vector<int> &counts);
 double jointImpurity(const std::vector<int> &counts1, const std::vector<int> &counts2);
 
 CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<int> &counts, int num_dropout);
+Interval<double> impurity(const std::vector<int> &counts, int num_dropout);
 Interval<double> jointImpurity(const std::vector<int> &counts1, int num_dropout1,
                                const std::vector<int> &counts2, int num_dropout2);
 

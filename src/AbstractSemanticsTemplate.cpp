@@ -6,6 +6,7 @@
 template <typename A>
 A AbstractSemanticsTemplate<A>::execute(const FeatureVector &test_input, A initial_state, const ProgramNode *program) {
     current_state = initial_state;
+    this->test_input = test_input;
     program->accept(*this);
     return current_state;
 }
@@ -28,7 +29,7 @@ void AbstractSemanticsTemplate<A>::visit(const ITEImpurityNode &node) {
     A pass_to_then, pass_to_else, backup;
 
     pass_to_then = state_domain->meetImpurityEqualsZero(current_state);
-    if(!pass_to_then.isBottomElement()) {
+    if(!state_domain->isBottomElement(pass_to_then)) {
         backup = current_state;
         current_state = pass_to_then;
         node.get_left_child()->accept(*this);
@@ -37,7 +38,7 @@ void AbstractSemanticsTemplate<A>::visit(const ITEImpurityNode &node) {
     }
 
     pass_to_else = state_domain->meetImpurityNotEqualsZero(current_state);
-    if(!pass_to_else.isBottomElement()) {
+    if(!state_domain->isBottomElement(pass_to_else)) {
         backup = current_state;
         current_state = pass_to_else;
         node.get_right_child()->accept(*this);
@@ -54,7 +55,7 @@ void AbstractSemanticsTemplate<A>::visit(const ITENoPhiNode &node) {
     A pass_to_then, pass_to_else, backup;
 
     pass_to_then = state_domain->meetPhiIsBottom(current_state);
-    if(!pass_to_then.isBottomElement()) {
+    if(!state_domain->isBottomElement(pass_to_then)) {
         backup = current_state;
         current_state = pass_to_then;
         node.get_left_child()->accept(*this);
@@ -63,7 +64,7 @@ void AbstractSemanticsTemplate<A>::visit(const ITENoPhiNode &node) {
     }
 
     pass_to_else = state_domain->meetPhiIsNotBottom(current_state);
-    if(!pass_to_else.isBottomElement()) {
+    if(!state_domain->isBottomElement(pass_to_else)) {
         backup = current_state;
         current_state = pass_to_else;
         node.get_right_child()->accept(*this);
@@ -95,8 +96,8 @@ void AbstractSemanticsTemplate<A>::visit(const ITEModelsNode &node) {
     std::vector<A> joins;
     A pass_to_then, pass_to_else, backup;
 
-    pass_to_then = state_domain->meetXModelsPhi(current_state);
-    if(!pass_to_then.isBottomElement()) {
+    pass_to_then = state_domain->meetXModelsPhi(current_state, test_input);
+    if(!state_domain->isBottomElement(pass_to_then)) {
         backup = current_state;
         current_state = pass_to_then;
         node.get_left_child()->accept(*this);
@@ -104,8 +105,8 @@ void AbstractSemanticsTemplate<A>::visit(const ITEModelsNode &node) {
         current_state = backup;
     }
 
-    pass_to_else = state_domain->meetXNotModelsPhi(current_state);
-    if(!pass_to_else.isBottomElement()) {
+    pass_to_else = state_domain->meetXNotModelsPhi(current_state, test_input);
+    if(!state_domain->isBottomElement(pass_to_else)) {
         backup = current_state;
         current_state = pass_to_else;
         node.get_right_child()->accept(*this);

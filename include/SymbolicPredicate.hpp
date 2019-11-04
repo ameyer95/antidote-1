@@ -35,6 +35,14 @@ public:
 };
 
 
+// And a wrapper for SymbolicPredicate::hash so we can conveniently use std::unordered_map
+struct hash_SymbolicPredicate {
+    size_t operator()(const SymbolicPredicate &p) const {
+        return p.hash();
+    }
+};
+
+
 /**
  * Member functions below
  */
@@ -71,7 +79,7 @@ inline std::optional<bool> SymbolicPredicate::evaluate(const FeatureVector &x) c
     }
 }
 
-bool SymbolicPredicate::operator ==(const SymbolicPredicate &right) const {
+inline bool SymbolicPredicate::operator ==(const SymbolicPredicate &right) const {
     if(this->feature_index != right.feature_index) {
         return false;
     }
@@ -87,7 +95,7 @@ bool SymbolicPredicate::operator ==(const SymbolicPredicate &right) const {
     return true;
 }
 
-size_t SymbolicPredicate::hash() const {
+inline size_t SymbolicPredicate::hash() const {
     if(feature_type == FeatureType::NUMERIC) {
         return std::hash<unsigned int>{}(feature_index)
             ^ std::hash<float>{}(threshold_lb)

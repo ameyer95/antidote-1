@@ -13,6 +13,7 @@
  */
 
 #include "AbstractDomainTemplate.hpp"
+#include "Feature.hpp"
 #include "StateDomainTemplate.hpp"
 
 
@@ -33,8 +34,8 @@ class PredicateDomainTemplate : public AbstractDomainTemplate<P> {
 public:
     virtual P meetPhiIsBottom(const P &element) const = 0;
     virtual P meetPhiIsNotBottom(const P &element) const = 0;
-    virtual P meetXModelsPhi(const P &element) const = 0;
-    virtual P meetXNotModelsPhi(const P &element) const = 0;
+    virtual P meetXModelsPhi(const P &element, const FeatureVector &x) const = 0;
+    virtual P meetXNotModelsPhi(const P &element, const FeatureVector &x) const = 0;
 };
 
 
@@ -63,6 +64,8 @@ struct BoxStateAbstraction {
 template <typename T, typename P, typename D>
 class BoxStateDomainTemplate : public StateDomainTemplate<BoxStateAbstraction<T,P,D>> {
 public:
+    typedef BoxStateAbstraction<T,P,D> BoxStateAbstractionType;
+
     const TrainingSetDomainTemplate<T> *training_set_domain;
     const PredicateDomainTemplate<P> *predicate_domain;
     const PosteriorDistributionDomainTemplate<D> *posterior_distribution_domain;
@@ -80,8 +83,8 @@ public:
     BoxStateAbstraction<T,P,D> meetImpurityNotEqualsZero(const BoxStateAbstraction<T,P,D> &element) const;
     BoxStateAbstraction<T,P,D> meetPhiIsBottom(const BoxStateAbstraction<T,P,D> &element) const;
     BoxStateAbstraction<T,P,D> meetPhiIsNotBottom(const BoxStateAbstraction<T,P,D> &element) const;
-    BoxStateAbstraction<T,P,D> meetXModelsPhi(const BoxStateAbstraction<T,P,D> &element) const;
-    BoxStateAbstraction<T,P,D> meetXNotModelsPhi(const BoxStateAbstraction<T,P,D> &element) const;
+    BoxStateAbstraction<T,P,D> meetXModelsPhi(const BoxStateAbstraction<T,P,D> &element, const FeatureVector &x) const;
+    BoxStateAbstraction<T,P,D> meetXNotModelsPhi(const BoxStateAbstraction<T,P,D> &element, const FeatureVector &x) const;
     BoxStateAbstraction<T,P,D> applyBestSplit(const BoxStateAbstraction<T,P,D> &element) const;
     BoxStateAbstraction<T,P,D> applySummary(const BoxStateAbstraction<T,P,D> &element) const;
     BoxStateAbstraction<T,P,D> applyFilter(const BoxStateAbstraction<T,P,D> &element) const;
@@ -148,19 +151,19 @@ BoxStateAbstraction<T,P,D> BoxStateDomainTemplate<T,P,D>::meetPhiIsNotBottom(con
 }
 
 template <typename T, typename P, typename D>
-BoxStateAbstraction<T,P,D> BoxStateDomainTemplate<T,P,D>::meetXModelsPhi(const BoxStateAbstraction<T,P,D> &element) const {
+BoxStateAbstraction<T,P,D> BoxStateDomainTemplate<T,P,D>::meetXModelsPhi(const BoxStateAbstraction<T,P,D> &element, const FeatureVector &x) const {
     return BoxStateAbstraction<T,P,D> {
         element.training_set_abstraction,
-        predicate_domain->meetXModelsPhi(element.predicate_abstraction),
+        predicate_domain->meetXModelsPhi(element.predicate_abstraction, x),
         element.posterior_distribution_abstraction
     };
 }
 
 template <typename T, typename P, typename D>
-BoxStateAbstraction<T,P,D> BoxStateDomainTemplate<T,P,D>::meetXNotModelsPhi(const BoxStateAbstraction<T,P,D> &element) const {
+BoxStateAbstraction<T,P,D> BoxStateDomainTemplate<T,P,D>::meetXNotModelsPhi(const BoxStateAbstraction<T,P,D> &element, const FeatureVector &x) const {
     return BoxStateAbstraction<T,P,D> {
         element.training_set_abstraction,
-        predicate_domain->meetXNotModelsPhi(element.predicate_abstraction),
+        predicate_domain->meetXNotModelsPhi(element.predicate_abstraction, x),
         element.posterior_distribution_abstraction
     };
 }

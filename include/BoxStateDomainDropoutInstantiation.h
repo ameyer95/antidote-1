@@ -66,16 +66,11 @@ public:
 
 
 class PredicateSetDomain : public PredicateDomainTemplate<PredicateAbstraction> {
-private:
-    FeatureVector x; // The fixed input to the program
-
 public:
-    PredicateSetDomain(FeatureVector x) { this->x = x; }
-
     PredicateAbstraction meetPhiIsBottom(const PredicateAbstraction &element) const;
     PredicateAbstraction meetPhiIsNotBottom(const PredicateAbstraction &element) const;
-    PredicateAbstraction meetXModelsPhi(const PredicateAbstraction &element) const;
-    PredicateAbstraction meetXNotModelsPhi(const PredicateAbstraction &element) const;
+    PredicateAbstraction meetXModelsPhi(const PredicateAbstraction &element, const FeatureVector &x) const;
+    PredicateAbstraction meetXNotModelsPhi(const PredicateAbstraction &element, const FeatureVector &x) const;
 
     bool isBottomElement(const PredicateAbstraction &element) const;
     PredicateAbstraction binary_join(const PredicateAbstraction &e1, const PredicateAbstraction &e2) const;
@@ -96,6 +91,8 @@ public:
 
 class BoxDropoutDomain : public BoxStateDomainTemplate<TrainingReferencesWithDropout, PredicateAbstraction, PosteriorDistributionAbstraction> {
 public:
+    using BoxStateDomainTemplate::BoxStateDomainTemplate; // Inheret the constructor
+
     PredicateAbstraction bestSplit(const TrainingReferencesWithDropout &training_set_abstraction) const;
     TrainingReferencesWithDropout filter(const TrainingReferencesWithDropout &training_set_abstraction, const PredicateAbstraction &predicate_abstraction) const;
     TrainingReferencesWithDropout filterNegated(const TrainingReferencesWithDropout &training_set_abstraction, const PredicateAbstraction &predicate_abstraction) const;

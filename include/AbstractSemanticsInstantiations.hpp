@@ -8,5 +8,12 @@
  */
 
 #include "AbstractSemanticsTemplate.h"
+#include "BoxStateDomainDropoutInstantiation.h"
+
+// Forward-declare the types to get code generation
+template class AbstractSemanticsTemplate<BoxDropoutDomain::BoxStateAbstractionType>;
+
+// Give them nicer names
+typedef AbstractSemanticsTemplate<BoxDropoutDomain::BoxStateAbstractionType> BoxDropoutSemantics;
 
 #endif

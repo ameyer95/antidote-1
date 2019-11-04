@@ -176,7 +176,7 @@ PredicateAbstraction PredicateSetDomain::meetPhiIsNotBottom(const PredicateAbstr
     return phis;
 }
 
-PredicateAbstraction PredicateSetDomain::meetXModelsPhi(const PredicateAbstraction &element) const {
+PredicateAbstraction PredicateSetDomain::meetXModelsPhi(const PredicateAbstraction &element, const FeatureVector &x) const {
     if(isBottomElement(element)) {
         return element;
     }
@@ -192,7 +192,7 @@ PredicateAbstraction PredicateSetDomain::meetXModelsPhi(const PredicateAbstracti
     return phis;
 }
 
-PredicateAbstraction PredicateSetDomain::meetXNotModelsPhi(const PredicateAbstraction &element) const {
+PredicateAbstraction PredicateSetDomain::meetXNotModelsPhi(const PredicateAbstraction &element, const FeatureVector &x) const {
     if(isBottomElement(element)) {
         return element;
     }
@@ -261,13 +261,6 @@ bool couldBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
 bool mustBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
     return std::accumulate(counts.counts.begin(), counts.counts.end(), 0) == 0;
 }
-
-// And a wrapper for SymbolicPredicate::hash so we can conveniently use std::unordered_map
-struct hash_SymbolicPredicate {
-    size_t operator()(const SymbolicPredicate &p) const {
-        return p.hash();
-    }
-};
 
 PredicateAbstraction BoxDropoutDomain::bestSplit(const TrainingReferencesWithDropout &training_set_abstraction) const {
     std::list<SymbolicPredicate> candidates = training_set_abstraction.gatherPredicates();
