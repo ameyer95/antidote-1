@@ -11,6 +11,7 @@
  */
 
 #include "Feature.hpp"
+#include <functional> // for std::hash
 #include <optional>
 
 
@@ -27,6 +28,10 @@ public:
     SymbolicPredicate(int feature_index, float threshold_lb, float threshold_ub); // Sets feature_Type = FeatureType::NUMERIC
 
     std::optional<bool> evaluate(const FeatureVector &x) const; // Does not check bounds
+
+    // Our abstract transformers would like to be able to hash these objects, etc
+    bool operator ==(const SymbolicPredicate &right) const;
+    size_t hash() const;
 };
 
 
@@ -63,6 +68,32 @@ inline std::optional<bool> SymbolicPredicate::evaluate(const FeatureVector &x) c
             // XXX this shouldn't happen---it's here to suppress a warning.
             // If adding new FeatureTypes, make sure to add remaining cases.
             return false;
+    }
+}
+
+bool SymbolicPredicate::operator ==(const SymbolicPredicate &right) const {
+    if(this->feature_index != right.feature_index) {
+        return false;
+    }
+    if(this->feature_type != right.feature_type) {
+        return false;
+    }
+    if(this->feature_type == FeatureType::NUMERIC) {
+        if(this->threshold_lb != right.threshold_lb ||
+                this->threshold_ub != right.threshold_ub) {
+            return false;
+        }
+    }
+    return true;
+}
+
+size_t SymbolicPredicate::hash() const {
+    if(feature_type == FeatureType::NUMERIC) {
+        return std::hash<unsigned int>{}(feature_index)
+            ^ std::hash<float>{}(threshold_lb)
+            ^ std::hash<float>{}(threshold_ub);
+    } else { // XXX assuming FeatureType::BOOLEAN
+        return std::hash<unsigned int>{}(feature_index);
     }
 }
 

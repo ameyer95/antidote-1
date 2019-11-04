@@ -77,3 +77,11 @@ double jointImpurity(const vector<int> &counts1, const vector<int> &counts2) {
     int total2 = accumulate(counts2.begin(), counts2.end(), 0);
     return total1 * impurity(counts1) + total2 * impurity(counts2);
 }
+
+CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<int> &counts, int num_dropout) {
+    // TODO
+}
+
+Interval<double> jointImpurity(const std::vector<int> &counts1, int num_dropout1, const std::vector<int> &counts2, int num_dropout2) {
+    // TODO
+}
