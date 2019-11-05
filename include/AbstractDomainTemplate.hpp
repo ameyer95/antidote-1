@@ -14,6 +14,8 @@
 template <typename A>
 class AbstractDomainTemplate {
 public:
+    typedef A AbstractionType; // Convenient access when A becomes quite complicated
+
     virtual bool isBottomElement(const A &element) const = 0;
 
     // We must give them different names; overriding one in a subclass

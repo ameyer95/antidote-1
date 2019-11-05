@@ -1,33 +1,40 @@
 #include "MNISTExperiment.h"
-#include "AbstractSemantics.h"
+#include "AbstractSemanticsInstantiations.hpp"
 #include "ASTNode.h"
+#include "BoxBoundedDisjunctsDomainDropoutInstantiation.h"
+#include "BoxDisjunctsDomainDropoutInstantiation.h"
+#include "BoxStateDomainDropoutInstantiation.h"
 #include "ConcreteSemantics.h"
-#include "Interval.h"
+#include "Feature.hpp"
 #include "MNIST.h"
-#include "SimplestBoxDisjunctsInstantiation.h"
-#include "SimplestBoxInstantiation.h"
 #include <string>
 #include <utility>
 #include <vector>
 using namespace std;
 
 // Uses 128 as the binary threshold (each pixel is a byte)
-inline vector<bool> Image_to_Input(const Image &image) {
-    vector<bool> ret(MNIST_IMAGE_SIZE);
+inline FeatureVector Image_to_Input(const Image &image) {
+    FeatureVector ret(MNIST_IMAGE_SIZE);
     for(int i = 0; i < MNIST_IMAGE_SIZE; i++) {
         ret[i] = *(image + i) > 128;
     }
     return ret;
 }
 
-// The classes pair assigns the boolean labels first -> 0 and second -> 1
-vector<BooleanXYPair>* simplified(const RawMNIST &mnist, pair<int, int> classes = make_pair(1, 7)) {
-    vector<BooleanXYPair> *ret = new vector<BooleanXYPair>();
+// The classes pair assigns the labels first -> 0 and second -> 1
+DataSet* simplified(const RawMNIST &mnist, pair<int, int> classes = make_pair(1, 7)) {
+    DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
+                                 2,
+                                 vector<DataRow>(0) };
+
     for(unsigned int i = 0; i < mnist.size(); i++) {
         if(mnist[i].second == classes.first || mnist[i].second == classes.second) {
-            ret->push_back(make_pair(Image_to_Input(mnist[i].first), mnist[i].second == classes.second));
+            DataRow temp = { Image_to_Input(mnist[i].first),
+                             (mnist[i].second == classes.second ? 1 : 0) };
+            ret->rows.push_back(temp);
         }
     }
+
     return ret;
 }
 
@@ -35,22 +42,11 @@ MNISTExperiment::MNISTExperiment(string mnistPrefix) {
     // The following allocate and populate this->{mnist_training, mnist_test, predicates}
     // (Accordingly, that's what the destructor cleans up)
     loadMNIST(mnistPrefix);
-    predicates = createPredicates();
 }
 
 MNISTExperiment::~MNISTExperiment() {
     delete mnist_training;
     delete mnist_test;
-    delete predicates;
-}
-
-vector<BitVectorPredicate>* MNISTExperiment::createPredicates() {
-    vector<BitVectorPredicate> *ret = new vector<BitVectorPredicate>();
-    ret->reserve(MNIST_IMAGE_SIZE);
-    for(int i = 0; i < MNIST_IMAGE_SIZE; i++) {
-        ret->push_back(BitVectorPredicate(i));
-    }
-    return ret;
 }
 
 void MNISTExperiment::loadMNIST(string mnistPrefix) {
@@ -60,75 +56,83 @@ void MNISTExperiment::loadMNIST(string mnistPrefix) {
     mnist_test = simplified(raw_mnist_test);
 }
 
-double MNISTExperiment::run_concrete(int depth, int test_index) {
-    ProgramNode* program = buildTree(depth);
-    // By putting all of the following on the stack, we don't have to do heap deallocation
+CategoricalDistribution<double> MNISTExperiment::run_concrete(int depth, int test_index) {
+    ProgramNode *program = buildTree(depth);
     ConcreteSemantics sem;
-    DataReferences<BooleanXYPair> training_references(mnist_training);
-    BooleanDataSet training_dataset(&training_references);
-    double ret = sem.execute((*mnist_test)[test_index].first, &training_dataset, predicates, program);
+    auto ret = sem.execute(mnist_test->rows[test_index].x, mnist_training, program);
     delete program;
     return ret;
 }
 
-Interval<double> MNISTExperiment::run_abstract(int depth, int test_index, int num_dropout) {
-    ProgramNode* program = buildTree(depth);
-    vector<bool> test_input = (*mnist_test)[test_index].first;
-    SimplestBoxDomain box_domain(test_input); // XXX there is probably a more proper way to pass around this information, especially since the predicatedomain's top element computation then uses test_input.size()
-    AbstractSemantics<SimplestBoxDomain, SimplestBoxAbstraction, vector<bool>> sem(&box_domain);
-    DataReferences<BooleanXYPair> training_references(mnist_training);
-    SimplestBoxAbstraction initial_state(BooleanDropoutSet(training_references, num_dropout),
-                                         BitvectorPredicateAbstraction({0,{}}), // XXX any non-bot value, ideally top?
-                                         BernoulliParameterAbstraction(Interval<double>(0, 1))); // XXX any non-bot value, ideally top?
-    // the ite nodes check if their conditional meet is not-bottom before they execute,
-    // hence why we don't want any portion of the state tuple to be a bottom element
-    // given the logic of BoxStateAbstraction's constructor's bottom_element computation
-    SimplestBoxAbstraction ret = sem.execute(test_input, initial_state, program);
+CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract(int depth, int test_index, int num_dropout) {
+    ProgramNode *program = buildTree(depth);
+    FeatureVector test_input = mnist_test->rows[test_index].x;
+    TrainingSetDropoutDomain L_T;
+    PredicateSetDomain L_Phi;
+    PosteriorDistributionIntervalDomain L_D;
+    BoxDropoutDomain state_domain(&L_T, &L_Phi, &L_D);
+    BoxDropoutSemantics sem(&state_domain);
+    DataReferences training_references(mnist_training);
+    BoxDropoutDomain::BoxStateAbstractionType initial_state = {
+        TrainingReferencesWithDropout(training_references, num_dropout),
+        PredicateAbstraction(1), // XXX any non-bot value, ideally top?
+        PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
+    };
+    auto ret = sem.execute(test_input, initial_state, program);
     delete program;
-    return ret.posterior_distribution_abstraction.interval;
+    return ret.posterior_distribution_abstraction;
 }
 
-Interval<double> MNISTExperiment::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
-    ProgramNode* program = buildTree(depth);
-    vector<bool> test_input = (*mnist_test)[test_index].first;
-    SimplestBoxDomain box_domain(test_input); // XXX there is probably a more proper way to pass around this information, especially since the predicatedomain's top element computation then uses test_input.size()
-    SimplestBoxDisjunctsDomain box_disjuncts_domain(&box_domain);
-    AbstractSemantics<SimplestBoxDisjunctsDomain, SimplestBoxDisjunctsAbstraction, vector<bool>> sem(&box_disjuncts_domain);
-    DataReferences<BooleanXYPair> training_references(mnist_training);
-    SimplestBoxAbstraction initial_box(BooleanDropoutSet(training_references, num_dropout),
-                                       BitvectorPredicateAbstraction({0,{}}), // XXX any non-bot value, ideally top?
-                                       BernoulliParameterAbstraction(Interval<double>(0, 1))); // XXX any non-bot value, ideally top?
-    // the ite nodes check if their conditional meet is not-bottom before they execute,
-    // hence why we don't want any portion of the state tuple to be a bottom element
-    // given the logic of BoxStateAbstraction's constructor's bottom_element computation
-    SimplestBoxDisjunctsAbstraction initial_state({initial_box});
-    SimplestBoxDisjunctsAbstraction ret = sem.execute(test_input, initial_state, program);
+
+CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
+    ProgramNode *program = buildTree(depth);
+    FeatureVector test_input = mnist_test->rows[test_index].x;
+    TrainingSetDropoutDomain L_T;
+    PredicateSetDomain L_Phi;
+    PosteriorDistributionIntervalDomain L_D;
+    BoxDropoutDomain box_domain(&L_T, &L_Phi, &L_D);
+    BoxDisjunctsDomainDropoutInstantiation state_domain(&box_domain);
+    BoxDisjunctsDropoutSemantics sem(&state_domain);
+    DataReferences training_references(mnist_training);
+    BoxDropoutDomain::BoxStateAbstractionType initial_box = {
+        TrainingReferencesWithDropout(training_references, num_dropout),
+        PredicateAbstraction(1), // XXX any non-bot value, ideally top?
+        PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
+    };
+    BoxDisjunctsDomainDropoutInstantiation::AbstractionType initial_state = {initial_box};
+    auto ret = sem.execute(test_input, initial_state, program);
     delete program;
-    vector<BernoulliParameterAbstraction> posteriors;
-    for(vector<SimplestBoxAbstraction>::const_iterator i = ret.disjuncts.begin(); i != ret.disjuncts.end(); i++) {
+    std::vector<CategoricalDistribution<Interval<double>>> posteriors;
+    for(auto i = ret.cbegin(); i != ret.cend(); i++) {
         posteriors.push_back(i->posterior_distribution_abstraction);
     }
-    return box_domain.posterior_distribution_domain.join(posteriors).interval;
+    return box_domain.posterior_distribution_domain->join(posteriors);
 }
 
-Interval<double> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const string &merge_mode) {
-    ProgramNode* program = buildTree(depth);
-    vector<bool> test_input = (*mnist_test)[test_index].first;
-    SimplestBoxDomain box_domain(test_input);
-    typedef SimplestBoxBoundedDisjunctsDomain::MergeMode MMode;
+CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const std::string &merge_mode) {
+    ProgramNode *program = buildTree(depth);
+    FeatureVector test_input = mnist_test->rows[test_index].x;
+    TrainingSetDropoutDomain L_T;
+    PredicateSetDomain L_Phi;
+    PosteriorDistributionIntervalDomain L_D;
+    BoxDropoutDomain box_domain(&L_T, &L_Phi, &L_D);
+    BoxDisjunctsDomainDropoutInstantiation V_domain(&box_domain);
+    typedef BoxBoundedDisjunctsDomainDropoutInstantiation::MergeMode MMode;
     MMode merge_mode_enum = (merge_mode == "optimal" ? MMode::OPTIMAL : MMode::GREEDY);
-    SimplestBoxBoundedDisjunctsDomain box_bounded_disjuncts_domain(&box_domain, disjunct_bound, merge_mode_enum);
-    AbstractSemantics<SimplestBoxBoundedDisjunctsDomain, SimplestBoxDisjunctsAbstraction, vector<bool>> sem(&box_bounded_disjuncts_domain);
-    DataReferences<BooleanXYPair> training_references(mnist_training);
-    SimplestBoxAbstraction initial_box(BooleanDropoutSet(training_references, num_dropout),
-                                       BitvectorPredicateAbstraction({0,{}}),
-                                       BernoulliParameterAbstraction(Interval<double>(0, 1)));
-    SimplestBoxDisjunctsAbstraction initial_state({initial_box});
-    SimplestBoxDisjunctsAbstraction ret = sem.execute(test_input, initial_state, program);
+    BoxBoundedDisjunctsDomainDropoutInstantiation state_domain(&V_domain, disjunct_bound, merge_mode_enum);
+    BoxDisjunctsDropoutSemantics sem(&state_domain);
+    DataReferences training_references(mnist_training);
+    BoxDropoutDomain::BoxStateAbstractionType initial_box = {
+        TrainingReferencesWithDropout(training_references, num_dropout),
+        PredicateAbstraction(1), // XXX any non-bot value, ideally top?
+        PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
+    };
+    BoxDisjunctsDomainDropoutInstantiation::AbstractionType initial_state = {initial_box};
+    auto ret = sem.execute(test_input, initial_state, program);
     delete program;
-    vector<BernoulliParameterAbstraction> posteriors;
-    for(vector<SimplestBoxAbstraction>::const_iterator i = ret.disjuncts.begin(); i != ret.disjuncts.end(); i++) {
+    std::vector<CategoricalDistribution<Interval<double>>> posteriors;
+    for(auto i = ret.cbegin(); i != ret.cend(); i++) {
         posteriors.push_back(i->posterior_distribution_abstraction);
     }
-    return box_domain.posterior_distribution_domain.join(posteriors).interval;
+    return box_domain.posterior_distribution_domain->join(posteriors);
 }

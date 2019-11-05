@@ -3,7 +3,6 @@
 #include "MNISTExperiment.h"
 #include "MNIST.h"
 #include "PrettyPrinter.h"
-#include <cstdint>
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -121,7 +120,7 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
 inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int depth, int index) {
     if(index < e.test_size()) {
         if(params.use_abstract) {
-            for(vector<int>::const_iterator n = params.num_dropouts.begin(); n != params.num_dropouts.end(); n++) {
+            for(auto n = params.num_dropouts.cbegin(); n != params.num_dropouts.cend(); n++) {
                 cout << "running a depth-" << depth << " experiment using <T," << *n << "> ";
                 if(params.with_disjuncts) {
                     if(params.disjunct_bound.has_value()) {
@@ -131,7 +130,7 @@ inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int
                     }
                 }
                 cout << "on test " << index << endl;
-                Interval<double> ret;
+                CategoricalDistribution<Interval<double>> ret;
                 if(!params.with_disjuncts) {
                     ret = e.run_abstract(depth, index, *n);
                 } else {
@@ -141,12 +140,13 @@ inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int
                         ret = e.run_abstract_disjuncts(depth, index, *n);
                     }
                 }
-                cout << "result: " << to_string(ret) << " (ground truth: " << e.groundTruth(index) << ")" << endl;
+                cout << "result: {0:" << to_string(ret[0]) << ", 1:" << to_string(ret[1])
+                    << "} (ground truth: " << e.groundTruth(index) << ")" << endl;
             }
         } else {
             cout << "running a depth-" << depth << " experiment using T on test " << index << endl;
-            double ret = e.run_concrete(depth, index);
-            cout << "result: " << ret << " (ground truth: " << e.groundTruth(index) << ")" << endl;
+            CategoricalDistribution<double> ret = e.run_concrete(depth, index);
+            cout << "result: {0:" << ret[0] << ", 1:" << ret[1] << "} (ground truth: " << e.groundTruth(index) << ")" << endl;
         }
     } else {
         cout << "skipping test " << index << " (out of bounds)" << endl;
@@ -165,45 +165,5 @@ void test_MNIST(const RunParams &params) {
                 perform_single_test(params, e, *depth, *i);
             }
         }
-    }
-}
-
-
-/**
- * (Now-)unused prototype code
- */
-
-void test_build_ast(int depth) {
-    ProgramNode *root = buildTree(depth);
-    PrettyPrinter p = PrettyPrinter();
-    cout << "Depth " << depth << endl;
-    root->accept(p);
-    cout << p.getString() << endl;
-}
-
-void test_build_asts() {
-    for(int i = 0; i < 3; i++) {
-        test_build_ast(i);
-    }
-}
-
-void print_digit(uint8_t *start) {
-    for(int row = 0; row < 28; row++) {
-        for(int col = 0; col < 28; col++) {
-            uint8_t pixel = *(start + 28*row + col);
-            cout << (pixel < 128 ? " " : "0");
-        }
-        cout << endl;
-    }
-}
-
-void test_load_MNIST() {
-    pair<LabelFile, ImageFile> training, test;
-    training = MNIST_readTrainingSet("data/");
-    test = MNIST_readTestSet("data/");
-    for(int i = 0; i < 10; i++) {
-        cout << "This is supposedly a " << (int)training.first.labels[i] << endl;
-        print_digit(training.second.pixels + i*28*28*sizeof(uint8_t));
-        cout << "==================================================" << endl << endl;
     }
 }
