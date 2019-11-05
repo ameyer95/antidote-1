@@ -240,6 +240,11 @@ bool PosteriorDistributionIntervalDomain::isBottomElement(const PosteriorDistrib
 }
 
 PosteriorDistributionAbstraction PosteriorDistributionIntervalDomain::binary_join(const PosteriorDistributionAbstraction &e1, const PosteriorDistributionAbstraction &e2) const {
+    if(isBottomElement(e1)) {
+        return e2;
+    } else if(isBottomElement(e2)) {
+        return e1;
+    }
     // XXX strong assumption (invariant?) that the two categorical dist's have the same size
     PosteriorDistributionAbstraction ret(e1.size());
     for(unsigned int i = 0; i < e1.size(); i++) {
