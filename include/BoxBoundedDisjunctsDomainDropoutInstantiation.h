@@ -7,7 +7,7 @@
 
 class BoxBoundedDisjunctsDomainDropoutInstantiation : public BoxBoundedDisjunctsDomainTemplate<TrainingReferencesWithDropout, PredicateAbstraction, PosteriorDistributionAbstraction, double> {
 public:
-    using BoxBoundedDisjunctsDomainTemplate::BoxBoundedDisjunctsDomainTemplate; // Inheret constructors
+    using BoxBoundedDisjunctsDomainTemplate::BoxBoundedDisjunctsDomainTemplate; // Inherit constructors
     double joinPrecisionLoss(const Types::Single &e1, const Types::Single &e2) const;
 };
 

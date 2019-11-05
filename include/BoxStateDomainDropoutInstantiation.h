@@ -91,7 +91,7 @@ public:
 
 class BoxDropoutDomain : public BoxStateDomainTemplate<TrainingReferencesWithDropout, PredicateAbstraction, PosteriorDistributionAbstraction> {
 public:
-    using BoxStateDomainTemplate::BoxStateDomainTemplate; // Inheret the constructor
+    using BoxStateDomainTemplate::BoxStateDomainTemplate; // Inherit the constructor
 
     PredicateAbstraction bestSplit(const TrainingReferencesWithDropout &training_set_abstraction) const;
     TrainingReferencesWithDropout filter(const TrainingReferencesWithDropout &training_set_abstraction, const PredicateAbstraction &predicate_abstraction) const;

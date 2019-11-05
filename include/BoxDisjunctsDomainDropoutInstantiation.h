@@ -9,7 +9,7 @@
 
 class BoxDisjunctsDomainDropoutInstantiation : public BoxDisjunctsDomainTemplate<TrainingReferencesWithDropout, PredicateAbstraction, PosteriorDistributionAbstraction> {
 public:
-    using BoxDisjunctsDomainTemplate::BoxDisjunctsDomainTemplate; // Inheret constructor
+    using BoxDisjunctsDomainTemplate::BoxDisjunctsDomainTemplate; // Inherit constructor
 
     std::vector<std::pair<TrainingReferencesWithDropout, PredicateAbstraction>> filter(const TrainingReferencesWithDropout &training_set_abstraction, const PredicateAbstraction &predicate_abstraction) const;
     std::vector<std::pair<TrainingReferencesWithDropout, PredicateAbstraction>> filterNegated(const TrainingReferencesWithDropout &training_set_abstraction, const PredicateAbstraction &predicate_abstraction) const;
