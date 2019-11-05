@@ -1,7 +1,7 @@
 #ifndef BOXBOUNDEDDISJUNCTSDOMAINDROPOUTINSTANTIATION_H
 #define BOXBOUNDEDDISJUNCTSDOMAINDROPOUTINSTANTIATION_H
 
-#include "BoxBoundedDisjunctsDomainTemplate.h"
+#include "BoxBoundedDisjunctsDomainTemplate.hpp"
 #include "BoxStateDomainDropoutInstantiation.h"
 
 
