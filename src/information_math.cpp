@@ -66,8 +66,8 @@ CategoricalDistribution<double> estimateCategorical(const std::vector<int> &coun
 double impurity(const vector<int> &counts) {
     CategoricalDistribution<double> p = estimateCategorical(counts);
     double total = 0;
-    for(unsigned int i = 0; i < p.size(); i++) {
-        total += p[i] * (1 - p[i]);
+    for(auto i = p.cbegin(); i != p.cend(); i++) {
+        total += *i * (1 - *i);
     }
     return total;
 }
@@ -79,17 +79,14 @@ double jointImpurity(const vector<int> &counts1, const vector<int> &counts2) {
 }
 
 CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<int> &counts, int num_dropout) {
-    CategoricalDistribution <Interval<double>> ret(counts.size());
     int count_total = accumulate(counts.cbegin(), counts.cend(), 0);
     // When num_dropout >= count_total, anything is possible.
     // In the == case, this is because we assume estimating from an empty set is undefined behavior.
     if(count_total <= num_dropout) {
-        for(unsigned int i = 0; i < ret.size(); i++) {
-            ret[i] = Interval<double>(0, 1);
-        }
-        return ret;
+        return CategoricalDistribution<Interval<double>>(counts.size(), Interval<double>(0,1));
     }
 
+    CategoricalDistribution<Interval<double>> ret(counts.size());
     // We estimate each component individually.
     // Since this is effectively computing an average of a collection of 0s and 1s,
     // extremal behavior occurs either when maximally many 1s are removed
@@ -111,8 +108,8 @@ Interval<double> impurity(const std::vector<int> &counts, int num_dropout) {
     // TODO can be more precise
     CategoricalDistribution<Interval<double>> p = estimateCategorical(counts, num_dropout);
     Interval<double> total(0);
-    for(unsigned int i = 0; i < p.size(); i++) {
-        total = total + p[i] * (Interval<double>(1) - p[i]);
+    for(auto i = p.cbegin(); i != p.cend(); i++) {
+        total = total + (*i * (Interval<double>(1) - *i));
     }
     return total;
 }

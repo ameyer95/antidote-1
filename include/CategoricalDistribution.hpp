@@ -25,12 +25,13 @@
  * hiding ways to change size,
  * because there's otherwise no appropriately polymorphic tuple.
  */
-template<typename T>
+template <typename T>
 class CategoricalDistribution {
 private:
     std::vector<T> p; // Will be a fixed size, as determined by constructor.
 
 public:
+    CategoricalDistribution(unsigned int size, const T &default_value) { p = std::vector<T>(size, default_value); }
     // Initializes to size-many uninitialized elements:
     CategoricalDistribution(unsigned int size) { p = std::vector<T>(size); }
     CategoricalDistribution() {}
@@ -38,6 +39,14 @@ public:
     unsigned int size() const { return p.size(); }
     T& operator [](unsigned int i) { return p[i]; } // Note: no bounds check.
     const T& operator [](unsigned int i) const { return p[i]; }
+
+    // Wrap the iteration pattern too
+    typename std::vector<T>::iterator begin() { return p.begin(); }
+    typename std::vector<T>::iterator end() { return p.end(); }
+    typename std::vector<T>::const_iterator begin() const { return p.begin(); }
+    typename std::vector<T>::const_iterator end() const { return p.end(); }
+    typename std::vector<T>::const_iterator cbegin() const { return p.cbegin(); }
+    typename std::vector<T>::const_iterator cend() const { return p.cend(); }
 };
 
 
