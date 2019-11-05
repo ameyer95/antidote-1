@@ -1,10 +1,8 @@
 #include "MNISTExperiment.h"
 #include "AbstractSemanticsInstantiations.hpp"
 #include "ASTNode.h"
-#include "BoxBoundedDisjunctsDomainDropoutInstantiation.h"
-#include "BoxDisjunctsDomainDropoutInstantiation.h"
-#include "BoxStateDomainDropoutInstantiation.h"
 #include "ConcreteSemantics.h"
+#include "DropoutDomains.hpp"
 #include "Feature.hpp"
 #include "MNIST.h"
 #include <string>
@@ -66,12 +64,9 @@ CategoricalDistribution<double> MNISTExperiment::run_concrete(int depth, int tes
 
 CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract(int depth, int test_index, int num_dropout) {
     ProgramNode *program = buildTree(depth);
+    DropoutDomains d;
+    BoxDropoutSemantics sem(&d.box_domain);
     FeatureVector test_input = mnist_test->rows[test_index].x;
-    TrainingSetDropoutDomain L_T;
-    PredicateSetDomain L_Phi;
-    PosteriorDistributionIntervalDomain L_D;
-    BoxDropoutDomain state_domain(&L_T, &L_Phi, &L_D);
-    BoxDropoutSemantics sem(&state_domain);
     DataReferences training_references(mnist_training);
     BoxDropoutDomain::AbstractionType initial_state = {
         TrainingReferencesWithDropout(training_references, num_dropout),
@@ -86,13 +81,9 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract(int dept
 
 CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
     ProgramNode *program = buildTree(depth);
+    DropoutDomains d;
+    BoxDisjunctsDropoutSemantics sem(&d.disjuncts_domain);
     FeatureVector test_input = mnist_test->rows[test_index].x;
-    TrainingSetDropoutDomain L_T;
-    PredicateSetDomain L_Phi;
-    PosteriorDistributionIntervalDomain L_D;
-    BoxDropoutDomain box_domain(&L_T, &L_Phi, &L_D);
-    BoxDisjunctsDomainDropoutInstantiation state_domain(&box_domain);
-    BoxDisjunctsDropoutSemantics sem(&state_domain);
     DataReferences training_references(mnist_training);
     BoxDropoutDomain::AbstractionType initial_box = {
         TrainingReferencesWithDropout(training_references, num_dropout),
@@ -106,21 +97,18 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_disjunct
     for(auto i = ret.cbegin(); i != ret.cend(); i++) {
         posteriors.push_back(i->posterior_distribution_abstraction);
     }
-    return box_domain.posterior_distribution_domain->join(posteriors);
+    return d.D_domain.join(posteriors);
 }
 
 CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const std::string &merge_mode) {
     ProgramNode *program = buildTree(depth);
+    DropoutDomains d;
     FeatureVector test_input = mnist_test->rows[test_index].x;
-    TrainingSetDropoutDomain L_T;
-    PredicateSetDomain L_Phi;
-    PosteriorDistributionIntervalDomain L_D;
-    BoxDropoutDomain box_domain(&L_T, &L_Phi, &L_D);
-    BoxDisjunctsDomainDropoutInstantiation V_domain(&box_domain);
     typedef BoxBoundedDisjunctsDomainDropoutInstantiation::MergeMode MMode;
     MMode merge_mode_enum = (merge_mode == "optimal" ? MMode::OPTIMAL : MMode::GREEDY);
-    BoxBoundedDisjunctsDomainDropoutInstantiation state_domain(&V_domain, disjunct_bound, merge_mode_enum);
-    BoxDisjunctsDropoutSemantics sem(&state_domain);
+
+    d.bounded_disjuncts_domain.setMergeDetails(disjunct_bound, merge_mode_enum);
+    BoxDisjunctsDropoutSemantics sem(&d.bounded_disjuncts_domain);
     DataReferences training_references(mnist_training);
     BoxDropoutDomain::AbstractionType initial_box = {
         TrainingReferencesWithDropout(training_references, num_dropout),
@@ -134,5 +122,5 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_bounded_
     for(auto i = ret.cbegin(); i != ret.cend(); i++) {
         posteriors.push_back(i->posterior_distribution_abstraction);
     }
-    return box_domain.posterior_distribution_domain->join(posteriors);
+    return d.D_domain.join(posteriors);
 }
