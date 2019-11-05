@@ -73,7 +73,7 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract(int dept
     BoxDropoutDomain state_domain(&L_T, &L_Phi, &L_D);
     BoxDropoutSemantics sem(&state_domain);
     DataReferences training_references(mnist_training);
-    BoxDropoutDomain::BoxStateAbstractionType initial_state = {
+    BoxDropoutDomain::AbstractionType initial_state = {
         TrainingReferencesWithDropout(training_references, num_dropout),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
         PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
@@ -94,7 +94,7 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_disjunct
     BoxDisjunctsDomainDropoutInstantiation state_domain(&box_domain);
     BoxDisjunctsDropoutSemantics sem(&state_domain);
     DataReferences training_references(mnist_training);
-    BoxDropoutDomain::BoxStateAbstractionType initial_box = {
+    BoxDropoutDomain::AbstractionType initial_box = {
         TrainingReferencesWithDropout(training_references, num_dropout),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
         PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
@@ -122,7 +122,7 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_bounded_
     BoxBoundedDisjunctsDomainDropoutInstantiation state_domain(&V_domain, disjunct_bound, merge_mode_enum);
     BoxDisjunctsDropoutSemantics sem(&state_domain);
     DataReferences training_references(mnist_training);
-    BoxDropoutDomain::BoxStateAbstractionType initial_box = {
+    BoxDropoutDomain::AbstractionType initial_box = {
         TrainingReferencesWithDropout(training_references, num_dropout),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
         PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?

@@ -64,8 +64,6 @@ struct BoxStateAbstraction {
 template <typename T, typename P, typename D>
 class BoxStateDomainTemplate : public StateDomainTemplate<BoxStateAbstraction<T,P,D>> {
 public:
-    typedef BoxStateAbstraction<T,P,D> BoxStateAbstractionType;
-
     const TrainingSetDomainTemplate<T> *training_set_domain;
     const PredicateDomainTemplate<P> *predicate_domain;
     const PosteriorDistributionDomainTemplate<D> *posterior_distribution_domain;
