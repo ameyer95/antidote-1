@@ -4,54 +4,16 @@
 #include "ConcreteSemantics.h"
 #include "DropoutDomains.hpp"
 #include "Feature.hpp"
-#include "MNIST.h"
 #include <string>
 #include <utility>
 #include <vector>
 using namespace std;
 
-// Uses 128 as the binary threshold (each pixel is a byte)
-inline FeatureVector Image_to_Input(const Image &image) {
-    FeatureVector ret(MNIST_IMAGE_SIZE);
-    for(int i = 0; i < MNIST_IMAGE_SIZE; i++) {
-        ret[i] = *(image + i) > 128;
-    }
-    return ret;
-}
-
-// The classes pair assigns the labels first -> 0 and second -> 1
-DataSet* simplified(const RawMNIST &mnist, pair<int, int> classes = make_pair(1, 7)) {
-    DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
-                                 2,
-                                 vector<DataRow>(0) };
-
-    for(unsigned int i = 0; i < mnist.size(); i++) {
-        if(mnist[i].second == classes.first || mnist[i].second == classes.second) {
-            DataRow temp = { Image_to_Input(mnist[i].first),
-                             (mnist[i].second == classes.second ? 1 : 0) };
-            ret->rows.push_back(temp);
-        }
-    }
-
-    return ret;
-}
-
-MNISTExperiment::MNISTExperiment(string mnistPrefix) {
-    // The following allocate and populate this->{mnist_training, mnist_test, predicates}
-    // (Accordingly, that's what the destructor cleans up)
-    loadMNIST(mnistPrefix);
-}
-
-MNISTExperiment::~MNISTExperiment() {
-    delete mnist_training;
-    delete mnist_test;
-}
-
-void MNISTExperiment::loadMNIST(string mnistPrefix) {
-    RawMNIST raw_mnist_training(MNISTMode::TRAINING, mnistPrefix);
-    RawMNIST raw_mnist_test(MNISTMode::TEST, mnistPrefix);
-    mnist_training = simplified(raw_mnist_training);
-    mnist_test = simplified(raw_mnist_test);
+MNISTExperiment::MNISTExperiment(ExperimentDataWrangler *wrangler) {
+    this->wrangler = wrangler;
+    const ExperimentData *mnist = wrangler->fetch(ExperimentDataEnum::MNIST_BOOLEAN_1_7);
+    this->mnist_training = mnist->training;
+    this->mnist_test = mnist->test;
 }
 
 CategoricalDistribution<double> MNISTExperiment::run_concrete(int depth, int test_index) {
@@ -77,7 +39,6 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract(int dept
     delete program;
     return ret.posterior_distribution_abstraction;
 }
-
 
 CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
     ProgramNode *program = buildTree(depth);

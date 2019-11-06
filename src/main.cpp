@@ -1,13 +1,12 @@
 #include "ArgParse.h"
-#include "ASTNode.h"
+#include "ExperimentDataWrangler.h"
 #include "MNISTExperiment.h"
 #include "MNIST.h"
-#include "PrettyPrinter.h"
 #include <iostream>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 using namespace std;
 
@@ -16,7 +15,8 @@ struct RunParams {
     vector<int> depths;
     bool test_all; // When false, use only the indices in test_indices
     vector<int> test_indices;
-    string mnist_prefix;
+    string data_prefix;
+    string dataset; // Should be "mnist" or "iris" or ...
     bool use_abstract; // When false, use concrete semantics
     bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
     vector<int> num_dropouts; // For when use_abstract == true
@@ -33,6 +33,7 @@ void test_MNIST(const RunParams &params);
 int main(int argc, char **argv) {
     RunParams params;
     if(readParams(params, argc, argv)) {
+        // XXX TODO ignores params.dataset, effectively, since we're still MNIST hard-coded
         test_MNIST(params);
     }
     return 0;
@@ -50,24 +51,42 @@ void vectorizeIntStringSplit(vector<int> &items, const string &space_separated_l
     }
 }
 
+string setToString(const set<string> &options) {
+    string ret = "{";
+    for(auto i = options.cbegin(); i != options.cend(); i++) {
+        if(i == options.cbegin()) {
+            ret += *i;
+        } else {
+            ret += ", " + *i;
+        }
+    }
+    ret += "}";
+    return ret;
+}
+
 // In tandem with RunParams, defines the command-line flags
 bool readParams(RunParams &params, const int &argc, char ** const &argv) {
     ArgParse p;
     bool success;
 
+    // TODO access this information from some more-central location
+    const set<string> dataset_options = {"mnist", "iris", "cancer", "wine"};
+    const set<string> merge_options = {"greedy", "optimal"};
+
     p.createArgument("depth", "-d", 1, "Space-separated list of depths of the tree to be built");
     p.createArgument("test_all", "-T", 0, "Run on each element in the test set", true);
     p.createArgument("test_indices", "-t", 1, "Space-separated list of test indices", true);
-    p.createArgument("mnist_prefix", "-m", 1, "Path to MNIST datasets");
+    p.createArgument("dataset", "-f", 2, "Dataset information: (1) the name from one of " + setToString(dataset_options) + ", and (2) the path to the data folder");
     p.createArgument("use_abstract", "-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
     p.createArgument("use_disjuncts", "-V", 1, "Like -a, but with disjuncts", true);
-    p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) \"greedy\" or \"optimal\" to specify the merging strategy", true);
+    p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from " + setToString(merge_options), true);
     
     p.requireAtLeastOne({"test_all", "test_indices"});
     p.requireAtMostOne({"test_all", "test_indices"});
     p.requireAtMostOne({"use_abstract", "use_disjuncts"});
 
     p.requireTokenConstraint("disjunct_bound", 1, [](const std::string &value){ return value == "greedy" || value == "optimal"; }, "Second argument of -b must be either \"greedy\" or \"optimal\"");
+    p.requireTokenConstraint("dataset", 0, [](const std::string &v){ return v == "mnist" || v == "iris" || v == "cancer" || v == "wine"; }, "First argument of -f must be from " + setToString(dataset_options));
 
     p.parse(argc, argv);
 
@@ -78,7 +97,8 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
         if(!params.test_all) {
             vectorizeIntStringSplit(params.test_indices, p["test_indices"].tokens[0]);
         }
-        params.mnist_prefix = p["mnist_prefix"].tokens[0];
+        params.dataset = p["dataset"].tokens[0];
+        params.data_prefix = p["dataset"].tokens[1];
         params.use_abstract = p["use_abstract"].included || p["use_disjuncts"].included;
         if(p["use_abstract"].included) {
             vectorizeIntStringSplit(params.num_dropouts, p["use_abstract"].tokens[0]);
@@ -139,7 +159,8 @@ inline void perform_single_test(const RunParams &params, MNISTExperiment &e, int
 }
 
 void test_MNIST(const RunParams &params) {
-    MNISTExperiment e(params.mnist_prefix);
+    ExperimentDataWrangler wrangler(params.data_prefix);
+    MNISTExperiment e(&wrangler);
     for(vector<int>::const_iterator depth = params.depths.begin(); depth != params.depths.end(); depth++) {
         if(params.test_all) {
             for(int i = 0; i < e.test_size(); i++) {

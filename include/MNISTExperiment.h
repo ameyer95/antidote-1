@@ -3,6 +3,7 @@
 
 #include "CategoricalDistribution.hpp"
 #include "DataSet.hpp"
+#include "ExperimentDataWrangler.h"
 #include "Interval.h"
 #include <string>
 #include <vector>
@@ -13,11 +14,10 @@ private:
     const DataSet *mnist_training;
     const DataSet *mnist_test;
 
-    void loadMNIST(std::string mnistPrefix);
+    ExperimentDataWrangler *wrangler;
 
 public:
-    MNISTExperiment(std::string mnistPrefix);
-    ~MNISTExperiment();
+    MNISTExperiment(ExperimentDataWrangler *wrangler);
 
     int test_size() { return mnist_test->rows.size(); }
     int groundTruth(int test_index) const { return mnist_test->rows[test_index].y; }
