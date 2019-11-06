@@ -1,0 +1,6 @@
+# MNIST dataset files
+*ubyte
+
+# UCI files
+*.names
+*.data

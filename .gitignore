@@ -4,6 +4,3 @@ bin/
 
 # vim temporary files
 *.swp
-
-# MNIST dataset files
-data/*ubyte
