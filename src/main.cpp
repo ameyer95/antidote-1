@@ -52,52 +52,45 @@ void vectorizeIntStringSplit(vector<int> &items, const string &space_separated_l
 
 // In tandem with RunParams, defines the command-line flags
 bool readParams(RunParams &params, const int &argc, char ** const &argv) {
-    Argument *depth, *test_all, *test_indices, *mnist_prefix, *use_abstract, *use_disjuncts, *disjunct_bound;
     ArgParse p;
     bool success;
 
-    depth = p.createArgument("-d", 1, "Space-separated list of depths of the tree to be built");
-    test_all = p.createArgument("-T", 0, "Run on each element in the test set", true);
-    test_indices = p.createArgument("-t", 1, "Space-separated list of test indices", true);
-    mnist_prefix = p.createArgument("-m", 1, "Path to MNIST datasets");
-    use_abstract = p.createArgument("-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
-    use_disjuncts = p.createArgument("-V", 1, "Like -a, but with disjuncts", true);
-    disjunct_bound = p.createArgument("-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) \"greedy\" or \"optimal\" to specify the merging strategy", true);
+    p.createArgument("depth", "-d", 1, "Space-separated list of depths of the tree to be built");
+    p.createArgument("test_all", "-T", 0, "Run on each element in the test set", true);
+    p.createArgument("test_indices", "-t", 1, "Space-separated list of test indices", true);
+    p.createArgument("mnist_prefix", "-m", 1, "Path to MNIST datasets");
+    p.createArgument("use_abstract", "-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
+    p.createArgument("use_disjuncts", "-V", 1, "Like -a, but with disjuncts", true);
+    p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) \"greedy\" or \"optimal\" to specify the merging strategy", true);
     
+    p.requireAtLeastOne({"test_all", "test_indices"});
+    p.requireAtMostOne({"test_all", "test_indices"});
+    p.requireAtMostOne({"use_abstract", "use_disjuncts"});
+
+    p.requireTokenConstraint("disjunct_bound", 1, [](const std::string &value){ return value == "greedy" || value == "optimal"; }, "Second argument of -b must be either \"greedy\" or \"optimal\"");
+
     p.parse(argc, argv);
 
     if(!p.failure()) {
         success = true;
-        if(!test_all->included && !test_indices->included) {
-            cout << "Must specify test cases with -t or -T" << endl;
-            success = false;
-        } else if(use_abstract->included && use_disjuncts->included) {
-            cout << "Must specify only one of -a and -V" << endl;
-            success = false;
-        } else {
-            vectorizeIntStringSplit(params.depths, depth->tokens[0]);
-            params.test_all = test_all->included;
-            if(!params.test_all) {
-                vectorizeIntStringSplit(params.test_indices, test_indices->tokens[0]);
-            }
-            params.mnist_prefix = mnist_prefix->tokens[0];
-            params.use_abstract = use_abstract->included || use_disjuncts->included;
-            if(use_abstract->included) {
-                vectorizeIntStringSplit(params.num_dropouts, use_abstract->tokens[0]);
-                params.with_disjuncts = false;
-            } else if(use_disjuncts->included) {
-                vectorizeIntStringSplit(params.num_dropouts, use_disjuncts->tokens[0]);
-                params.with_disjuncts = true;
-                if(disjunct_bound->included) {
-                    params.disjunct_bound = stoi(disjunct_bound->tokens[0]);
-                    params.merge_mode = disjunct_bound->tokens[1];
-                    if(params.merge_mode != "greedy" && params.merge_mode != "optimal") {
-                        cout << "second argument of -b must be either \"greedy\" or \"optimal\"" << endl;
-                        success = false;
-                    }
-                } else {
-                    params.disjunct_bound = {};
-                }
+        vectorizeIntStringSplit(params.depths, p["depth"].tokens[0]);
+        params.test_all = p["test_all"].included;
+        if(!params.test_all) {
+            vectorizeIntStringSplit(params.test_indices, p["test_indices"].tokens[0]);
+        }
+        params.mnist_prefix = p["mnist_prefix"].tokens[0];
+        params.use_abstract = p["use_abstract"].included || p["use_disjuncts"].included;
+        if(p["use_abstract"].included) {
+            vectorizeIntStringSplit(params.num_dropouts, p["use_abstract"].tokens[0]);
+            params.with_disjuncts = false;
+        } else if(p["use_disjuncts"].included) {
+            vectorizeIntStringSplit(params.num_dropouts, p["use_disjuncts"].tokens[0]);
+            params.with_disjuncts = true;
+            if(p["disjunct_bound"].included) {
+                params.disjunct_bound = stoi(p["disjunct_bound"].tokens[0]);
+                params.merge_mode = p["disjunct_bound"].tokens[1];
+            } else {
+                params.disjunct_bound = {};
             }
         }
     } else {
@@ -106,14 +99,6 @@ bool readParams(RunParams &params, const int &argc, char ** const &argv) {
         success = false;
     }
 
-    // TODO make ArgParse maintain some kind of map to avoid this
-    delete depth;
-    delete test_all;
-    delete test_indices;
-    delete mnist_prefix;
-    delete use_abstract;
-    delete use_disjuncts;
-    delete disjunct_bound;
     return success;
 }
 
