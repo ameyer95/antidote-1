@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-O3 -std=c++17 -Wall
+CXXFLAGS=-O3 -std=c++17 -Wall -flto
 # Debugging flags (including the debugging macro for src/ASTNode.cpp)
 #CXXFLAGS=-g -O3 -std=c++17 -Wall -DDEBUG
 
