@@ -1,10 +1,38 @@
 #include "ExperimentDataWrangler.h"
 #include "Feature.hpp"
+#include <string>
 #include <vector>
 
 /**
  * Non-member auxiliary functions
  */
+
+inline std::string int_to_MNIST_label(int label) {
+    switch(label) {
+        case 0:
+            return "zero";
+        case 1:
+            return "one";
+        case 2:
+            return "two";
+        case 3:
+            return "three";
+        case 4:
+            return "four";
+        case 5:
+            return "five";
+        case 6:
+            return "six";
+        case 7:
+            return "seven";
+        case 8:
+            return "eight";
+        case 9:
+            return "nine";
+        default:
+            return "???"; // XXX shouldn't happen
+    }
+}
 
 // Uses 128 as the binary threshold (each pixel is a byte)
 inline FeatureVector Image_to_Input(const Image &image) {
@@ -61,6 +89,7 @@ ExperimentData* ExperimentDataWrangler::loadSimplifiedMNIST(const std::pair<int,
     ExperimentData *mnist = new ExperimentData;
     mnist->training = simplifiedMNIST(raw_mnist_training, classes);
     mnist->test = simplifiedMNIST(raw_mnist_test, classes);
+    mnist->class_labels = {int_to_MNIST_label(classes.first), int_to_MNIST_label(classes.second)};
     return mnist;
 }
 

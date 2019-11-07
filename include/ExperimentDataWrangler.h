@@ -30,7 +30,7 @@ enum class ExperimentDataEnum {
 struct ExperimentData {
     DataSet *training;
     DataSet *test;
-    // TODO include the int<->string for class labels
+    std::vector<std::string> class_labels;
 };
 
 
