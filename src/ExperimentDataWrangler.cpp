@@ -35,10 +35,18 @@ inline std::string int_to_MNIST_label(int label) {
 }
 
 // Uses 128 as the binary threshold (each pixel is a byte)
-inline FeatureVector Image_to_Input(const Image &image) {
+inline FeatureVector Image_to_bools(const Image &image) {
     FeatureVector ret(MNIST_IMAGE_SIZE);
     for(int i = 0; i < MNIST_IMAGE_SIZE; i++) {
         ret[i] = *(image + i) > 128;
+    }
+    return ret;
+}
+
+inline FeatureVector Image_to_floats(const Image &image) {
+    FeatureVector ret(MNIST_IMAGE_SIZE);
+    for(int i = 0; i < MNIST_IMAGE_SIZE; i++) {
+        ret[i] = (float)*(image + i);
     }
     return ret;
 }
@@ -51,7 +59,7 @@ DataSet* simplifiedMNIST(const RawMNIST &mnist, const std::pair<int, int> &class
 
     for(unsigned int i = 0; i < mnist.size(); i++) {
         if(mnist[i].second == classes.first || mnist[i].second == classes.second) {
-            DataRow temp = { Image_to_Input(mnist[i].first),
+            DataRow temp = { Image_to_bools(mnist[i].first),
                              (mnist[i].second == classes.second ? 1 : 0) };
             ret->rows.push_back(temp);
         }
@@ -79,6 +87,9 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
         case ExperimentDataEnum::MNIST_BOOLEAN_1_7:
             cache.insert(std::make_pair(dataset, loadSimplifiedMNIST(std::make_pair(1,7))));
             break;
+        case ExperimentDataEnum::MNIST:
+            cache.insert(std::make_pair(dataset, loadFullMNIST()));
+            break;
         // XXX TODO all the other cases
     }
 }
@@ -90,6 +101,30 @@ ExperimentData* ExperimentDataWrangler::loadSimplifiedMNIST(const std::pair<int,
     mnist->training = simplifiedMNIST(raw_mnist_training, classes);
     mnist->test = simplifiedMNIST(raw_mnist_test, classes);
     mnist->class_labels = {int_to_MNIST_label(classes.first), int_to_MNIST_label(classes.second)};
+    return mnist;
+}
+
+ExperimentData* ExperimentDataWrangler::loadFullMNIST() {
+    RawMNIST raw_mnist_training(MNISTMode::TRAINING, path_prefix);
+    RawMNIST raw_mnist_test(MNISTMode::TEST, path_prefix);
+    DataSet *mnist_training = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::NUMERIC),
+                                            10,
+                                            std::vector<DataRow>(raw_mnist_training.size()) };
+    DataSet *mnist_test = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::NUMERIC),
+                                        10,
+                                        std::vector<DataRow>(raw_mnist_test.size()) };
+    for(unsigned int i = 0; i < raw_mnist_training.size(); i++) {
+        mnist_training->rows[i] = { Image_to_floats(raw_mnist_training[i].first),
+                                    raw_mnist_training[i].second };
+    }
+    for(unsigned int i = 0; i < raw_mnist_test.size(); i++) {
+        mnist_test->rows[i] = { Image_to_floats(raw_mnist_training[i].first),
+                                raw_mnist_test[i].second };
+    }
+    ExperimentData *mnist = new ExperimentData { mnist_training, mnist_test, std::vector<std::string>(10) };
+    for(int i = 0; i < 10; i++) {
+        mnist->class_labels[i] = int_to_MNIST_label(i);
+    }
     return mnist;
 }
 

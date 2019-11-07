@@ -1,6 +1,7 @@
 #ifndef EXPERIMENTDATAWRANGLER_H
 #define EXPERIMENTDATAWRANGLER_H
 
+#include "CommonEnums.h"
 #include "DataSet.hpp"
 #include "MNIST.h"
 #include "UCI.h"
@@ -17,15 +18,6 @@
  *     - loads from any of the different dataset sources
  */
 
-// Experiment code can request to fetch a dataset from options in the following enum.
-enum class ExperimentDataEnum {
-    MNIST_BOOLEAN_1_7,
-    MNIST,
-    UCI_IRIS,
-    UCI_CANCER,
-    UCI_WINE,
-};
-
 // Fetches return this structure. Note that they still need a DataReferences wrapper.
 struct ExperimentData {
     DataSet *training;
@@ -41,6 +33,7 @@ private:
 
     void loadData(const ExperimentDataEnum &dataset);
     ExperimentData* loadSimplifiedMNIST(const std::pair<int, int> &classes);
+    ExperimentData* loadFullMNIST();
 
 public:
     ExperimentDataWrangler(const std::string &path_prefix);

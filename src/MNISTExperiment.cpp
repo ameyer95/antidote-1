@@ -9,11 +9,9 @@
 #include <vector>
 using namespace std;
 
-MNISTExperiment::MNISTExperiment(ExperimentDataWrangler *wrangler) {
-    this->wrangler = wrangler;
-    const ExperimentData *mnist = wrangler->fetch(ExperimentDataEnum::MNIST_BOOLEAN_1_7);
-    this->mnist_training = mnist->training;
-    this->mnist_test = mnist->test;
+MNISTExperiment::MNISTExperiment(const DataSet *mnist_training, const DataSet *mnist_test) {
+    this->mnist_training = mnist_training;
+    this->mnist_test = mnist_test;
 }
 
 CategoricalDistribution<double> MNISTExperiment::run_concrete(int depth, int test_index) {
@@ -61,14 +59,12 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_disjunct
     return d.D_domain.join(posteriors);
 }
 
-CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const std::string &merge_mode) {
+CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const DisjunctsMergeMode &merge_mode) {
     ProgramNode *program = buildTree(depth);
     DropoutDomains d;
     FeatureVector test_input = mnist_test->rows[test_index].x;
-    typedef BoxBoundedDisjunctsDomainDropoutInstantiation::MergeMode MMode;
-    MMode merge_mode_enum = (merge_mode == "optimal" ? MMode::OPTIMAL : MMode::GREEDY);
 
-    d.bounded_disjuncts_domain.setMergeDetails(disjunct_bound, merge_mode_enum);
+    d.bounded_disjuncts_domain.setMergeDetails(disjunct_bound, merge_mode);
     BoxDisjunctsDropoutSemantics sem(&d.bounded_disjuncts_domain);
     DataReferences training_references(mnist_training);
     BoxDropoutDomain::AbstractionType initial_box = {

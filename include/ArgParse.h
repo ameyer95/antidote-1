@@ -2,6 +2,7 @@
 #define ARGPARSE_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -29,10 +30,16 @@ private:
         bool (*fptr)(const std::string &value);
         std::string failure_message;
     };
+    struct TokenInSetConstraint {
+        std::string id;
+        int token_index;
+        std::set<std::string> values;
+    };
     std::map<const std::string, Argument> arguments;
     std::vector<std::vector<std::string>> at_most_one_constraints;
     std::vector<std::vector<std::string>> at_least_one_constraints;
     std::vector<TokenConstraint> token_constraints;
+    std::vector<TokenInSetConstraint> token_set_constraints;
     bool fail_flag;
     std::string error_message;
 
@@ -49,6 +56,7 @@ public:
     void requireAtMostOne(const std::vector<std::string> &ids) { at_most_one_constraints.push_back(ids); }
     void requireAtLeastOne(const std::vector<std::string> &ids) { at_least_one_constraints.push_back(ids); }
     void requireTokenConstraint(const std::string &id, int token_index, bool (*fptr)(const std::string &value), const std::string &failure_message);
+    void requireTokenInSet(const std::string &id, int token_index, const std::set<std::string> &values);
 
     const Argument& operator[](const std::string &id) const { return arguments.at(id); }
     Argument& operator[](const std::string &id) { return arguments[id]; }

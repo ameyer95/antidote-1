@@ -10,12 +10,13 @@
  */
 
 #include "DataSet.hpp"
+#include <vector>
 
 
 class DataReferences {
 private:
     const DataSet *data_set; // Does not handle deallocation
-    std::vector<int> indices;
+    std::vector<int> indices; // Invariant: this is kept sorted
 
 public:
     DataReferences() { data_set = NULL; indices = {}; }

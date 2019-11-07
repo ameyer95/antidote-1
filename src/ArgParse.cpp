@@ -81,11 +81,30 @@ void ArgParse::checkConstraints() {
             }
         }
     }
+    for(auto i = token_set_constraints.cbegin(); i != token_set_constraints.cend(); i++) {
+        if(arguments[i->id].included) {
+            std::string token = arguments[i->id].tokens[i->token_index];
+            if(none_of(i->values.cbegin(), i->values.cend(), [&token](const std::string &value){ return value == token; })) {
+                fail_flag = true;
+                error_message = "Token index " + to_string(i->token_index) + " of " + arguments[i->id].flag_name
+                    + " must be one of";
+                for(auto j = i->values.cbegin(); j != i->values.cend(); j++) {
+                    error_message += " " + *j;
+                }
+                return;
+            }
+        }
+    }
 }
 
 void ArgParse::requireTokenConstraint(const std::string &id, int token_index, bool (*fptr)(const std::string &value), const std::string &failure_message) {
     TokenConstraint temp = { id, token_index, fptr, failure_message };
     token_constraints.push_back(temp);
+}
+
+void ArgParse::requireTokenInSet(const std::string &id, int token_index, const std::set<std::string> &values) {
+    TokenInSetConstraint temp = { id, token_index, values };
+    token_set_constraints.push_back(temp);
 }
 
 void ArgParse::vectorizeTokens(vector<string> &tokens, const int &argc, char ** const &argv) {

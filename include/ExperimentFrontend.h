@@ -24,21 +24,18 @@ private:
         bool test_all; // When false, use only the indices in test_indices
         std::vector<int> test_indices;
         std::string data_prefix;
-        std::string dataset; // Should be "mnist" or "iris" or ...
+        ExperimentDataEnum dataset;
         bool use_abstract; // When false, use concrete semantics
         bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
         std::vector<int> num_dropouts; // For when use_abstract == true
         std::optional<int> disjunct_bound; // Optionally, has_value only when with_disjuncts is true
-        std::string merge_mode; // For when disjunct_bound.has_value(), takes value "greedy" or "optimal"
+        DisjunctsMergeMode merge_mode; // For when disjunct_bound.has_value()
     } params;
-
-    // TODO access this information from some more-central location
-    const std::set<std::string> dataset_options = {"mnist", "iris", "cancer", "wine"};
-    const std::set<std::string> merge_options = {"greedy", "optimal"};
 
     ArgParse p;
     MNISTExperiment *e;
     ExperimentDataWrangler *wrangler;
+    const ExperimentData *current_data; // the wrangler handles this deallocation
 
     void createCommandLineArguments();
     void performSingleTest(int depth, int test_index);

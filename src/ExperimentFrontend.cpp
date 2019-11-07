@@ -1,6 +1,8 @@
 #include "ExperimentFrontend.h"
 #include "CategoricalDistribution.hpp"
+#include "ExperimentDataWrangler.h"
 #include "Interval.h"
+#include "MNISTExperiment.h"
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -31,6 +33,31 @@ void vectorizeIntStringSplit(std::vector<int> &items, const std::string &space_s
     }
 }
 
+std::string formatDistribution(const CategoricalDistribution<Interval<double>> &dist, const std::vector<std::string> &labels) {
+    // XXX strong assumption that dist.size() == labels.size()
+    std::string ret = "{";
+    for(unsigned int i = 0; i < dist.size(); i++) {
+        if(i != 0) {
+            ret += ", ";
+        }
+        ret += labels[i] + ":" + to_string(dist[i]);
+    }
+    ret += "}";
+    return ret;
+}
+
+std::string formatDistribution(const CategoricalDistribution<double> &dist, const std::vector<std::string> &labels) {
+    std::string ret = "{";
+    for(unsigned int i = 0; i < dist.size(); i++) {
+        if(i != 0) {
+            ret += ", ";
+        }
+        ret += labels[i] + ":" + std::to_string(dist[i]);
+    }
+    ret += "}";
+    return ret;
+}
+
 /**
  * ExperimentFrontend member functions
  */
@@ -40,10 +67,13 @@ ExperimentFrontend::ExperimentFrontend() {
 }
 
 void ExperimentFrontend::createCommandLineArguments() {
+    const std::set<std::string> dataset_options = strings_of_ExperimentDataEnum();
+    const std::set<std::string> merge_options = strings_of_DisjunctsMergeMode();
+
     p.createArgument("depth", "-d", 1, "Space-separated list of depths of the tree to be built");
     p.createArgument("test_all", "-T", 0, "Run on each element in the test set", true);
     p.createArgument("test_indices", "-t", 1, "Space-separated list of test indices", true);
-    p.createArgument("dataset", "-f", 2, "Dataset information: (1) the name from one of " + setToString(dataset_options) + ", and (2) the path to the data folder");
+    p.createArgument("dataset", "-f", 2, "Dataset information: (1) the path to the data folder and (2) the name from one of " + setToString(dataset_options));
     p.createArgument("use_abstract", "-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
     p.createArgument("use_disjuncts", "-V", 1, "Like -a, but with disjuncts", true);
     p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from " + setToString(merge_options), true);
@@ -52,8 +82,8 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.requireAtMostOne({"test_all", "test_indices"});
     p.requireAtMostOne({"use_abstract", "use_disjuncts"});
 
-    p.requireTokenConstraint("disjunct_bound", 1, [](const std::string &value){ return value == "greedy" || value == "optimal"; }, "Second argument of -b must be either \"greedy\" or \"optimal\"");
-    p.requireTokenConstraint("dataset", 0, [](const std::string &v){ return v == "mnist" || v == "iris" || v == "cancer" || v == "wine"; }, "First argument of -f must be from " + setToString(dataset_options));
+    p.requireTokenInSet("disjunct_bound", 1, merge_options);
+    p.requireTokenInSet("dataset", 1, dataset_options);
 }
 
 void ExperimentFrontend::performSingleTest(int depth, int test_index) {
@@ -79,13 +109,14 @@ void ExperimentFrontend::performSingleTest(int depth, int test_index) {
                         ret = e->run_abstract_disjuncts(depth, test_index, *n);
                     }
                 }
-                std::cout << "result: {0:" << to_string(ret[0]) << ", 1:" << to_string(ret[1])
-                    << "} (ground truth: " << e->groundTruth(test_index) << ")" << std::endl;
+                std::cout << "result: " << formatDistribution(ret, current_data->class_labels)
+                    << " (ground truth: " << current_data->class_labels[e->groundTruth(test_index)] << ")" << std::endl;
             }
         } else {
             std::cout << "running a depth-" << depth << " experiment using T on test " << test_index << std::endl;
             CategoricalDistribution<double> ret = e->run_concrete(depth, test_index);
-            std::cout << "result: {0:" << ret[0] << ", 1:" << ret[1] << "} (ground truth: " << e->groundTruth(test_index) << ")" << std::endl;
+            std::cout << "result: " << formatDistribution(ret, current_data->class_labels)
+                << " (ground truth: " << current_data->class_labels[e->groundTruth(test_index)] << ")" << std::endl;
         }
     } else {
         std::cout << "skipping test " << test_index << " (out of bounds)" << std::endl;
@@ -101,8 +132,8 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
         if(!params.test_all) {
             vectorizeIntStringSplit(params.test_indices, p["test_indices"].tokens[0]);
         }
-        params.dataset = p["dataset"].tokens[0];
-        params.data_prefix = p["dataset"].tokens[1];
+        params.data_prefix = p["dataset"].tokens[0];
+        params.dataset = string_to_ExperimentDataEnum(p["dataset"].tokens[1]);
         params.use_abstract = p["use_abstract"].included || p["use_disjuncts"].included;
         if(p["use_abstract"].included) {
             vectorizeIntStringSplit(params.num_dropouts, p["use_abstract"].tokens[0]);
@@ -112,7 +143,7 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
             params.with_disjuncts = true;
             if(p["disjunct_bound"].included) {
                 params.disjunct_bound = std::stoi(p["disjunct_bound"].tokens[0]);
-                params.merge_mode = p["disjunct_bound"].tokens[1];
+                params.merge_mode = string_to_DisjunctsMergeMode(p["disjunct_bound"].tokens[1]);
             } else {
                 params.disjunct_bound = {};
             }
@@ -127,7 +158,8 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
 
 void ExperimentFrontend::performExperiments() {
     wrangler = new ExperimentDataWrangler(params.data_prefix);
-    e = new MNISTExperiment(wrangler);
+    current_data = wrangler->fetch(params.dataset);
+    e = new MNISTExperiment(current_data->training, current_data->test);
     for(auto depth = params.depths.begin(); depth != params.depths.end(); depth++) {
         if(params.test_all) {
             for(int i = 0; i < e->test_size(); i++) {

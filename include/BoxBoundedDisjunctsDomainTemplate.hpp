@@ -3,6 +3,7 @@
 
 #include "BoxDisjunctsDomainTemplate.hpp"
 #include "BoxStateDomainTemplate.hpp"
+#include "CommonEnums.h"
 #include "Feature.hpp"
 #include "StateDomainTemplate.hpp"
 #include <forward_list>
@@ -24,7 +25,6 @@
 template <typename T, typename P, typename D, typename S>
 class BoxBoundedDisjunctsDomainTemplate : public StateDomainTemplate<typename BoxDisjunctsTypes<T,P,D>::Many> {
 public:
-    enum class MergeMode { GREEDY, OPTIMAL };
     typedef BoxDisjunctsTypes<T,P,D> Types;
 
 private:
@@ -53,16 +53,16 @@ private:
     void prepareNextGreedyStep(ScoreQueue &score_queue, std::set<const typename Types::Single *> &included, std::queue<const typename Types::Single *> &pending) const;
 
     unsigned int max_num_disjuncts;
-    MergeMode merge_mode;
+    DisjunctsMergeMode merge_mode;
 
 public:
     const BoxDisjunctsDomainTemplate<T,P,D> *disjuncts_domain;
     // We have access to the underlying box domain through disjuncts_domain->box_domain
 
     BoxBoundedDisjunctsDomainTemplate(const BoxDisjunctsDomainTemplate<T,P,D> *disjuncts_domain);
-    BoxBoundedDisjunctsDomainTemplate(const BoxDisjunctsDomainTemplate<T,P,D> *disjuncts_domain, unsigned int max_num_disjuncts, const MergeMode &merge_mode);
+    BoxBoundedDisjunctsDomainTemplate(const BoxDisjunctsDomainTemplate<T,P,D> *disjuncts_domain, unsigned int max_num_disjuncts, const DisjunctsMergeMode &merge_mode);
 
-    void setMergeDetails(unsigned int max_num_disjuncts, const MergeMode &merge_mode);
+    void setMergeDetails(unsigned int max_num_disjuncts, const DisjunctsMergeMode &merge_mode);
 
     virtual S joinPrecisionLoss(const typename Types::Single &e1, const typename Types::Single &e2) const = 0;
 
@@ -101,18 +101,18 @@ typename BoxDisjunctsTypes<T,P,D>::Many BoxBoundedDisjunctsDomainTemplate<T,P,D,
     // since when the vector is resized etc the memory locations of the objects can change.
     std::forward_list<typename Types::Single> new_disjuncts;
     // pending contains pointers to elements that are not yet in included.
-    // Note that this is only non-empty for MergeMode::GREEDY,
-    // since with MergeMode::OPTIMAL all of the disjuncts are initially included.
+    // Note that this is only non-empty for DisjunctsMergeMode::GREEDY,
+    // since with DisjunctsMergeMode::OPTIMAL all of the disjuncts are initially included.
     std::queue<const typename Types::Single *> pending;
 
-    // In general, in MergeMode::OPTIMAL we put all of the disjuncts into included and reduce one-by-one.
-    // In MergeMode::GREEDY we put max_num_disjuncts+1 disjuncts into included, the rest into pending,
+    // In general, in DisjunctsMergeMode::OPTIMAL we put all of the disjuncts into included and reduce one-by-one.
+    // In DisjunctsMergeMode::GREEDY we put max_num_disjuncts+1 disjuncts into included, the rest into pending,
     // and then iteratively merge one disjunct in included + insert the next one from pending.
     initializeMerging(score_queue, included, pending, element);
     while(included.size() > max_num_disjuncts) {
         ScoreTuple to_merge = selectMerge(score_queue, included);
         performMerge(to_merge, score_queue, included, new_disjuncts);
-        if(merge_mode == MergeMode::GREEDY) {
+        if(merge_mode == DisjunctsMergeMode::GREEDY) {
             prepareNextGreedyStep(score_queue, included, pending);
         }
     }
@@ -127,12 +127,12 @@ typename BoxDisjunctsTypes<T,P,D>::Many BoxBoundedDisjunctsDomainTemplate<T,P,D,
 
 template <typename T, typename P, typename D, typename S>
 void BoxBoundedDisjunctsDomainTemplate<T,P,D,S>::initializeMerging(ScoreQueue &score_queue, std::set<const typename Types::Single *> &included, std::queue<const typename Types::Single *> &pending, const typename Types::Many &disjuncts) const {
-    if(merge_mode == MergeMode::OPTIMAL) {
+    if(merge_mode == DisjunctsMergeMode::OPTIMAL) {
         // Initially, included has a pointer to each of the original disjuncts
         for(auto i = disjuncts.cbegin(); i != disjuncts.cend(); i++) {
             included.insert(&*i);
         }
-    } else { // i.e. merge_mode == MergeMode::GREEDY
+    } else { // i.e. merge_mode == DisjunctsMergeMode::GREEDY
         // Initially, included has a pointer to only the first max_num_disjuncts+1 elements
         auto disjuncts_iter = disjuncts.begin();
         for(unsigned int i = 0; i < max_num_disjuncts + 1; i++, disjuncts_iter++) {
@@ -184,8 +184,8 @@ void BoxBoundedDisjunctsDomainTemplate<T,P,D,S>::performMerge(const ScoreTuple &
 
 template <typename T, typename P, typename D, typename S>
 void BoxBoundedDisjunctsDomainTemplate<T,P,D,S>::prepareNextGreedyStep(ScoreQueue &score_queue, std::set<const typename Types::Single *> &included, std::queue<const typename Types::Single *> &pending) const {
-    // For MergeMode::GREEDY, we have to move something from pending to included and add relevant scores to the ScoreQueue.
-    // Note that in MergeMode::OPTIMAL pending is always empty.
+    // For DisjunctsMergeMode::GREEDY, we have to move something from pending to included and add relevant scores to the ScoreQueue.
+    // Note that in DisjunctsMergeMode::OPTIMAL pending is always empty.
     if(pending.size() > 0) {
         for(auto i = included.begin(); i != included.end(); i++) {
             ScoreTuple temp = {*i, pending.front(), joinPrecisionLoss(**i, *pending.front())};
@@ -204,18 +204,18 @@ template <typename T, typename P, typename D, typename S>
 inline BoxBoundedDisjunctsDomainTemplate<T,P,D,S>::BoxBoundedDisjunctsDomainTemplate(const BoxDisjunctsDomainTemplate<T,P,D> *disjuncts_domain) {
     this->disjuncts_domain = disjuncts_domain;
     this->max_num_disjuncts = 1;
-    this->merge_mode = MergeMode::OPTIMAL;
+    this->merge_mode = DisjunctsMergeMode::OPTIMAL;
 }
 
 template <typename T, typename P, typename D, typename S>
-inline BoxBoundedDisjunctsDomainTemplate<T,P,D,S>::BoxBoundedDisjunctsDomainTemplate(const BoxDisjunctsDomainTemplate<T,P,D> *disjuncts_domain, unsigned int max_num_disjuncts, const MergeMode &merge_mode) {
+inline BoxBoundedDisjunctsDomainTemplate<T,P,D,S>::BoxBoundedDisjunctsDomainTemplate(const BoxDisjunctsDomainTemplate<T,P,D> *disjuncts_domain, unsigned int max_num_disjuncts, const DisjunctsMergeMode &merge_mode) {
     this->disjuncts_domain = disjuncts_domain;
     this->max_num_disjuncts = max_num_disjuncts;
     this->merge_mode = merge_mode;
 }
 
 template <typename T, typename P, typename D, typename S>
-inline void BoxBoundedDisjunctsDomainTemplate<T,P,D,S>::setMergeDetails(unsigned int max_num_disjuncts, const MergeMode &merge_mode) {
+inline void BoxBoundedDisjunctsDomainTemplate<T,P,D,S>::setMergeDetails(unsigned int max_num_disjuncts, const DisjunctsMergeMode &merge_mode) {
     this->max_num_disjuncts = max_num_disjuncts;
     this->merge_mode = merge_mode;
 }
