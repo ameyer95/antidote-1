@@ -142,28 +142,49 @@ ExperimentData* ExperimentDataWrangler::loadFullMNIST() {
 
 ExperimentData* ExperimentDataWrangler::loadUCI(const UCINames &dataset) {
     UCI raw_uci(dataset, path_prefix);
-    DataSet *uci = new DataSet { FeatureVectorHeader(raw_uci.getData()[0].x.size(), FeatureType::NUMERIC), // XXX many assumptions
-                                 raw_uci.getLabels().size(),
-                                 std::vector<DataRow>(raw_uci.getData().size()) };
+    DataSet *uci_training = new DataSet {
+        FeatureVectorHeader(raw_uci.getTrainingData()[0].x.size(), FeatureType::NUMERIC), // XXX many assumptions
+        raw_uci.getLabels().size(),
+        std::vector<DataRow>(raw_uci.getTrainingData().size())
+    };
+    DataSet *uci_test = new DataSet {
+        FeatureVectorHeader(raw_uci.getTestData()[0].x.size(), FeatureType::NUMERIC),
+        raw_uci.getLabels().size(),
+        std::vector<DataRow>(raw_uci.getTestData().size())
+    };
 
     std::map<std::string, int> label_map;
     std::vector<std::string> labels;
-    for(unsigned int i = 0; i < raw_uci.getData().size(); i++) {
-        CSVRow temp = raw_uci.getData()[i];
-        uci->rows[i].x = FeatureVector(temp.x.size());
+
+    for(unsigned int i = 0; i < raw_uci.getTrainingData().size(); i++) {
+        CSVRow temp = raw_uci.getTrainingData()[i];
+        uci_training->rows[i].x = FeatureVector(temp.x.size());
         for(unsigned int j = 0; j < temp.x.size(); j++) {
-            uci->rows[i].x[j] = temp.x[j];
+            uci_training->rows[i].x[j] = temp.x[j];
         }
         if(label_map.find(temp.y) == label_map.end()) {
             int fresh = labels.size();
             labels.push_back(temp.y);
             label_map.emplace(temp.y, fresh);
         }
-        uci->rows[i].y = label_map[temp.y];
+        uci_training->rows[i].y = label_map[temp.y];
+    }
+    // XXX copy-paste
+    for(unsigned int i = 0; i < raw_uci.getTestData().size(); i++) {
+        CSVRow temp = raw_uci.getTestData()[i];
+        uci_test->rows[i].x = FeatureVector(temp.x.size());
+        for(unsigned int j = 0; j < temp.x.size(); j++) {
+            uci_test->rows[i].x[j] = temp.x[j];
+        }
+        if(label_map.find(temp.y) == label_map.end()) {
+            int fresh = labels.size();
+            labels.push_back(temp.y);
+            label_map.emplace(temp.y, fresh);
+        }
+        uci_test->rows[i].y = label_map[temp.y];
     }
 
-    // XXX TODO still need to handle training/test division
-    ExperimentData *ret = new ExperimentData { uci, NULL, labels };
+    ExperimentData *ret = new ExperimentData { uci_training, uci_test, labels };
     return ret;
 }
 

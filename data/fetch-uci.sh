@@ -16,3 +16,5 @@ done;))
 
 cd $(dirname "$0") # Descend into the same directory as the script
 wget -N ${URLS[@]}
+
+python3 train_test_split.py

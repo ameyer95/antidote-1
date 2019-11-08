@@ -9,7 +9,8 @@ using namespace std;
 
 UCI::UCI(const UCINames &name, const string &prefix) {
     setDetails(name);
-    loadFromFile(prefix);
+    loadFromFile(prefix + "/" + details->training_file_name, &training_data);
+    loadFromFile(prefix + "/" + details->test_file_name, &test_data);
 }
 
 void UCI::setDetails(const UCINames &name) {
@@ -26,21 +27,18 @@ void UCI::setDetails(const UCINames &name) {
     }
 }
 
-void UCI::loadFromFile(const string &prefix) {
-    data = vector<CSVRow>(details->num_rows);
-
+void UCI::loadFromFile(const std::string &filepath, std::vector<CSVRow> *data) {
     ifstream file;
-    file.open(prefix + "/" + details->file_name);
-
-    int lines_read = 0;
+    file.open(filepath);
     string line;
-    // XXX we just stop reading after we run out of lines or read as many as is expected
-    // without checking or reporting which case happens
-    while(getline(file, line) && lines_read < details->num_rows) {
-        parseLine(data[lines_read], line);
-        lines_read++;
+    // XXX we just stop reading after we run out of lines
+    // without checking if it matches the expected details
+    // (which maybe are unnecessary?)
+    while(getline(file, line)) {
+        CSVRow temp;
+        parseLine(temp, line); // Handles accruing the output class labels, too
+        data->push_back(temp);
     }
-
     file.close();
 }
 
