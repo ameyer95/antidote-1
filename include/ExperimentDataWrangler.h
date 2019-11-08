@@ -3,7 +3,6 @@
 
 #include "CommonEnums.h"
 #include "DataSet.hpp"
-#include "MNIST.h"
 #include "UCI.h"
 #include <map>
 #include <string>
@@ -34,6 +33,7 @@ private:
     void loadData(const ExperimentDataEnum &dataset);
     ExperimentData* loadSimplifiedMNIST(const std::pair<int, int> &classes);
     ExperimentData* loadFullMNIST();
+    ExperimentData* loadUCI(const UCINames &dataset);
 
 public:
     ExperimentDataWrangler(const std::string &path_prefix);

@@ -1,6 +1,10 @@
 #include "ExperimentDataWrangler.h"
 #include "Feature.hpp"
+#include "MNIST.h"
+#include "UCI.h"
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 /**
@@ -90,7 +94,15 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
         case ExperimentDataEnum::MNIST:
             cache.insert(std::make_pair(dataset, loadFullMNIST()));
             break;
-        // XXX TODO all the other cases
+        case ExperimentDataEnum::UCI_IRIS:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::IRIS)));
+            break;
+        case ExperimentDataEnum::UCI_CANCER:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::CANCER)));
+            break;
+        case ExperimentDataEnum::UCI_WINE:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::WINE)));
+            break;
     }
 }
 
@@ -126,6 +138,33 @@ ExperimentData* ExperimentDataWrangler::loadFullMNIST() {
         mnist->class_labels[i] = int_to_MNIST_label(i);
     }
     return mnist;
+}
+
+ExperimentData* ExperimentDataWrangler::loadUCI(const UCINames &dataset) {
+    UCI raw_uci(dataset, path_prefix);
+    DataSet *uci = new DataSet { FeatureVectorHeader(raw_uci.getData()[0].x.size(), FeatureType::NUMERIC), // XXX many assumptions
+                                 raw_uci.getLabels().size(),
+                                 std::vector<DataRow>(raw_uci.getData().size()) };
+
+    std::map<std::string, int> label_map;
+    std::vector<std::string> labels;
+    for(unsigned int i = 0; i < raw_uci.getData().size(); i++) {
+        CSVRow temp = raw_uci.getData()[i];
+        uci->rows[i].x = FeatureVector(temp.x.size());
+        for(unsigned int j = 0; j < temp.x.size(); j++) {
+            uci->rows[i].x[j] = temp.x[j];
+        }
+        if(label_map.find(temp.y) == label_map.end()) {
+            int fresh = labels.size();
+            labels.push_back(temp.y);
+            label_map.emplace(temp.y, fresh);
+        }
+        uci->rows[i].y = label_map[temp.y];
+    }
+
+    // XXX TODO still need to handle training/test division
+    ExperimentData *ret = new ExperimentData { uci, NULL, labels };
+    return ret;
 }
 
 const ExperimentData* ExperimentDataWrangler::fetch(const ExperimentDataEnum &dataset) {
