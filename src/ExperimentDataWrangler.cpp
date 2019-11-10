@@ -72,6 +72,23 @@ DataSet* simplifiedMNIST(const RawMNIST &mnist, const std::pair<int, int> &class
     return ret;
 }
 
+void makeWineDataSetThresholded(DataSet *wine, const std::vector<std::string> &old_labels) {
+    for(auto i = wine->rows.begin(); i != wine->rows.end(); i++) {
+        if(stoi(old_labels[i->y]) <= 5) {
+            i->y = 0;
+        } else {
+            i->y = 1;
+        }
+    }
+    wine->num_categories = 2;
+}
+
+void makeWineExperimentDataThresholded(ExperimentData *wine) {
+    makeWineDataSetThresholded(wine->training, wine->class_labels);
+    makeWineDataSetThresholded(wine->test, wine->class_labels);
+    wine->class_labels = {"low", "high"};
+}
+
 /**
  * ExperimentDataWrangler member functions
  */
@@ -102,6 +119,11 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
             break;
         case ExperimentDataEnum::UCI_WINE:
             cache.insert(std::make_pair(dataset, loadUCI(UCINames::WINE)));
+            break;
+        case ExperimentDataEnum::UCI_WINE_2CLASS:
+            ExperimentData *wine = loadUCI(UCINames::WINE);
+            makeWineExperimentDataThresholded(wine);
+            cache.insert(std::make_pair(dataset, wine));
             break;
     }
 }

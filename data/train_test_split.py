@@ -15,7 +15,7 @@ FileNames = namedtuple('FileNames', ['input_file', 'rand_file', 'output80_file',
 
 iris = FileNames("bezdekIris.data", "iris.rand", "iris80.data", "iris20.data")
 cancer = FileNames("wdbc.data", "wdbc.rand", "wdbc80.data", "wdbc20.data")
-wine = FileNames("wine.data", "wine.rand", "wine80.data", "wine20.data")
+wine = FileNames("winequality.data", "winequality.rand", "winequality80.data", "winequality20.data")
 
 Instance = namedtuple('Instance', ['file_names', 'random_seed'])
 
