@@ -72,6 +72,26 @@ DataSet* simplifiedMNIST(const RawMNIST &mnist, const std::pair<int, int> &class
     return ret;
 }
 
+DataSet* booleanMNIST(const RawMNIST &mnist) {
+    DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
+                                 10,
+                                 std::vector<DataRow>(mnist.size()) };
+    for(unsigned int i = 0; i < mnist.size(); i++) {
+        ret->rows[i] = { Image_to_bools(mnist[i].first), mnist[i].second };
+    }
+    return ret;
+}
+
+DataSet* fullMNIST(const RawMNIST &mnist) {
+    DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::NUMERIC),
+                                 10,
+                                 std::vector<DataRow>(mnist.size()) };
+    for(unsigned int i = 0; i < mnist.size(); i++) {
+        ret->rows[i] = { Image_to_floats(mnist[i].first), mnist[i].second };
+    }
+    return ret;
+}
+
 void makeWineDataSetThresholded(DataSet *wine, const std::vector<std::string> &old_labels) {
     for(auto i = wine->rows.begin(); i != wine->rows.end(); i++) {
         if(stoi(old_labels[i->y]) <= 5) {
@@ -108,8 +128,11 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
         case ExperimentDataEnum::MNIST_BOOLEAN_1_7:
             cache.insert(std::make_pair(dataset, loadSimplifiedMNIST(std::make_pair(1,7))));
             break;
+        case ExperimentDataEnum::MNIST_BOOLEAN:
+            cache.insert(std::make_pair(dataset, loadFullMNIST(true)));
+            break;
         case ExperimentDataEnum::MNIST:
-            cache.insert(std::make_pair(dataset, loadFullMNIST()));
+            cache.insert(std::make_pair(dataset, loadFullMNIST(false)));
             break;
         case ExperimentDataEnum::UCI_IRIS:
             cache.insert(std::make_pair(dataset, loadUCI(UCINames::IRIS)));
@@ -138,22 +161,16 @@ ExperimentData* ExperimentDataWrangler::loadSimplifiedMNIST(const std::pair<int,
     return mnist;
 }
 
-ExperimentData* ExperimentDataWrangler::loadFullMNIST() {
+ExperimentData* ExperimentDataWrangler::loadFullMNIST(bool booleanized) {
     RawMNIST raw_mnist_training(MNISTMode::TRAINING, path_prefix);
     RawMNIST raw_mnist_test(MNISTMode::TEST, path_prefix);
-    DataSet *mnist_training = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::NUMERIC),
-                                            10,
-                                            std::vector<DataRow>(raw_mnist_training.size()) };
-    DataSet *mnist_test = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::NUMERIC),
-                                        10,
-                                        std::vector<DataRow>(raw_mnist_test.size()) };
-    for(unsigned int i = 0; i < raw_mnist_training.size(); i++) {
-        mnist_training->rows[i] = { Image_to_floats(raw_mnist_training[i].first),
-                                    raw_mnist_training[i].second };
-    }
-    for(unsigned int i = 0; i < raw_mnist_test.size(); i++) {
-        mnist_test->rows[i] = { Image_to_floats(raw_mnist_training[i].first),
-                                raw_mnist_test[i].second };
+    DataSet *mnist_training, *mnist_test;
+    if(booleanized) {
+        mnist_training = booleanMNIST(raw_mnist_training);
+        mnist_test = booleanMNIST(raw_mnist_test);
+    } else {
+        mnist_training = fullMNIST(raw_mnist_training);
+        mnist_test = fullMNIST(raw_mnist_test);
     }
     ExperimentData *mnist = new ExperimentData { mnist_training, mnist_test, std::vector<std::string>(10) };
     for(int i = 0; i < 10; i++) {

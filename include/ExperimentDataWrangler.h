@@ -32,7 +32,7 @@ private:
 
     void loadData(const ExperimentDataEnum &dataset);
     ExperimentData* loadSimplifiedMNIST(const std::pair<int, int> &classes);
-    ExperimentData* loadFullMNIST();
+    ExperimentData* loadFullMNIST(bool booleanized);
     ExperimentData* loadUCI(const UCINames &dataset);
 
 public:
