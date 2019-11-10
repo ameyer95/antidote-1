@@ -7,6 +7,11 @@
 #include <utility>
 #include <vector>
 
+// We'll output some information about the number of disjuncts
+// when -DDEBUG is given as a g++ argument
+#ifdef DEBUG
+#include <iostream>
+#endif
 
 template <typename T, typename P, typename D>
 struct BoxDisjunctsTypes {
@@ -107,6 +112,10 @@ typename BoxDisjunctsTypes<T,P,D>::Many BoxDisjunctsDomainTemplate<T,P,D>::filte
             }
         }
     }
+
+#ifdef DEBUG
+    std::cout << "exiting filterAndUnion with " << ret.size() << " disjuncts" << std::endl;
+#endif
     return ret;
 }
 
