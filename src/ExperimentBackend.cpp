@@ -27,7 +27,7 @@ set<int> softMax(const CategoricalDistribution<double> &p) {
     return ret;
 }
 
-// Any element whose min value is at least the largest-over-elements'-min-values
+// Any element whose max value is at least the largest-over-elements'-min-values
 // could feasibly be the maximum
 set<int> softMax(const CategoricalDistribution<Interval<double>> &p) {
     set<int> ret;
@@ -36,7 +36,7 @@ set<int> softMax(const CategoricalDistribution<Interval<double>> &p) {
                 { return e1.get_lower_bound() < e2.get_lower_bound(); }
             )->get_lower_bound();
     for(int i = 0; i < p.size(); i++) {
-        if(p[i].get_upper_bound() > threshold) {
+        if(p[i].get_upper_bound() >= threshold) {
             ret.insert(i);
         }
     }
