@@ -2,8 +2,8 @@
 #define EXPERIMENTFRONTEND_H
 
 #include "ArgParse.h"
+#include "ExperimentBackend.h"
 #include "ExperimentDataWrangler.h"
-#include "MNISTExperiment.h"
 #include <optional>
 #include <set>
 #include <string>
@@ -33,7 +33,7 @@ private:
     } params;
 
     ArgParse p;
-    MNISTExperiment *e;
+    ExperimentBackend *e;
     ExperimentDataWrangler *wrangler;
     const ExperimentData *current_data; // the wrangler handles this deallocation
 

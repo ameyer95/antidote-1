@@ -1,8 +1,8 @@
 #include "ExperimentFrontend.h"
 #include "CategoricalDistribution.hpp"
+#include "ExperimentBackend.h"
 #include "ExperimentDataWrangler.h"
 #include "Interval.h"
-#include "MNISTExperiment.h"
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -159,7 +159,7 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
 void ExperimentFrontend::performExperiments() {
     wrangler = new ExperimentDataWrangler(params.data_prefix);
     current_data = wrangler->fetch(params.dataset);
-    e = new MNISTExperiment(current_data->training, current_data->test);
+    e = new ExperimentBackend(current_data->training, current_data->test);
     for(auto depth = params.depths.begin(); depth != params.depths.end(); depth++) {
         if(params.test_all) {
             for(int i = 0; i < e->test_size(); i++) {

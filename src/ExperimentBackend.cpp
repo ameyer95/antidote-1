@@ -1,4 +1,4 @@
-#include "MNISTExperiment.h"
+#include "ExperimentBackend.h"
 #include "AbstractSemanticsInstantiations.hpp"
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
@@ -9,25 +9,25 @@
 #include <vector>
 using namespace std;
 
-MNISTExperiment::MNISTExperiment(const DataSet *mnist_training, const DataSet *mnist_test) {
-    this->mnist_training = mnist_training;
-    this->mnist_test = mnist_test;
+ExperimentBackend::ExperimentBackend(const DataSet *training, const DataSet *test) {
+    this->training = training;
+    this->test = test;
 }
 
-CategoricalDistribution<double> MNISTExperiment::run_concrete(int depth, int test_index) {
+CategoricalDistribution<double> ExperimentBackend::run_concrete(int depth, int test_index) {
     ProgramNode *program = buildTree(depth);
     ConcreteSemantics sem;
-    auto ret = sem.execute(mnist_test->rows[test_index].x, mnist_training, program);
+    auto ret = sem.execute(test->rows[test_index].x, training, program);
     delete program;
     return ret;
 }
 
-CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract(int depth, int test_index, int num_dropout) {
+CategoricalDistribution<Interval<double>> ExperimentBackend::run_abstract(int depth, int test_index, int num_dropout) {
     ProgramNode *program = buildTree(depth);
     DropoutDomains d;
     BoxDropoutSemantics sem(&d.box_domain);
-    FeatureVector test_input = mnist_test->rows[test_index].x;
-    DataReferences training_references(mnist_training);
+    FeatureVector test_input = test->rows[test_index].x;
+    DataReferences training_references(training);
     BoxDropoutDomain::AbstractionType initial_state = {
         TrainingReferencesWithDropout(training_references, num_dropout),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
@@ -38,12 +38,12 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract(int dept
     return ret.posterior_distribution_abstraction;
 }
 
-CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
+CategoricalDistribution<Interval<double>> ExperimentBackend::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
     ProgramNode *program = buildTree(depth);
     DropoutDomains d;
     BoxDisjunctsDropoutSemantics sem(&d.disjuncts_domain);
-    FeatureVector test_input = mnist_test->rows[test_index].x;
-    DataReferences training_references(mnist_training);
+    FeatureVector test_input = test->rows[test_index].x;
+    DataReferences training_references(training);
     BoxDropoutDomain::AbstractionType initial_box = {
         TrainingReferencesWithDropout(training_references, num_dropout),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
@@ -59,14 +59,14 @@ CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_disjunct
     return d.D_domain.join(posteriors);
 }
 
-CategoricalDistribution<Interval<double>> MNISTExperiment::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const DisjunctsMergeMode &merge_mode) {
+CategoricalDistribution<Interval<double>> ExperimentBackend::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const DisjunctsMergeMode &merge_mode) {
     ProgramNode *program = buildTree(depth);
     DropoutDomains d;
-    FeatureVector test_input = mnist_test->rows[test_index].x;
+    FeatureVector test_input = test->rows[test_index].x;
 
     d.bounded_disjuncts_domain.setMergeDetails(disjunct_bound, merge_mode);
     BoxDisjunctsDropoutSemantics sem(&d.bounded_disjuncts_domain);
-    DataReferences training_references(mnist_training);
+    DataReferences training_references(training);
     BoxDropoutDomain::AbstractionType initial_box = {
         TrainingReferencesWithDropout(training_references, num_dropout),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
