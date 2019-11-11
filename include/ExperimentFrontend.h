@@ -32,6 +32,7 @@ private:
         DisjunctsMergeMode merge_mode; // For when disjunct_bound.has_value()
     } params;
 
+    bool verbose;
     ArgParse p;
     ExperimentBackend *e;
     ExperimentDataWrangler *wrangler;
@@ -43,6 +44,8 @@ private:
 
     std::string output_to_json(int depth, int test_index, const ExperimentBackend::Result<double> &result);
     std::string output_to_json(int depth, int test_index, const ExperimentBackend::Result<Interval<double>> &result);
+
+    void output(const std::string &message, bool force=false);
 
 public:
     ExperimentFrontend();

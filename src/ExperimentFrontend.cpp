@@ -78,6 +78,7 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.createArgument("use_abstract", "-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
     p.createArgument("use_disjuncts", "-V", 1, "Like -a, but with disjuncts", true);
     p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from " + setToString(merge_options), true);
+    p.createArgument("verbose", "-v", 0, "", true);
     
     p.requireAtLeastOne({"test_all", "test_indices"});
     p.requireAtMostOne({"test_all", "test_indices"});
@@ -92,26 +93,27 @@ void ExperimentFrontend::performSingleTest(int depth, int test_index) {
         if(params.use_abstract) {
             performAbstractTests(depth, test_index);
         } else {
-            std::cout << "running a depth-" << depth << " experiment using T on test " << test_index << std::endl;
+            output("running a depth-" + std::to_string(depth) + " experiment using T on test " + std::to_string(test_index));
             ExperimentBackend::Result<double> ret = e->run_concrete(depth, test_index);
-            std::cout << "result: " << output_to_json(depth, test_index, ret) << std::endl;
+            output(output_to_json(depth, test_index, ret), true);
         }
     } else {
-        std::cout << "skipping test " << test_index << " (out of bounds)" << std::endl;
+        output("skipping test " + std::to_string(test_index) + " (out of bounds)");
     }
 }
 
 void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
     for(auto n = params.num_dropouts.cbegin(); n != params.num_dropouts.cend(); n++) {
-        std::cout << "running a depth-" << depth << " experiment using <T," << *n << "> ";
+        std::string message = "running a depth-" + std::to_string(depth) + " experiment using <T," + std::to_string(*n) + "> ";
         if(params.with_disjuncts) {
             if(params.disjunct_bound.has_value()) {
-                std::cout << "(with disjuncts # <= " << params.disjunct_bound.value() << ") ";
+                message += "(with disjuncts # <= " + std::to_string(params.disjunct_bound.value()) + ") ";
             } else {
-                std::cout << "(with disjuncts) ";
+                message += "(with disjuncts) ";
             }
         }
-        std::cout << "on test " << test_index << std::endl;
+        message += "on test " + std::to_string(test_index);
+        output(message);
         ExperimentBackend::Result<Interval<double>> ret;
         if(!params.with_disjuncts) {
             ret = e->run_abstract(depth, test_index, *n);
@@ -122,7 +124,7 @@ void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
                 ret = e->run_abstract_disjuncts(depth, test_index, *n);
             }
         }
-        std::cout << "result: " << output_to_json(depth, test_index, ret) << std::endl;
+        output(output_to_json(depth, test_index, ret), true);
     }
 }
 
@@ -178,10 +180,17 @@ std::string ExperimentFrontend::output_to_json(int depth, int test_index, const 
     return ret;
 }
 
+void ExperimentFrontend::output(const std::string &message, bool force) {
+    if(verbose || force) {
+        std::cout << message << std::endl;
+    }
+}
+
 bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &argv) {
     p.parse(argc, argv);
 
     if(!p.failure()) {
+        verbose = p["verbose"].included;
         vectorizeIntStringSplit(params.depths, p["depth"].tokens[0]);
         params.test_all = p["test_all"].included;
         if(!params.test_all) {
