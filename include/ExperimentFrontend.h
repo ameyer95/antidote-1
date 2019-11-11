@@ -39,6 +39,10 @@ private:
 
     void createCommandLineArguments();
     void performSingleTest(int depth, int test_index);
+    void performAbstractTests(int depth, int test_index);
+
+    std::string output_to_json(int depth, int test_index, const ExperimentBackend::Result<double> &result);
+    std::string output_to_json(int depth, int test_index, const ExperimentBackend::Result<Interval<double>> &result);
 
 public:
     ExperimentFrontend();

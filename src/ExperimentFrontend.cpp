@@ -1,5 +1,6 @@
 #include "ExperimentFrontend.h"
 #include "CategoricalDistribution.hpp"
+#include "CommonEnums.h"
 #include "ExperimentBackend.h"
 #include "ExperimentDataWrangler.h"
 #include "Interval.h"
@@ -89,38 +90,92 @@ void ExperimentFrontend::createCommandLineArguments() {
 void ExperimentFrontend::performSingleTest(int depth, int test_index) {
     if(test_index < e->test_size()) {
         if(params.use_abstract) {
-            for(auto n = params.num_dropouts.cbegin(); n != params.num_dropouts.cend(); n++) {
-                std::cout << "running a depth-" << depth << " experiment using <T," << *n << "> ";
-                if(params.with_disjuncts) {
-                    if(params.disjunct_bound.has_value()) {
-                        std::cout << "(with disjuncts # <= " << params.disjunct_bound.value() << ") ";
-                    } else {
-                        std::cout << "(with disjuncts) ";
-                    }
-                }
-                std::cout << "on test " << test_index << std::endl;
-                ExperimentBackend::Result<Interval<double>> ret;
-                if(!params.with_disjuncts) {
-                    ret = e->run_abstract(depth, test_index, *n);
-                } else {
-                    if(params.disjunct_bound.has_value()) {
-                        ret = e->run_abstract_bounded_disjuncts(depth, test_index, *n, params.disjunct_bound.value(), params.merge_mode);
-                    } else {
-                        ret = e->run_abstract_disjuncts(depth, test_index, *n);
-                    }
-                }
-                std::cout << "result: " << formatDistribution(ret.posterior, current_data->class_labels)
-                    << " (ground truth: " << current_data->class_labels[ret.ground_truth] << ")" << std::endl;
-            }
+            performAbstractTests(depth, test_index);
         } else {
             std::cout << "running a depth-" << depth << " experiment using T on test " << test_index << std::endl;
             ExperimentBackend::Result<double> ret = e->run_concrete(depth, test_index);
-            std::cout << "result: " << formatDistribution(ret.posterior, current_data->class_labels)
-                << " (ground truth: " << current_data->class_labels[ret.ground_truth] << ")" << std::endl;
+            std::cout << "result: " << output_to_json(depth, test_index, ret) << std::endl;
         }
     } else {
         std::cout << "skipping test " << test_index << " (out of bounds)" << std::endl;
     }
+}
+
+void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
+    for(auto n = params.num_dropouts.cbegin(); n != params.num_dropouts.cend(); n++) {
+        std::cout << "running a depth-" << depth << " experiment using <T," << *n << "> ";
+        if(params.with_disjuncts) {
+            if(params.disjunct_bound.has_value()) {
+                std::cout << "(with disjuncts # <= " << params.disjunct_bound.value() << ") ";
+            } else {
+                std::cout << "(with disjuncts) ";
+            }
+        }
+        std::cout << "on test " << test_index << std::endl;
+        ExperimentBackend::Result<Interval<double>> ret;
+        if(!params.with_disjuncts) {
+            ret = e->run_abstract(depth, test_index, *n);
+        } else {
+            if(params.disjunct_bound.has_value()) {
+                ret = e->run_abstract_bounded_disjuncts(depth, test_index, *n, params.disjunct_bound.value(), params.merge_mode);
+            } else {
+                ret = e->run_abstract_disjuncts(depth, test_index, *n);
+            }
+        }
+        std::cout << "result: " << output_to_json(depth, test_index, ret) << std::endl;
+    }
+}
+
+std::string ExperimentFrontend::output_to_json(int depth, int test_index, const ExperimentBackend::Result<double> &result) {
+    std::string ret = "{ ";
+    ret += "\"depth\" : " + std::to_string(depth) + ", ";
+    ret += "\"test_index\" : " + std::to_string(test_index) + ", ";
+    ret += "\"ground_truth\" : \"" + current_data->class_labels[result.ground_truth] + "\", ";
+    ret += "\"posterior\" : { ";
+    for(unsigned int i = 0; i < result.posterior.size(); i++) {
+        if(i != 0) {
+            ret += ", ";
+        }
+        ret += "\"" + current_data->class_labels[i] + "\" : " + std::to_string(result.posterior[i]);
+    }
+    ret += " }, ";
+    ret += "\"possible_classifications\" : [ ";
+    for(auto i = result.possible_classifications.cbegin(); i != result.possible_classifications.cend(); i++) {
+        if(i != result.possible_classifications.cbegin()) {
+            ret += ", ";
+        }
+        ret += "\"" + current_data->class_labels[*i] + "\"";
+    }
+    ret += " ]";
+    ret += " }";
+    return ret;
+}
+
+std::string ExperimentFrontend::output_to_json(int depth, int test_index, const ExperimentBackend::Result<Interval<double>> &result) {
+    std::string ret = "{ ";
+    ret += "\"depth\" : " + std::to_string(depth) + ", ";
+    ret += "\"test_index\" : " + std::to_string(test_index) + ", ";
+    ret += "\"ground_truth\" : \"" + current_data->class_labels[result.ground_truth] + "\", ";
+    ret += "\"posterior\" : { ";
+    for(unsigned int i = 0; i < result.posterior.size(); i++) {
+        if(i != 0) {
+            ret += ", ";
+        }
+        ret += "\"" + current_data->class_labels[i] + "\" : ";
+        ret += "[ " + std::to_string(result.posterior[i].get_lower_bound()) + ", "
+            + std::to_string(result.posterior[i].get_upper_bound()) + " ]";
+    }
+    ret += " }, ";
+    ret += "\"possible_classifications\" : [ ";
+    for(auto i = result.possible_classifications.cbegin(); i != result.possible_classifications.cend(); i++) {
+        if(i != result.possible_classifications.cbegin()) {
+            ret += ", ";
+        }
+        ret += "\"" + current_data->class_labels[*i] + "\"";
+    }
+    ret += " ]";
+    ret += " }";
+    return ret;
 }
 
 bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &argv) {
