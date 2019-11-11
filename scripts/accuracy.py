@@ -9,7 +9,7 @@ def load_jsonl(filename):
 
 def correct(json_obj):
     if len(json_obj["possible_classifications"]) != 1:
-        return false
+        return False
     return json_obj["possible_classifications"][0] == json_obj["ground_truth"]
 
 def compute_accuracy(json_lines):
