@@ -99,7 +99,7 @@ void ExperimentFrontend::performSingleTest(int depth, int test_index) {
                     }
                 }
                 std::cout << "on test " << test_index << std::endl;
-                CategoricalDistribution<Interval<double>> ret;
+                ExperimentBackend::Result<Interval<double>> ret;
                 if(!params.with_disjuncts) {
                     ret = e->run_abstract(depth, test_index, *n);
                 } else {
@@ -109,14 +109,14 @@ void ExperimentFrontend::performSingleTest(int depth, int test_index) {
                         ret = e->run_abstract_disjuncts(depth, test_index, *n);
                     }
                 }
-                std::cout << "result: " << formatDistribution(ret, current_data->class_labels)
-                    << " (ground truth: " << current_data->class_labels[e->groundTruth(test_index)] << ")" << std::endl;
+                std::cout << "result: " << formatDistribution(ret.posterior, current_data->class_labels)
+                    << " (ground truth: " << current_data->class_labels[ret.ground_truth] << ")" << std::endl;
             }
         } else {
             std::cout << "running a depth-" << depth << " experiment using T on test " << test_index << std::endl;
-            CategoricalDistribution<double> ret = e->run_concrete(depth, test_index);
-            std::cout << "result: " << formatDistribution(ret, current_data->class_labels)
-                << " (ground truth: " << current_data->class_labels[e->groundTruth(test_index)] << ")" << std::endl;
+            ExperimentBackend::Result<double> ret = e->run_concrete(depth, test_index);
+            std::cout << "result: " << formatDistribution(ret.posterior, current_data->class_labels)
+                << " (ground truth: " << current_data->class_labels[ret.ground_truth] << ")" << std::endl;
         }
     } else {
         std::cout << "skipping test " << test_index << " (out of bounds)" << std::endl;
