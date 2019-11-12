@@ -31,7 +31,7 @@ private:
     std::string path_prefix;
 
     void loadData(const ExperimentDataEnum &dataset);
-    ExperimentData* loadSimplifiedMNIST(const std::pair<int, int> &classes);
+    ExperimentData* loadSimplifiedMNIST(const std::pair<int, int> &classes, bool booleanized);
     ExperimentData* loadFullMNIST(bool booleanized);
     ExperimentData* loadUCI(const UCINames &dataset);
 

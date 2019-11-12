@@ -17,6 +17,7 @@ std::set<std::string> gather_enum_strings(const std::map<T, std::string> &enum_s
 
 const std::map<ExperimentDataEnum, std::string> experiment_data_enum_strings = {
     {ExperimentDataEnum::MNIST_BOOLEAN_1_7, "mnist_simple_1_7"},
+    {ExperimentDataEnum::MNIST_1_7, "mnist_1_7"},
     {ExperimentDataEnum::MNIST_BOOLEAN, "mnist_simple"},
     {ExperimentDataEnum::MNIST, "mnist"},
     {ExperimentDataEnum::UCI_IRIS, "iris"},

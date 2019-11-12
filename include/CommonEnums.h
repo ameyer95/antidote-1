@@ -18,6 +18,7 @@
 
 enum class ExperimentDataEnum {
     MNIST_BOOLEAN_1_7,
+    MNIST_1_7,
     MNIST_BOOLEAN,
     MNIST,
     UCI_IRIS,

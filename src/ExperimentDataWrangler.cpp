@@ -56,38 +56,39 @@ inline FeatureVector Image_to_floats(const Image &image) {
 }
 
 // The classes pair assigns the labels first -> 0 and second -> 1
-DataSet* simplifiedMNIST(const RawMNIST &mnist, const std::pair<int, int> &classes) {
+DataSet* twoClassMNIST(const RawMNIST &mnist, const std::pair<int, int> &classes, bool booleanized) {
     DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
                                  2,
                                  std::vector<DataRow>(0) };
 
     for(unsigned int i = 0; i < mnist.size(); i++) {
         if(mnist[i].second == classes.first || mnist[i].second == classes.second) {
-            DataRow temp = { Image_to_bools(mnist[i].first),
-                             (mnist[i].second == classes.second ? 1 : 0) };
-            ret->rows.push_back(temp);
+            if(booleanized) {
+                DataRow temp = { Image_to_bools(mnist[i].first),
+                                 (mnist[i].second == classes.second ? 1 : 0) };
+                ret->rows.push_back(temp);
+            } else {
+                DataRow temp = { Image_to_floats(mnist[i].first),
+                                 (mnist[i].second == classes.second ? 1 : 0) };
+                ret->rows.push_back(temp);
+            }
         }
     }
 
     return ret;
 }
 
-DataSet* booleanMNIST(const RawMNIST &mnist) {
+
+DataSet* fullMNIST(const RawMNIST &mnist, bool booleanized) {
     DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
                                  10,
                                  std::vector<DataRow>(mnist.size()) };
     for(unsigned int i = 0; i < mnist.size(); i++) {
-        ret->rows[i] = { Image_to_bools(mnist[i].first), mnist[i].second };
-    }
-    return ret;
-}
-
-DataSet* fullMNIST(const RawMNIST &mnist) {
-    DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::NUMERIC),
-                                 10,
-                                 std::vector<DataRow>(mnist.size()) };
-    for(unsigned int i = 0; i < mnist.size(); i++) {
-        ret->rows[i] = { Image_to_floats(mnist[i].first), mnist[i].second };
+        if(booleanized) {
+            ret->rows[i] = { Image_to_bools(mnist[i].first), mnist[i].second };
+        } else {
+            ret->rows[i] = { Image_to_floats(mnist[i].first), mnist[i].second };
+        }
     }
     return ret;
 }
@@ -127,7 +128,10 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
     ExperimentData *temp;
     switch(dataset) {
         case ExperimentDataEnum::MNIST_BOOLEAN_1_7:
-            cache.insert(std::make_pair(dataset, loadSimplifiedMNIST(std::make_pair(1,7))));
+            cache.insert(std::make_pair(dataset, loadSimplifiedMNIST(std::make_pair(1,7), true)));
+            break;
+        case ExperimentDataEnum::MNIST_1_7:
+            cache.insert(std::make_pair(dataset, loadSimplifiedMNIST(std::make_pair(1,7), false)));
             break;
         case ExperimentDataEnum::MNIST_BOOLEAN:
             cache.insert(std::make_pair(dataset, loadFullMNIST(true)));
@@ -161,12 +165,13 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
     }
 }
 
-ExperimentData* ExperimentDataWrangler::loadSimplifiedMNIST(const std::pair<int, int> &classes) {
+
+ExperimentData* ExperimentDataWrangler::loadSimplifiedMNIST(const std::pair<int, int> &classes, bool booleanized) {
     RawMNIST raw_mnist_training(MNISTMode::TRAINING, path_prefix);
     RawMNIST raw_mnist_test(MNISTMode::TEST, path_prefix);
     ExperimentData *mnist = new ExperimentData;
-    mnist->training = simplifiedMNIST(raw_mnist_training, classes);
-    mnist->test = simplifiedMNIST(raw_mnist_test, classes);
+    mnist->training = twoClassMNIST(raw_mnist_training, classes, booleanized);
+    mnist->test = twoClassMNIST(raw_mnist_test, classes, booleanized);
     mnist->class_labels = {int_to_MNIST_label(classes.first), int_to_MNIST_label(classes.second)};
     return mnist;
 }
@@ -175,13 +180,8 @@ ExperimentData* ExperimentDataWrangler::loadFullMNIST(bool booleanized) {
     RawMNIST raw_mnist_training(MNISTMode::TRAINING, path_prefix);
     RawMNIST raw_mnist_test(MNISTMode::TEST, path_prefix);
     DataSet *mnist_training, *mnist_test;
-    if(booleanized) {
-        mnist_training = booleanMNIST(raw_mnist_training);
-        mnist_test = booleanMNIST(raw_mnist_test);
-    } else {
-        mnist_training = fullMNIST(raw_mnist_training);
-        mnist_test = fullMNIST(raw_mnist_test);
-    }
+    mnist_training = fullMNIST(raw_mnist_training, booleanized);
+    mnist_test = fullMNIST(raw_mnist_test, booleanized);
     ExperimentData *mnist = new ExperimentData { mnist_training, mnist_test, std::vector<std::string>(10) };
     for(int i = 0; i < 10; i++) {
         mnist->class_labels[i] = int_to_MNIST_label(i);
