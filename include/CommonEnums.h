@@ -26,6 +26,7 @@ enum class ExperimentDataEnum {
     UCI_WINE_2CLASS,
     UCI_YEAST,
     UCI_RETINOPATHY,
+    UCI_MAMMOGRAPHY,
 };
 
 std::string to_string(const ExperimentDataEnum &e);

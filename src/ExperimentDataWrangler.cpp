@@ -155,6 +155,9 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
         case ExperimentDataEnum::UCI_RETINOPATHY:
             cache.insert(std::make_pair(dataset, loadUCI(UCINames::RETINOPATHY)));
             break;
+        case ExperimentDataEnum::UCI_MAMMOGRAPHY:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::MAMMOGRAPHY)));
+            break;
     }
 }
 

@@ -25,6 +25,7 @@ const std::map<ExperimentDataEnum, std::string> experiment_data_enum_strings = {
     {ExperimentDataEnum::UCI_WINE_2CLASS, "wine_2"},
     {ExperimentDataEnum::UCI_YEAST, "yeast"},
     {ExperimentDataEnum::UCI_RETINOPATHY, "retinopathy"},
+    {ExperimentDataEnum::UCI_MAMMOGRAPHY, "mammography"},
 };
 
 std::string to_string(const ExperimentDataEnum &e) {

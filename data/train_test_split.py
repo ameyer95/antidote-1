@@ -18,10 +18,11 @@ cancer = FileNames("wdbc.data", "wdbc.rand", "wdbc80.data", "wdbc20.data")
 wine = FileNames("winequality.data", "winequality.rand", "winequality80.data", "winequality20.data")
 yeast = FileNames("yeast.data", "yeast.rand", "yeast80.data", "yeast20.data")
 retinopathy = FileNames("retinopathy.data", "retinopathy.rand", "retinopathy80.data", "retinopathy20.data")
+mammography = FileNames("mammographic_masses.data", "mammographic_masses.rand", "mammographic_masses80.data", "mammographic_masses20.data")
 
 Instance = namedtuple('Instance', ['file_names', 'random_seed'])
 
-instances = { 'iris' : Instance(iris, 0), 'cancer' : Instance(cancer, 17), 'wine' : Instance(wine, 43), 'yeast' : Instance(yeast, 100), 'retinopathy' : Instance(retinopathy, 111) }
+instances = { 'iris' : Instance(iris, 0), 'cancer' : Instance(cancer, 17), 'wine' : Instance(wine, 43), 'yeast' : Instance(yeast, 100), 'retinopathy' : Instance(retinopathy, 111), 'mammography' : Instance(mammography, 150) }
 
 def readFile(filename):
     f = open(filename, 'r')
