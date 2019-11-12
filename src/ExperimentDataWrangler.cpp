@@ -57,9 +57,16 @@ inline FeatureVector Image_to_floats(const Image &image) {
 
 // The classes pair assigns the labels first -> 0 and second -> 1
 DataSet* twoClassMNIST(const RawMNIST &mnist, const std::pair<int, int> &classes, bool booleanized) {
-    DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
-                                 2,
-                                 std::vector<DataRow>(0) };
+    DataSet *ret;
+    if(booleanized) {
+        ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
+                            2,
+                            std::vector<DataRow>(0) };
+    } else {
+        ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::NUMERIC),
+                            2,
+                            std::vector<DataRow>(0) };
+    }
 
     for(unsigned int i = 0; i < mnist.size(); i++) {
         if(mnist[i].second == classes.first || mnist[i].second == classes.second) {
@@ -80,9 +87,16 @@ DataSet* twoClassMNIST(const RawMNIST &mnist, const std::pair<int, int> &classes
 
 
 DataSet* fullMNIST(const RawMNIST &mnist, bool booleanized) {
-    DataSet *ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
-                                 10,
-                                 std::vector<DataRow>(mnist.size()) };
+    DataSet *ret;
+    if(booleanized) {
+        ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::BOOLEAN),
+                            10,
+                            std::vector<DataRow>(mnist.size()) };
+    } else {
+        ret = new DataSet { FeatureVectorHeader(MNIST_IMAGE_SIZE, FeatureType::NUMERIC),
+                            10,
+                            std::vector<DataRow>(mnist.size()) };
+    }
     for(unsigned int i = 0; i < mnist.size(); i++) {
         if(booleanized) {
             ret->rows[i] = { Image_to_bools(mnist[i].first), mnist[i].second };
