@@ -24,6 +24,12 @@ void UCI::setDetails(const UCINames &name) {
         case UCINames::WINE:
             details = &UCI_WINE_DETAILS;
             break;
+        case UCINames::YEAST:
+            details = &UCI_YEAST_DETAILS;
+            break;
+        case UCINames::RETINOPATHY:
+            details = &UCI_RETINOPATHY_DETAILS;
+            break;
     }
 }
 

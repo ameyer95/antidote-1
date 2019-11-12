@@ -12,7 +12,7 @@
  * that the files look as expected.
  */
 
-enum class UCINames { IRIS, CANCER, WINE };
+enum class UCINames { IRIS, CANCER, WINE, YEAST, RETINOPATHY };
 
 struct UCIDetails {
     std::string training_file_name;
@@ -26,6 +26,8 @@ struct UCIDetails {
 const UCIDetails UCI_IRIS_DETAILS = { "iris80.data", "iris20.data", 5, 4, {}, 150 };
 const UCIDetails UCI_CANCER_DETAILS = { "wdbc80.data", "wdbc20.data", 32, 1, {0}, 569 };
 const UCIDetails UCI_WINE_DETAILS = { "winequality80.data", "winequality20.data", 12, 11, {}, 6497 };
+const UCIDetails UCI_YEAST_DETAILS = { "yeast80.data", "yeast20.data", 10, 9, {0}, 1484 };
+const UCIDetails UCI_RETINOPATHY_DETAILS = { "retinopathy80.data", "retinopathy20.data", 20, 19, {}, 1151 };
 
 struct CSVRow {
     std::vector<float> x;

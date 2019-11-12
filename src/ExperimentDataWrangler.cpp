@@ -124,6 +124,7 @@ ExperimentDataWrangler::~ExperimentDataWrangler() {
 }
 
 void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
+    ExperimentData *temp;
     switch(dataset) {
         case ExperimentDataEnum::MNIST_BOOLEAN_1_7:
             cache.insert(std::make_pair(dataset, loadSimplifiedMNIST(std::make_pair(1,7))));
@@ -144,9 +145,15 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
             cache.insert(std::make_pair(dataset, loadUCI(UCINames::WINE)));
             break;
         case ExperimentDataEnum::UCI_WINE_2CLASS:
-            ExperimentData *wine = loadUCI(UCINames::WINE);
-            makeWineExperimentDataThresholded(wine);
-            cache.insert(std::make_pair(dataset, wine));
+            temp = loadUCI(UCINames::WINE);
+            makeWineExperimentDataThresholded(temp);
+            cache.insert(std::make_pair(dataset, temp));
+            break;
+        case ExperimentDataEnum::UCI_YEAST:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::YEAST)));
+            break;
+        case ExperimentDataEnum::UCI_RETINOPATHY:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::RETINOPATHY)));
             break;
     }
 }
