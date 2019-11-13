@@ -21,6 +21,9 @@ private:
     std::pair<std::vector<int>, std::vector<int>> splitCounts(const Predicate &phi) const;
 
     std::list<Predicate> gatherPredicates() const;
+    void computePredicatesAndScores(std::list<std::pair<Predicate, double>> &store, int feature_index) const;
+    void computeBooleanFeaturePredicateAndScore(std::list<std::pair<Predicate, double>> &store, int feature_index) const;
+    void computeNumericFeaturePredicatesAndScores(std::list<std::pair<Predicate, double>> &store, int feature_index) const;
 
 public:
     ConcreteTrainingReferences() {}
