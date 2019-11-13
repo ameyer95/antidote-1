@@ -38,7 +38,6 @@ public:
     TrainingReferencesWithDropout(DataReferences training_references, int num_dropout);
 
     std::vector<int> baseCounts() const;
-    std::list<SymbolicPredicate> gatherPredicates() const;
     std::pair<DropoutCounts, DropoutCounts> splitCounts(const SymbolicPredicate &phi) const;
     TrainingReferencesWithDropout pureSetRestriction(std::list<int> pure_possible_classes) const;
     TrainingReferencesWithDropout filter(const SymbolicPredicate &phi, bool positive_flag) const; // Returns a new object
@@ -90,6 +89,24 @@ public:
 
 
 class BoxDropoutDomain : public BoxStateDomainTemplate<TrainingReferencesWithDropout, PredicateAbstraction, PosteriorDistributionAbstraction> {
+private:
+    typedef std::pair<SymbolicPredicate, Interval<double>> ScoreEntry;
+    void computePredicatesAndScores(
+            std::list<ScoreEntry> &exists_nontrivial,
+            std::list<const ScoreEntry *> &forall_nontrivial,
+            const TrainingReferencesWithDropout &training_set_abstraction,
+            int feature_index ) const;
+    void computeBooleanFeaturePredicateAndScore(
+            std::list<ScoreEntry> &exists_nontrivial,
+            std::list<const ScoreEntry *> &forall_nontrivial,
+            const TrainingReferencesWithDropout &training_set_abstraction,
+            int feature_index ) const;
+    void computeNumericFeaturePredicatesAndScores(
+            std::list<ScoreEntry> &exists_nontrivial,
+            std::list<const ScoreEntry *> &forall_nontrivial,
+            const TrainingReferencesWithDropout &training_set_abstraction,
+            int feature_index ) const;
+
 public:
     using BoxStateDomainTemplate::BoxStateDomainTemplate; // Inherit the constructor
 

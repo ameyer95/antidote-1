@@ -6,30 +6,12 @@
 #include <list>
 #include <numeric> // for std::accumulate
 #include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 /**
  * TrainingReferencesWithDropout members
  */
-
-// first an auxiliary method
-void storeSymbolicPredicatesForFeatureValues(std::list<SymbolicPredicate> &ret, int index, std::vector<float> &feature_values) {
-    // XXX largely copy paste from concrete case
-    if(feature_values.size() == 0) {
-        return;
-    }
-
-    // std::set sorts, so we can use it to deduplicate + sort
-    std::set<float> unique_values(feature_values.begin(), feature_values.end());
-    feature_values.assign(unique_values.begin(), unique_values.end());
-
-    // For each adjacent pair (l,u) store a symbolic predicate x<=[l,u)
-    for(auto i = feature_values.cbegin(); i + 1 != feature_values.cend(); i++) {
-        ret.push_back(SymbolicPredicate(index, *i, *(i+1)));
-    }
-}
 
 TrainingReferencesWithDropout::TrainingReferencesWithDropout(DataReferences training_references, int num_dropout) {
     this->training_references = training_references;
@@ -42,27 +24,6 @@ std::vector<int> TrainingReferencesWithDropout::baseCounts() const {
         counts[training_references[i].y]++;
     }
     return counts;
-}
-
-std::list<SymbolicPredicate> TrainingReferencesWithDropout::gatherPredicates() const {
-    std::list<SymbolicPredicate> ret;
-    FeatureVectorHeader header = training_references.getFeatureTypes();
-    for(unsigned int i = 0; i < header.size(); i++) {
-        switch(header[i]) {
-            // XXX need to make changes here if adding new feature types
-            case FeatureType::BOOLEAN:
-                ret.push_back(SymbolicPredicate(i));
-                break;
-            case FeatureType::NUMERIC:
-                std::vector<float> feature_values(training_references.size());
-                for(unsigned int j = 0; j < training_references.size(); j++) {
-                    feature_values[j] = training_references[j].x[i].getNumericValue();
-                }
-                storeSymbolicPredicatesForFeatureValues(ret, i, feature_values);
-                break;
-        }
-    }
-    return ret;
 }
 
 std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDropout::DropoutCounts> TrainingReferencesWithDropout::splitCounts(const SymbolicPredicate &phi) const {
@@ -287,65 +248,118 @@ PosteriorDistributionAbstraction PosteriorDistributionIntervalDomain::binary_joi
 
 // First two auxiliary methods
 
-bool couldBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
+inline bool couldBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
     return std::accumulate(counts.counts.begin(), counts.counts.end(), 0) <= counts.num_dropout;
 }
 
-bool mustBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
+inline bool mustBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
     return std::accumulate(counts.counts.begin(), counts.counts.end(), 0) == 0;
 }
 
-PredicateAbstraction BoxDropoutDomain::bestSplit(const TrainingReferencesWithDropout &training_set_abstraction) const {
-    std::list<SymbolicPredicate> candidates = training_set_abstraction.gatherPredicates();
-    std::unordered_map<const SymbolicPredicate, std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDropout::DropoutCounts>, hash_SymbolicPredicate> counts;
-    PredicateAbstraction forall_nontrivial, exists_nontrivial;
+void BoxDropoutDomain::computePredicatesAndScores(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropout &training_set_abstraction, int feature_index) const {
+    switch(training_set_abstraction.training_references.getFeatureTypes()[feature_index]) {
+        // XXX need to make changes here if adding new feature types
+        case FeatureType::BOOLEAN:
+            computeBooleanFeaturePredicateAndScore(exists_nontrivial, forall_nontrivial, training_set_abstraction, feature_index);
+            break;
+        case FeatureType::NUMERIC:
+            computeNumericFeaturePredicatesAndScores(exists_nontrivial, forall_nontrivial, training_set_abstraction, feature_index);
+            break;
+    }
+}
 
-    for(auto i = candidates.cbegin(); i != candidates.cend(); i++) {
-        counts.insert(std::make_pair(*i, training_set_abstraction.splitCounts(*i)));
-        if(!couldBeEmpty(counts[*i].first) && !couldBeEmpty(counts[*i].second)) {
-            forall_nontrivial.push_back(*i);
+void BoxDropoutDomain::computeBooleanFeaturePredicateAndScore(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropout &training_set_abstraction, int feature_index) const {
+    SymbolicPredicate phi(feature_index);
+    auto counts = training_set_abstraction.splitCounts(phi);
+    if(!couldBeEmpty(counts.first) && !couldBeEmpty(counts.second)) {
+        Interval<double> temp = jointImpurity(counts.first.counts,
+                                              counts.first.num_dropout,
+                                              counts.second.counts,
+                                              counts.second.num_dropout);
+        exists_nontrivial.push_back(std::make_pair(phi, temp));
+        if(!mustBeEmpty(counts.first) && !mustBeEmpty(counts.second)) {
+            forall_nontrivial.push_back(&exists_nontrivial.back());
         }
-        if(!mustBeEmpty(counts[*i].first) && !mustBeEmpty(counts[*i].second)) {
-            exists_nontrivial.push_back(*i);
+    }
+}
+
+void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropout &training_set_abstraction, int feature_index) const {
+    // Largely copy-paste from concrete case
+    std::vector<std::pair<float,int>> value_class_pairs(training_set_abstraction.training_references.size());
+    for(unsigned int j = 0; j < training_set_abstraction.training_references.size(); j++) {
+        DataRow temp = training_set_abstraction.training_references[j];
+        value_class_pairs[j].first = temp.x[feature_index].getNumericValue();
+        value_class_pairs[j].second = temp.y;
+    }
+    if(value_class_pairs.size() < 2) {
+        return;
+    }
+    std::sort(value_class_pairs.begin(), value_class_pairs.end(),
+              [](const std::pair<float,int> &p1, const std::pair<float,int> &p2)
+              { return p1.first < p2.first; } );
+    std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDropout::DropoutCounts> split_counts = {
+            { std::vector<int>(training_set_abstraction.training_references.getNumCategories(), 0), 0 },
+            { training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout } };
+    for(auto i = value_class_pairs.begin(); i + 1 != value_class_pairs.end(); i++) {
+        split_counts.first.counts[i->second]++;
+        if(split_counts.first.num_dropout < training_set_abstraction.num_dropout) {
+            split_counts.first.num_dropout++;
         }
+        split_counts.second.counts[i->second]--;
+        int remaining = std::accumulate(split_counts.second.counts.cbegin(), split_counts.second.counts.cend(), 0);
+        if(remaining < split_counts.second.num_dropout) {
+            split_counts.second.num_dropout = remaining;
+        }
+        if(i->first == (i+1)->first) {
+            continue;
+        }
+        // At this point, the check for if we should include in exists_nontrivial would always pass.
+        // For each adjacent pair (l,u) store a symbolic predicate x<=[l,u)
+        SymbolicPredicate phi(feature_index, i->first, (i+1)->first);
+        Interval<double> temp = jointImpurity(split_counts.first.counts,
+                                              split_counts.first.num_dropout,
+                                              split_counts.second.counts,
+                                              split_counts.second.num_dropout);
+        exists_nontrivial.push_back(std::make_pair(phi, temp));
+        if(!mustBeEmpty(split_counts.first) && !mustBeEmpty(split_counts.second)) {
+            forall_nontrivial.push_back(&exists_nontrivial.back());
+        }
+    }
+}
+
+PredicateAbstraction BoxDropoutDomain::bestSplit(const TrainingReferencesWithDropout &training_set_abstraction) const {
+    std::list<ScoreEntry> exists_nontrivial;
+    std::list<const ScoreEntry *> forall_nontrivial; // Points to elements in exists_nontrivial
+    for(int i = 0; i < training_set_abstraction.training_references.getFeatureTypes().size(); i++) {
+        computePredicatesAndScores(exists_nontrivial, forall_nontrivial, training_set_abstraction, i);
     }
 
     if(forall_nontrivial.size() == 0) {
-        exists_nontrivial.push_back({}); // The none option type value
-        return exists_nontrivial;
-    }
-
-    // Compute and store all of the predicates' scores
-    std::unordered_map<const SymbolicPredicate, Interval<double>, hash_SymbolicPredicate> scores;
-    for(auto i = exists_nontrivial.cbegin(); i != exists_nontrivial.cend(); i++) {
-        SymbolicPredicate index = i->value(); // Prior for-loop guarantees i->has_value()
-        Interval<double> temp = jointImpurity(counts[index].first.counts,
-                                              counts[index].first.num_dropout,
-                                              counts[index].second.counts,
-                                              counts[index].second.num_dropout);
-        scores.insert(std::make_pair(index, temp));
-    }
-
-    // Find the threshold using only predicates from forall_nontrivial
-    double min_upper_bound; // Always gets initialized unless forall_nontrivial.size() == 0,
-                            // and we prior have an if statement to check that
-    for(auto i = forall_nontrivial.cbegin(); i != forall_nontrivial.cend(); i++) {
-        SymbolicPredicate index = i->value(); // Again, guaranteed i->has_value()
-        if(i == forall_nontrivial.begin() || min_upper_bound > scores[index].get_upper_bound()) {
-            min_upper_bound = scores[index].get_upper_bound();
+        PredicateAbstraction ret(exists_nontrivial.size() + 1);
+        int index = 0;
+        for(auto i = exists_nontrivial.cbegin(); i != exists_nontrivial.cend(); i++,index++) {
+            ret[index] = i->first;
         }
-    }
-
-    // Return any predicates in exists_nontrivial whose score could beat the threshold
-    PredicateAbstraction ret;
-    for(auto i = exists_nontrivial.cbegin(); i != exists_nontrivial.cend(); i++) {
-        SymbolicPredicate index = i->value(); // Again again, guaranteed i->has_value()
-        if(scores[index].get_lower_bound() <= min_upper_bound) {
-            ret.push_back(*i);
+        ret[exists_nontrivial.size()] = {}; // The non option type value
+        return ret;
+    } else {
+        // Find the threshold using only predicates from forall_nontrivial
+        double min_upper_bound; // Always gets initialized unless forall_nontrivial.size() == 0,
+                                // and we prior have an if statement to check that
+        for(auto i = forall_nontrivial.cbegin(); i != forall_nontrivial.cend(); i++) {
+            if(i == forall_nontrivial.begin() || min_upper_bound > (*i)->second.get_upper_bound()) {
+                min_upper_bound = (*i)->second.get_upper_bound();
+            }
         }
+        // Return any predicates in exists_nontrivial whose score could beat the threshold
+        PredicateAbstraction ret;
+        for(auto i = exists_nontrivial.cbegin(); i != exists_nontrivial.cend(); i++) {
+            if(i->second.get_lower_bound() <= min_upper_bound) {
+                ret.push_back(i->first);
+            }
+        }
+        return ret;
     }
-
-    return ret;
 }
 
 TrainingReferencesWithDropout BoxDropoutDomain::filter(const TrainingReferencesWithDropout &training_set_abstraction, const PredicateAbstraction &predicate_abstraction) const {

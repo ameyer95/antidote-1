@@ -36,6 +36,7 @@ public:
 
 
 // And a wrapper for SymbolicPredicate::hash so we can conveniently use std::unordered_map
+// XXX hashing these may no longer be used
 struct hash_SymbolicPredicate {
     size_t operator()(const SymbolicPredicate &p) const {
         return p.hash();
