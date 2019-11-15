@@ -14,7 +14,7 @@ def filter_oom(json_lines):
 def filter_inconclusive(json_lines):
     return [line for line in json_lines if len(line['result']['possible_classifications']) == 1]
 
-def next_experiment(json_lines):
+def incremented_experiment(json_lines):
     ret = []
     for line in json_lines:
         tokens = line['command'].split()
@@ -30,8 +30,19 @@ def next_experiment(json_lines):
         ret.append(reduce(lambda x,y : x + " " + y, tokens))
     return ret
 
+def next_experiment(filename):
+    prefix = "initcommands_";
+    filename_nopath = filename.split("/")[-1]
+    if filename_nopath[:len(prefix)] == prefix:
+        f = open(filename, 'r')
+        lines = [line.strip() for line in f.readlines()] # remove trailing newline
+        f.close()
+        return lines
+    else:
+        js = load_jsonl(filename)
+        return incremented_experiment(filter_inconclusive(filter_oom(js)))
+
 if __name__ == '__main__':
-    filename = sys.argv[1] # the previous run's jsonl file
-    js = load_jsonl(filename)
-    for e in next_experiment(filter_inconclusive(filter_oom(js))):
+    filename = sys.argv[1] # the previous run's jsonl file OR a list of commands in "initcommands_*"
+    for e in next_experiment(filename):
         print(e)
