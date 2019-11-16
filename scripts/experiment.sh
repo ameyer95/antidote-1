@@ -24,3 +24,5 @@ do
         break
     fi
 done
+
+python3 summarize.py $(ls $PATHTOFILE/*.jsonl) | column -t -s ,
