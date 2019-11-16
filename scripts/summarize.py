@@ -64,7 +64,7 @@ def compute_rows(filenames):
         average_time_all = (v.total_time_finished + v.total_time_oom) / v.num_run
         average_memory_finished = int(v.total_memory_finished / v.num_run)
         csv_rows.append(CSVRow(k, v.num_run, v.num_verified, v.num_oom, f'{average_time_finished:.2f}', f'{average_time_all:.2f}', average_memory_finished))
-    return csv_rows
+    return sorted(csv_rows, key=lambda x : x.num_dropout)
 
 if __name__ == '__main__':
     filenames = sys.argv[1:]
