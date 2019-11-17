@@ -28,6 +28,7 @@ private:
 public:
     ConcreteTrainingReferences() {}
     ConcreteTrainingReferences(const DataSet *training_set) { training_references = DataReferences(training_set); }
+    ConcreteTrainingReferences(const DataReferences *training_references) { this->training_references = *training_references; }
 
     bool isPure() const;
     void filter(const Predicate &phi, bool mode);

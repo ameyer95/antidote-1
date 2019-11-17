@@ -13,6 +13,14 @@ CategoricalDistribution<double> ConcreteSemantics::execute(const FeatureVector &
     return return_value;
 }
 
+CategoricalDistribution<double> ConcreteSemantics::execute(const FeatureVector &test_input, const DataReferences *training_references, const ProgramNode *program) {
+    this->test_input = test_input;
+    current_state.training_references = ConcreteTrainingReferences(training_references);
+    current_state.phi = {};
+    program->accept(*this);
+    return return_value;
+}
+
 void ConcreteSemantics::visit(const ProgramNode &node) {
     node.get_left_child()->accept(*this);
     node.get_right_child()->accept(*this);

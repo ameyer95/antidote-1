@@ -30,6 +30,12 @@ private:
         std::vector<int> num_dropouts; // For when use_abstract == true
         std::optional<int> disjunct_bound; // Optionally, has_value only when with_disjuncts is true
         DisjunctsMergeMode merge_mode; // For when disjunct_bound.has_value()
+        struct RandomTest {
+            bool flag; // Whether to do a random test
+            int num_dropout;
+            int num_trials;
+            unsigned int seed;
+        } random_test;
     } params;
 
     bool verbose;
@@ -44,6 +50,7 @@ private:
 
     std::string output_to_json(int depth, int test_index, const ExperimentBackend::Result<double> &result);
     std::string output_to_json(int depth, int test_index, const ExperimentBackend::Result<Interval<double>> &result);
+    std::string output_to_json(int depth, int test_index, const std::map<int,int> &result);
 
     void output(const std::string &message, bool force=false);
 

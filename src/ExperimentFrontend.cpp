@@ -5,6 +5,7 @@
 #include "ExperimentDataWrangler.h"
 #include "Interval.h"
 #include <iostream>
+#include <map>
 #include <set>
 #include <sstream>
 #include <string>
@@ -79,10 +80,11 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.createArgument("use_disjuncts", "-V", 1, "Like -a, but with disjuncts", true);
     p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from " + setToString(merge_options), true);
     p.createArgument("verbose", "-v", 0, "", true);
+    p.createArgument("random_test", "-r", 3, "Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed.", true);
     
     p.requireAtLeastOne({"test_all", "test_indices"});
     p.requireAtMostOne({"test_all", "test_indices"});
-    p.requireAtMostOne({"use_abstract", "use_disjuncts"});
+    p.requireAtMostOne({"use_abstract", "use_disjuncts", "random_test"});
 
     p.requireTokenInSet("disjunct_bound", 1, merge_options);
     p.requireTokenInSet("dataset", 1, dataset_options);
@@ -90,7 +92,11 @@ void ExperimentFrontend::createCommandLineArguments() {
 
 void ExperimentFrontend::performSingleTest(int depth, int test_index) {
     if(test_index < e->test_size()) {
-        if(params.use_abstract) {
+        if(params.random_test.flag) {
+            output("running a depth-" + std::to_string(depth) + " random test (" + std::to_string(params.random_test.num_trials) + ") using <T," + std::to_string(params.random_test.num_dropout) + "> on test " + std::to_string(test_index));
+            std::map<int,int> ret = e->run_test(depth, test_index, params.random_test.num_dropout, params.random_test.num_trials, params.random_test.seed);
+            output(output_to_json(depth, test_index, ret), true);
+        } else if(params.use_abstract) {
             performAbstractTests(depth, test_index);
         } else {
             output("running a depth-" + std::to_string(depth) + " experiment using T on test " + std::to_string(test_index));
@@ -126,6 +132,10 @@ void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
         }
         output(output_to_json(depth, test_index, ret), true);
     }
+}
+
+std::string ExperimentFrontend::output_to_json(int depth, int test_index, const std::map<int,int> &result) {
+    // TODO
 }
 
 std::string ExperimentFrontend::output_to_json(int depth, int test_index, const ExperimentBackend::Result<double> &result) {
@@ -198,8 +208,13 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
         }
         params.data_prefix = p["dataset"].tokens[0];
         params.dataset = string_to_ExperimentDataEnum(p["dataset"].tokens[1]);
+        params.random_test.flag = p["random_test"].included;
         params.use_abstract = p["use_abstract"].included || p["use_disjuncts"].included;
-        if(p["use_abstract"].included) {
+        if(p["random_test"].included) {
+            params.random_test.num_dropout = std::stoi(p["random_test"].tokens[0]);
+            params.random_test.num_trials = std::stoi(p["random_test"].tokens[1]);
+            params.random_test.seed = std::stoi(p["random_test"].tokens[2]);
+        } else if(p["use_abstract"].included) {
             vectorizeIntStringSplit(params.num_dropouts, p["use_abstract"].tokens[0]);
             params.with_disjuncts = false;
         } else if(p["use_disjuncts"].included) {

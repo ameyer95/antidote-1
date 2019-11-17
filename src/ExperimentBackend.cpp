@@ -5,6 +5,8 @@
 #include "DropoutDomains.hpp"
 #include "Feature.hpp"
 #include <algorithm>
+#include <cstdlib> // for random stuff
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,6 +43,10 @@ set<int> softMax(const CategoricalDistribution<Interval<double>> &p) {
         }
     }
     return ret;
+}
+
+DataReferences* random_subset(const DataSet *training, int num_dropout) {
+    // TODO
 }
 
 /**
@@ -121,4 +127,25 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_boun
     }
     auto ret = d.D_domain.join(posteriors);
     return { ret, softMax(ret), groundTruth(test_index) };
+}
+
+std::map<int,int> ExperimentBackend::run_test(int depth, int test_index, int num_dropout, int num_trials, unsigned int seed) {
+    ProgramNode *program = buildTree(depth);
+    ConcreteSemantics sem;
+    map<int,int> ret;
+    for(int i = 0; i < training->num_categories; i++) {
+        ret.insert(make_pair(i, 0));
+    }
+    srand(seed);
+    for(int i = 0; i < num_trials; i++) {
+        DataReferences *subset = random_subset(training, num_dropout);
+        auto result = sem.execute(test->rows[test_index].x, subset, program);
+        set<int> classification = softMax(result);
+        for(auto j = classification.cbegin(); j != classification.cend(); j++) {
+            ret[*j]++;
+        }
+        delete subset;
+    }
+    delete program;
+    return ret;
 }

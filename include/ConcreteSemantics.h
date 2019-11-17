@@ -31,6 +31,7 @@ public:
     // This class doesn't do any dynamic allocation and accordingly does not handle any deallocation
 
     CategoricalDistribution<double> execute(const FeatureVector &test_input, const DataSet *training_set, const ProgramNode *program);
+    CategoricalDistribution<double> execute(const FeatureVector &test_input, const DataReferences *training_references, const ProgramNode *program);
 
     void visit(const ProgramNode &node);
     void visit(const SequenceNode &node);

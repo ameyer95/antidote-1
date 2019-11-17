@@ -5,6 +5,7 @@
 #include "CommonEnums.h"
 #include "DataSet.hpp"
 #include "Interval.h"
+#include <map>
 #include <set>
 
 
@@ -30,6 +31,8 @@ public:
     Result<Interval<double>> run_abstract(int depth, int test_index, int num_dropout);
     Result<Interval<double>> run_abstract_disjuncts(int depth, int test_index, int num_dropout);
     Result<Interval<double>> run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const DisjunctsMergeMode &merge_mode);
+
+    std::map<int,int> run_test(int depth, int test_index, int num_dropout, int num_trials, unsigned int seed);
 };
 
 
