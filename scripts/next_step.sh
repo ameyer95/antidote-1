@@ -6,15 +6,16 @@
 MEMLIMIT=$[$1*2**10]
 PREVRUNS=$2
 OUTPUTFILE=$3
+TEMPPATH=$4
 
 # Hack: to get iteratively running this script started,
 # the python script nextbatch.py checks
 # if the PREVRUNS filename is of the form initcommands_*
 # and if so, simply returns the commands in that file to be run
 
-RESULTFILE=output.tmp
-RESOURCEFILE=resources.tmp
-RUNFILE=runbatch.tmp
+RESULTFILE=$TEMPPATH/output.tmp
+RESOURCEFILE=$TEMPPATH/resources.tmp
+RUNFILE=$TEMPPATH/runbatch.tmp
 
 function run_benchmark {
     /usr/bin/time -f "%E %M" -o $RESOURCEFILE ./run_with_mem_limit.sh $MEMLIMIT $@ > $RESULTFILE

@@ -8,7 +8,7 @@ INITFILE=$2
 PATHTOFILE=${INITFILE%\/*}
 
 NEXT=1
-./next_step.sh $MEMLIMIT $INITFILE $PATHTOFILE/$NEXT.jsonl
+./next_step.sh $MEMLIMIT $INITFILE $PATHTOFILE/$NEXT.jsonl $PATHTOFILE
 while true
 do
     PREV=$NEXT
@@ -19,7 +19,7 @@ do
     # i.e. check if the previous iteration actually caused us to run any experiments
     if [ -s $PREVFILE ]
     then
-        ./next_step.sh $MEMLIMIT $PREVFILE $NEXTFILE
+        ./next_step.sh $MEMLIMIT $PREVFILE $NEXTFILE $PATHTOFILE
     else
         break
     fi
