@@ -135,7 +135,21 @@ void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
 }
 
 std::string ExperimentFrontend::output_to_json(int depth, int test_index, const std::map<int,int> &result) {
-    // TODO
+    std::string ret = "{ ";
+    ret += "\"depth\" : " + std::to_string(depth) + ", ";
+    ret += "\"test_index\" : " + std::to_string(test_index) + ", ";
+    ret += "\"classification_counts\" : { ";
+    for(auto i = result.cbegin(); i != result.cend(); i++) {
+        if(i->second != 0) {
+            if(i != result.cbegin()) {
+                ret += ", ";
+            }
+            ret += "\"" + current_data->class_labels[i->first] + "\" : " + std::to_string(i->second);
+        }
+    }
+    ret += " }";
+    ret += " }";
+    return ret;
 }
 
 std::string ExperimentFrontend::output_to_json(int depth, int test_index, const ExperimentBackend::Result<double> &result) {

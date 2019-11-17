@@ -45,8 +45,23 @@ set<int> softMax(const CategoricalDistribution<Interval<double>> &p) {
     return ret;
 }
 
+unsigned int random_removal_size(int set_size, int num_dropout) {
+    // TODO make this actually consider smaller amounts
+    return num_dropout;
+}
+
 DataReferences* random_subset(const DataSet *training, int num_dropout) {
-    // TODO
+    unsigned int removal_size = random_removal_size(training->rows.size(), num_dropout);
+    set<int> indices;
+    while(indices.size() < removal_size) {
+        indices.insert(rand() % training->rows.size());
+    }
+    DataReferences *ret = new DataReferences(training);
+    // For each index in decreasing order, remove it
+    for(auto i = indices.crbegin(); i != indices.crend(); i++) {
+        ret->remove(*i);
+    }
+    return ret;
 }
 
 /**
