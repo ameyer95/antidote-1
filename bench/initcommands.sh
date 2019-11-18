@@ -1,7 +1,7 @@
 #!/bin/bash
 
 mkdir iris
-for D in {1..3}
+for D in {1..4}
 do
     mkdir iris/d${D}_a iris/d${D}_V
     for I in {0..29}
