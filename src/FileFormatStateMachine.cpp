@@ -1,7 +1,5 @@
 #include "FileFormatStateMachine.h"
-#include <algorithm> // all_of, remove_if, transform, ...
-#include <ctype.h> // for isspace
-#include <locale> // for tolower
+#include "string_common.h"
 #include <string>
 using namespace std;
 
@@ -9,7 +7,6 @@ using namespace std;
  * Auxiliary declarations
  */
 
-bool allWhiteSpace(const string &s);
 string delimLint(string s);
 
 
@@ -25,7 +22,7 @@ FileFormatStateMachine::LineType FileFormatStateMachine::processLine(const strin
     if(error_flag) {
         return LineType::SKIP;
     }
-    if(allWhiteSpace(line)) {
+    if(allWhitespace(line)) {
         return LineType::SKIP;
     }
 
@@ -63,13 +60,8 @@ FileFormatStateMachine::LineType FileFormatStateMachine::processLine(const strin
  * Auxiliary definitions
  */
 
-inline bool allWhiteSpace(const string &s) {
-    return std::all_of(s.begin(), s.end(), ::isspace);
-}
-
 string delimLint(string s) {
-    // remove_if can't modify string length, isspace has overloads---see https://stackoverflow.com/a/83538
-    s.erase(remove_if(s.begin(), s.end(), ::isspace), s.end()); // remove whitespace
-    transform(s.begin(), s.end(), s.begin(), ::tolower); // tolowercase
+    removeWhitespace(s);
+    return toLowerCase(s);
     return s;
 }
