@@ -25,7 +25,7 @@ private:
     bool extractTrainingRow(const std::string &line);
     bool extractTestRow(const std::string &line);
 
-    DataRow extractDataRow(const std::string &line);
+    bool extractDataRow(const std::string &line, std::vector<DataRow> *store);
 
 public:
     // Returns NULL if there was an error, caller is responsible for deallocation

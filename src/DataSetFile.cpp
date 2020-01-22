@@ -22,6 +22,7 @@ DataSetFile::DataSetFile() {
     // TODO
 }
 
+// Strings in the header line must be either "bool" or "real" or parsing will fail
 bool DataSetFile::extractHeader(const string &line) {
     vector<string> fields;
     commaSplit(line, fields, true);
@@ -47,15 +48,20 @@ bool DataSetFile::extractClassLabels(const string &line) {
 }
 
 bool DataSetFile::extractTrainingRow(const string &line) {
-    // TODO
+    return extractDataRow(line, &training);
 }
 
 bool DataSetFile::extractTestRow(const string &line) {
-    // TODO
+    return extractDataRow(line, &test);
 }
 
-DataRow DataSetFile::extractDataRow(const string &line) {
+bool DataSetFile::extractDataRow(const string &line, vector<DataRow> *store) {
+    vector<string> fields;
+    commaSplit(line, fields, true);
     // TODO
+    // make sure that the length agrees with the header
+    // convert all of the features to the Feature type
+    // convert the class string to the appropriate int from the header
 }
 
 DataSetFile* DataSetFile::loadFile(const string &filename) {
