@@ -1,5 +1,6 @@
 #include "ExperimentBackend.h"
 #include "AbstractSemanticsInstantiations.hpp"
+#include "AbstractSemanticsTemplate.cpp"
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
 #include "DropoutDomains.hpp"
