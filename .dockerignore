@@ -1,0 +1,12 @@
+# Ignore everything
+**
+
+# Explicitly allow certain files/directories as exceptions
+!Dockerfile
+!.dockerignore
+!data/*.sh
+!data/*.py
+!include/**
+!src/**
+!test/**
+!Makefile
