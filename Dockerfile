@@ -1,10 +1,29 @@
-FROM ubuntu:18.04
+# Multistage building:
+# The first compiles the code and fetches the datasets,
+# while the second just copies the built objects
+# (thus we avoid distributing a large image that includes g++ etc)
+#
+# While this keeps the distributable image small,
+# the user will have to install python3 to run the data-summarizing scripts,
+# install g++/make to tweak code and rebuild, etc.
+
+# The first image:
+# 1) installs g++, make, python3, and wget
+# 2) compiles the source code (and tester, which then runs)
+# 3) fetches the datasets and preprocesses them
+FROM ubuntu:18.04 AS builder
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends g++ make python3 wget \
-    && rm -rf /var/apt/lists*
+    && apt-get install -y --no-install-recommends g++ make python3 wget
+# No "need" for clean-up since we abandon this base image
 
 COPY . /antidote/
-
 WORKDIR /antidote
-RUN make && data/fetch-mnist.sh && data/fetch-uci.sh
+RUN make && make test
+RUN data/fetch-mnist.sh && data/fetch-uci.sh
+
+# The second (final) image:
+FROM ubuntu:18.04
+
+COPY --from=builder /antidote /antidote
+WORKDIR /antidote
