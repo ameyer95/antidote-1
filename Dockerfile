@@ -4,8 +4,7 @@
 # (thus we avoid distributing a large image that includes g++ etc)
 #
 # While this keeps the distributable image small,
-# the user will have to install python3 to run the data-summarizing scripts,
-# install g++/make to tweak code and rebuild, etc.
+# the user will have to install g++/make to tweak code and rebuild, etc.
 
 # The first image:
 # 1) installs g++, make, python3, and wget
@@ -23,7 +22,13 @@ RUN make && make test
 RUN data/fetch-mnist.sh && data/fetch-uci.sh
 
 # The second (final) image:
+# We actually must include python3 since the batch experimentation pipeline uses python scripts
+# (ubuntu + apt-get python3 seems to be ~100MB smaller than python:3.8-slim-buster).
 FROM ubuntu:18.04
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists*
 
 COPY --from=builder /antidote /antidote
 WORKDIR /antidote

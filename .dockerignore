@@ -4,9 +4,10 @@
 # Explicitly allow certain files/directories as exceptions
 !Dockerfile
 !.dockerignore
+!Makefile
 !data/*.sh
 !data/*.py
 !include/**
+!scripts/**
 !src/**
 !test/**
-!Makefile
