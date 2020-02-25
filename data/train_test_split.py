@@ -5,11 +5,12 @@
 #   (2) Generating a random row partitioning and accordingly
 #       it in a file;
 # however, there is no interface for selecting between them.
-# The default behavior is (1), while (2) can be achieved
-# by modifying the code herein.
+# The default behavior is that (1) runs if the appropriate .rand file exists,
+# otherwise (2) is performed (which also writes the .rand file).
 
 from collections import namedtuple
 import random
+import os.path
 
 FileNames = namedtuple('FileNames', ['input_file', 'rand_file', 'output80_file', 'output20_file'])
 
@@ -69,7 +70,10 @@ def performStoredSplit(instance):
     writeFile(instance.file_names.output80_file, lines80)
     writeFile(instance.file_names.output20_file, lines20)
 
+
 if __name__ == '__main__':
     for k,v in instances.items():
-        #performFreshSplit(v)
-        performStoredSplit(v)
+        if os.path.exists(v.file_names.rand_file):
+            performStoredSplit(v)
+        else:
+            performFreshSplit(v)
