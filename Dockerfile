@@ -34,3 +34,6 @@ RUN apt-get update \
 
 COPY --from=builder /antidote /antidote
 WORKDIR /antidote
+
+# Generate the initcommands files for the experiment pipeline
+RUN scripts/batch-exp/initcommands.sh
