@@ -1,3 +1,8 @@
+# Takes a variable number of command line arguments,
+# each of which should be the path to a .jsonl file
+# produced by the scripts/batch-exp/next_step.sh script.
+# Does some wrangling of each json line's content and dumps everything to stdout.
+
 import json
 import sys
 from collections import namedtuple

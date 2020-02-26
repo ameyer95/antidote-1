@@ -1,3 +1,7 @@
+# Takes one .jsonl filename as input.
+# Each json object should be the direct output of the main tool bin/main
+# (not some wrapped information from the scripts/batch-exp/ pipeline).
+
 import json
 import sys
 

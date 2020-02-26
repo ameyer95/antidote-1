@@ -1,3 +1,10 @@
+# Takes a variable number of command line arguments,
+# each of which should be the path to a .jsonl file
+# produced by the scripts/batch-exp/next_step.sh script.
+# It's intended to passed every .jsonl file produced by the main experiment script
+# scripts/batch-exp/experiment.sh
+# (which does the binary searching for the maximal verifiable robustness bounds).
+
 from collections import namedtuple
 from functools import reduce
 import json
