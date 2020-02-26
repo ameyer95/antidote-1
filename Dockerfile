@@ -24,10 +24,12 @@ RUN data/fetch-mnist.sh && data/fetch-uci.sh
 # The second (final) image:
 # We actually must include python3 since the batch experimentation pipeline uses python scripts
 # (ubuntu + apt-get python3 seems to be ~100MB smaller than python:3.8-slim-buster).
+# `column` (from bsdmainutils) and jq are convenient for command-line data readability
+# (and we explicitly invoke the former from the experiment scripts)
 FROM ubuntu:18.04
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 \
+    && apt-get install -y --no-install-recommends python3 bsdmainutils jq time \
     && rm -rf /var/lib/apt/lists*
 
 COPY --from=builder /antidote /antidote
