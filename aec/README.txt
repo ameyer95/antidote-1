@@ -136,7 +136,8 @@ It then outputs a summary of the results in a tabular format, as below
 The fourth data row reads as follows:
 imagining that an adversary had been allowed to contribute three poisoned
 training elements, we were able to verify that eight test set instances could
-not have had their classifications changed (we checked nineteen at this stage). These experiments took on average 0.15s, using on average 4243KB memory.
+not have had their classifications changed (we checked nineteen at this stage).
+These experiments took on average 0.15s, using on average 4243KB memory.
 
 The experiment.sh script populated the `bench/iris/d2_V/` directory with many
 .jsonl files (see `ls bench/iris/d2_V/`).
@@ -183,6 +184,8 @@ with `docker rm NAME`.
 
 
 # Step-by-Step Instructions
+
+TODO: everything
 
 ### Details of the Executables
 
