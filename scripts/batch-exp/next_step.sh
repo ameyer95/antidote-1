@@ -3,10 +3,12 @@
 # first argument is a memory limit (in MB, we convert to KB)
 # second argument is the file where we stored the previous results
 # third argument is the file where we will write these results
+# fourth argument is the directory in which to store temp files (to avoid parallelized collisions)
+# (Note that we convert the path arguments to an absolute path.)
 MEMLIMIT=$[$1*2**10]
-PREVRUNS=$2
-OUTPUTFILE=$3
-TEMPPATH=$4
+PREVRUNS=$(readlink -m $2)
+OUTPUTFILE=$(readlink -m $3)
+TEMPPATH=$(readlink -m $4)
 
 # Hack: to get iteratively running this script started,
 # the python script nextbatch.py checks
@@ -16,6 +18,8 @@ TEMPPATH=$4
 RESULTFILE=$TEMPPATH/output.tmp
 RESOURCEFILE=$TEMPPATH/resources.tmp
 RUNFILE=$TEMPPATH/runbatch.tmp
+
+cd $(dirname "$0") # Descend into the same directory as the script
 
 function run_benchmark {
     /usr/bin/time -f "%E %M" -o $RESOURCEFILE ./run_with_mem_limit.sh $MEMLIMIT $@ > $RESULTFILE
@@ -37,7 +41,7 @@ function run_benchmark {
     rm $RESULTFILE $RESOURCEFILE
 }
 
-python3 nextbatch.py $PREVRUNS > $RUNFILE
+python3 ./nextbatch.py $PREVRUNS > $RUNFILE
 
 INDEX=1
 TOTAL=$(echo $(wc -l $RUNFILE) | awk '{print $1}')

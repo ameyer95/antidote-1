@@ -1,18 +1,23 @@
 #!/bin/bash
 
-# copied and modified next_step.sh
+# XXX copied and modified next_step.sh
+# to be able to run an array of experiments without performing the
+# iterative experiment step preparations.
 
 # first argument is a memory limit (in MB, we convert to KB)
 # second argument is the file with the list of commands to run
 # third argument is the file where we will write these results
 # fourth argument is the directory in which to store temp files (to avoid parallelized collisions)
+# (Note that we convert the path arguments to an absolute path.)
 MEMLIMIT=$[$1*2**10]
-COMMANDSFILE=$2
-OUTPUTFILE=$3
-TEMPPATH=$4
+COMMANDSFILE=$(readlink -m $2)
+OUTPUTFILE=$(readlink -m $3)
+TEMPPATH=$(readlnk -m $4)
 
 RESULTFILE=$TEMPPATH/output.tmp
 RESOURCEFILE=$TEMPPATH/resources.tmp
+
+cd $(dirname "$0") # Descend into the same directory as the script
 
 function run_benchmark {
     /usr/bin/time -f "%E %M" -o $RESOURCEFILE ./run_with_mem_limit.sh $MEMLIMIT $@ > $RESULTFILE
