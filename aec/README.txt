@@ -54,15 +54,15 @@ proceeding to the next section.
 
 From the shell within the interactive docker container,
 you should be able to see the contents of /antidote with `ls`.
-The tool comes pre-built (./bin/main) from the source (./include/ and ./src).
+The tool comes pre-built (./bin/main) from the source (./include/ and ./src/).
 Running `bin/main` without any arguments should simply output usage information
 as a list of the form "-flag[number of arguments]: description".
 
-The datasets from our experimental evaluation (and more) are stored in ./data.
+The datasets from our experimental evaluation (and more) are stored in ./data/.
 We will illustrate example usage of the tool with the simplest dataset: iris.
 The following command trains a depth-2 decision tree on the iris training set
-(data/iris80.data) and uses it to classify the test set (data/iris20.data)
-element with index 0 (i.e. the first row the test set file):
+(data/iris80.data) and uses it to classify the test set element with index 0
+(i.e. the first row of the test set file data/iris20.data):
 `bin/main -f data iris -d 2 -t 0 | jq`
 (The pipe into `jq` is optional, but makes the output more readable.)
 The program should terminate immediately, outputting the following json string:
@@ -86,7 +86,7 @@ but also reports that
 
 1. this test set instance's true label ("ground_truth") is "Iris-setosa";
 2. the posterior distribution the model assigns this test input for its
-   classification ("posterior") assigns probability 1 to "Iris-setosa";
+   classification ("posterior") has probability 1 for "Iris-setosa";
 3. accordingly, the tree (correctly) classifies the test input as an
    "Iris-setosa" (since "possible_classifications" is a single value).
 
@@ -105,7 +105,7 @@ yield models that classify a particular test input in the same way.
 
 We have scripts that automate a process where we explore our ability to prove
 poisoning robustness for increasing amounts of possible poisoning (this N).
-(See the description from the paper, Section 6.1, "Experimental Setup".)
+(The full description is in the paper, Section 6.1, "Experimental Setup".)
 We exemplify their usage, continuing with the depth-2 tree on the iris dataset.
 
 There is a directory hierarchy in ./bench for batch experimentation. Run
@@ -119,8 +119,9 @@ We have a pipeline that (1) runs each of these commands, and then
 we increase the value of N and run again, repeating until all proofs fail.
 
 Run the following:
-`scripts/batch-exp/experiment.sh 500 bench/iris/d2_V/initcommands_iris_d2_V.txt`
-(note that the first argument is a memory limit in MB).
+`scripts/batch-exp/experiment.sh 1000 60 bench/iris/d2_V/initcommands_iris_d2_V.txt`
+(note that the first two arguments are a memory limit in MB and a time limit in
+seconds, respectively, for each of the commands that are run).
 It should terminate within a minute, outputting timestamps for each of the
 individual commands it runs.
 It then outputs a summary of the results in a tabular format, as below
@@ -145,8 +146,7 @@ Internally, experiment.sh appends to these .jsonl files, so repeatedly invoking
 the command when bench/iris/d2_V/ contains files other than the initial
 "initcommands...txt" file will create unusual behavior.
 The table above can always be recreated from the existing data via
-`python3 scripts/data-wrangle/summarize.py $(ls bench/iris/d2_V/*.jsonl)
-| column -t -s ,`
+`python3 scripts/data-wrangle/summarize.py $(ls bench/iris/d2_V/*.jsonl) | column -t -s ,`
 (the pipe to `column` is just for readability).
 
 This concludes ensuring the basics of experimentation function correctly;
@@ -194,7 +194,7 @@ TODO: everything
 If we assume an adversary contributed up to 1 poisoned training element,
 we can modify the passed parameters to perform this computation with the "box"
 domain (as described in the paper, Section 4):
-`bin/main -f data -iris -d 2 -t 0 -a 1`
+`bin/main -f data iris -d 2 -t 0 -a 1`
 The program should again terminate quickly, but with slightly different output:
 
     ...

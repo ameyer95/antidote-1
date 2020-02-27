@@ -3,7 +3,7 @@
 # Runs a command, and while waiting for it to finish,
 # periodically checks if the process is exceeding a given memory threshold.
 # If so, kills the process and exits with an error.
-# (Update: now also enforces a 1-hour timeout.)
+# (Update: now also enforces a given timeout.)
 #
 # Ideally, we wouldn't need this auxiliary script,
 # since it is supposed to be achievable with ulimit,
@@ -13,11 +13,10 @@
 
 # memory limit in KB
 MEMLIMIT=$1
-# All tokens after the first argument constitute the single command
-COMMAND=${@:2}
-
-# Also, we give all benchmarks a 1 hour time limit
-TIMELIMIT=3600
+# time limit in seconds (used to be hard-coded 1hr=3600)
+TIMELIMIT=$2
+# All tokens after the second argument constitute the single command
+COMMAND=${@:3}
 
 # Don't descend into this directory (in case command includes relative paths)
 # but access ./hhmmss.sh using relative paths
