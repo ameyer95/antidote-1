@@ -185,7 +185,8 @@ with `docker rm NAME`.
 
 # 2 Step-by-Step Instructions
 
-TODO: everything
+This section provides a bit more documentation about our tool and instructions
+to reproduce the results presented in our paper.
 
 
 ### 2.1 Antidote Details
@@ -258,11 +259,46 @@ the poisoning-robustness property for n=1.
 
 ### 2.2 Recreating the Paper's Experiments
 
+In this section, we will walk through recreating all of the experimental claims
+presented in the paper.
+However (as is noted in the paper), all of our experiments were performed on
+machines with 160GB of RAM. The total running time for all benchmarks amounts
+to around 800 cpu hours: this is in large part due to *how long* it takes to
+run out of memory, in the test cases that do so, when there is 160GB available.
+
+Running the experiments with a smaller memory limit (and timeout period) will
+drastically reduce the total running time, although this will naturally reduce
+the number of verification problems that the tool is able to prove.
+In each of the following sections, where appropriate, we describe how to run
+versions of the experiments at smaller scales.
+For completeness, we have also included the raw output of the verification
+experiments as they performed on our machines (described later).
+
 #### 2.2.1 Test Set Accuracies (Concrete Semantics)
 
-Slow because we retrain for every test instance, lol
-As in Section 6.1, Table 1.
-TODO scripts to run all of them? Then invoke accuracy data-wrangling thing?
+Section 6.1, Table 1 reports test-set accuracies for each of the combinations
+of datasets and tree depths that we consider.
+This computation requires running the concrete learner on each element of the
+test set (which our tool is not optimized for, and thus takes a while on some
+of the datasets).
+To compute the test set accuracy of a depth-2 tree on iris, run:
+```
+bin/main -f data iris -d 2 -T > temp.jsonl
+python3 scripts/data-wrangle/accuracy.py temp.jsonl
+```
+This should report `0.9` (meaning 90% accuracy).
+(`rm temp.jsonl` to clean up.)
+
+We have a script to compute the test set accuracies for all our combination
+of parameters: it stores the raw output of the main tool in jsonl files in
+bench/concrete, and it invokes the above accuracy.py script on each.
+Run `scripts/batch-exp/test_accuracy.sh`. The results for the iris, mammography,
+and cancer datasets should complete in seconds; the mnist variants take far
+longer, around an hour total on our 4GHz machine.
+
+The results should match the numbers that appear in the table in the paper.
+The accuracies can be recomputed quickly by pointing
+scripts/data-wrangle/accuracy.py to the appropriate bench/concrete/*.jsonl file.
 
 #### 2.2.2 Recreating full Benchmarks (Abstract Semantics)
 
