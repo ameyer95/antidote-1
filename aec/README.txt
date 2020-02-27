@@ -1,4 +1,4 @@
-# Getting Started Guide
+# 1 Getting Started Guide
 
 The artifact is a docker image based on ubuntu:18.04,
 and our testing of the artifact was done on a ubuntu:18.04 host machine
@@ -10,7 +10,7 @@ All you should need to begin is the given antidote-image.tar file and a working
 docker installation.
 
 
-### Setting up Docker
+### 1.1 Setting up Docker
 
 In a perfect world, the reader of this document would already be familiar with
 docker and have it installed.
@@ -30,7 +30,7 @@ able to run the given commands and recreate the desired results.
 maintenance of docker images and containers.)
 
 
-### Running the Image
+### 1.2 Running the Image
 
 Load the image from the .tar file into docker's internal storage
 `docker load -i antidote-image.tar`
@@ -50,7 +50,7 @@ If you do `exit`, you must perform the prior `docker run ...` command before
 proceeding to the next section.
 
 
-### Running the Tool
+### 1.3 Running the Tool
 
 From the shell within the interactive docker container,
 you should be able to see the contents of /antidote with `ls`.
@@ -95,7 +95,7 @@ we will defer discussing other variations of parameters to the more detailed
 Step-by-Step Instructions in the latter part of this document.
 
 
-### Running Batches of Experiments
+### 1.4 Running Batches of Experiments
 
 As described in our paper, our tool uses abstract interpretation to prove an
 adversary can not successfully perform a *training set poisoning attack*.
@@ -153,7 +153,7 @@ This concludes ensuring the basics of experimentation function correctly;
 at this point you may `exit` the container.
 
 
-### Additional Notes About Docker
+### 1.5 Additional Notes About Docker
 
 A docker "container" is like a virtual machine whose initial internal state
 is given from some specified docker "image."
@@ -183,18 +183,33 @@ with `docker rm NAME`.
 
 
 
-# Step-by-Step Instructions
+# 2 Step-by-Step Instructions
 
 TODO: everything
 
-### Details of the Executables
 
-#### Computing the Possible Classifications Under Poisoning
+### 2.1 Antidote Details
+
+TODO the tool implements both concrete and abstract learning.
+
+#### 2.1.1 Summary of Revelant Flags
+
+TODO -f, -d, -t/-T, epsilon/-a/-V
+
+#### 2.1.2 Example Usage: Proving Poisoning Robustness
+
+In the Getting Started section, we invoked the tool to classify an particular
+test set instance of an iris using `bin/main -f data iris -d 2 -t 0`.
+This performed the concrete learning algorithm described in our paper, Section
+3.3 (this is the "DTrace" from Figure 4).
+Our tool can take additional flags that run the abstract version, DTrace#,
+which symbolically trains on all of the training sets in a particular "poisoning
+model" (see Definition 3.1 and Section 4.1).
 
 If we assume an adversary contributed up to 1 poisoned training element,
 we can modify the passed parameters to perform this computation with the "box"
-domain (as described in the paper, Section 4):
-`bin/main -f data iris -d 2 -t 0 -a 1`
+domain (as described in the paper, Section 4) -- specifically, the "-a N" flag:
+`bin/main -f data iris -d 2 -t 0 -a 1 | jq`
 The program should again terminate quickly, but with slightly different output:
 
     ...
@@ -212,13 +227,93 @@ The program should again terminate quickly, but with slightly different output:
 
 In this case, the analysis reports that many things are possible.
 Each probability in the posterior distribution can take an *interval* of values
-(written as [lower bound, upper bound]);
+(written as `[lower bound, upper bound]`);
 here, "Iris-virginia" is definitely assigned 0 probability, but each of the
 other two classes could be assigned any probability between 0 and 1.
-Accordingly, "possible_classifications" TODO
+Accordingly, "possible_classifications" soundly reports that any of the classes
+could have maximal probability, and we are not able to prove robustness.
 
-TODO show how -V is more precise
+Later in the paper (Section 5.2), we describe a variant of our abstraction that
+uses disjuncts to perform a more precise analysis (but more resource-expensive).
+This uses the "-V N" flag (instead of "-a"). If we run this variant:
+`bin/main -f data iris -d 2 -t 0 -V 1 | jq`
+we get
 
-### Recreating the Paper's Experiments
+    ...
+      "posterior": {
+        "Iris-setosa": [ 0.961538, 1 ],
+        "Iris-versicolor": [ 0, 0.038462 ],
+        "Iris-virginica": [ 0, 0 ]
+      },
+      "possible_classifications": [
+        "Iris-setosa"
+      ]
+    }
 
-### Running on Other Datasets
+This time, the analysis kept enough precision to conclude that Iris-Setosa is
+always given probability *at least* 0.96, while the other classes are given
+probability *at most* 0.03, so Iris-Setosa always dominates; we have proved
+the poisoning-robustness property for n=1.
+
+
+### 2.2 Recreating the Paper's Experiments
+
+#### 2.2.1 Test Set Accuracies (Concrete Semantics)
+
+Slow because we retrain for every test instance, lol
+As in Section 6.1, Table 1.
+TODO scripts to run all of them? Then invoke accuracy data-wrangling thing?
+
+#### 2.2.2 Recreating full Benchmarks (Abstract Semantics)
+
+The remaining figures require a lot of runs, TODO figure out a small fraction
+TODO include the ones we used that they can use to reproduce paper values.
+
+#### 2.2.3 Reproducing Figures
+
+Figure generation for summary Section 6.2, Figure 6
+
+Figure generation for Section 6.3, Figure 7 (and supp figures?)
+
+#### 2.2.4 Reproducing In-Text Quantitative Claims
+
+TODO intro's example (repeated in Section 2, "An Involved Example"):
+`/usr/bin/time -v bin/main -f data mnist_simple_1_7 -d 3 -t 511 -V 192`
+note: this computation takes around 4.5GB of memory
+("Maximum resident set size")
+alternatively,
+`grep "\"dataset\": \"mnist_simple_1_7\", \"depth\": 3, \"test_index\": 511, \"domain\": \"disjuncts\", \"num_dropout\": 192," all.jsonl | jq`
+(line 14487 of the vmres-gen'd one)
+
+Section 6.2:
+mnist real 1 7 depth 2: 38 proven for n=64, average 800s run time
+
+Section 6.3, "Box vs Disjuncts":
+mnist bin 1 7 depth=3 n=64:
+    disjuncts: 52 verif, average 32s 1650MB
+    Box: 15 verif, average 0.7s 150MB
+
+Section 6.3, "Number of Poisoned Elements":
+95% of exp with Box finished within 20s, no TO, longest 232 seconds
+
+Section 6.3, "Size of Dataset and Number of Features":
+depth=3, disjuncts, n~0.5%
+    Iris: average 0.1s
+    Mammography: average 0.2s
+    wdbc: average 26s
+    mnist simple: average 32s
+    mnist real: 100% timeout, hah.
+
+Section 6.3, "Depth of the Tree":
+mnist binary, disjuncts, n=64
+    depth 1: average 0.3s
+    depth 2: average 0.5s
+    depth 3: average 32s
+    depth 4: average 933s
+
+
+### 2.3 Running on Other Datasets
+
+TODO have to modify code, so you'll need to also install things.
+Pipeline for batch experimentation and figure generation is hard-coded
+for filenames in the paper and would take some dedicated hacking to extend.
