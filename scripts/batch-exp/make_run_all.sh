@@ -14,7 +14,7 @@ echo "cd \$(dirname \"\$0\") # Descend into the same directory as this script" >
 for DATASET in iris mammography cancer mnist_simple_1_7 mnist_1_7; do
     for DOMAIN in a V; do
         for DEPTH in {1..4}; do
-            echo ./experiment.sh \$MEMLIMIT \$TIMELIMIT ../../bench/$DATASET/d${DEPTH}_${DOMAIN}/initcommands_${DATASET}_${DOMAIN}.txt >> $OUTFILE
+            echo ./experiment.sh \$MEMLIMIT \$TIMELIMIT ../../bench/$DATASET/d${DEPTH}_${DOMAIN}/initcommands_${DATASET}_d${DEPTH}_${DOMAIN}.txt >> $OUTFILE
         done
     done
 done
