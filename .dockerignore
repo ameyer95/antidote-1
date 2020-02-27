@@ -8,6 +8,7 @@
 !data/*.sh
 !data/*.py
 !include/**
-!scripts/**
+!scripts/**/*.sh
+!scripts/**/*.py
 !src/**
 !test/**
