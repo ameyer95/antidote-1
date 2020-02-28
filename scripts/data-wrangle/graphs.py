@@ -90,6 +90,8 @@ def create_proven_vs_poisoned_csvs(json_lines):
 
 def create_proven_vs_poisoned_plots(json_lines, path_prefix):
     touch_directory(path_prefix)
+    marker_map = {1 : 'o', 2 : 's', 3 : '^', 4 : '*'}
+    color_map = {1 : 'b', 2 : 'r', 3 : 'tab:brown', 4 : 'k'}
     for dataset in datasets:
         dataset_lines = [x for x in json_lines if x['dataset'] == dataset]
         for depth in depths:
@@ -98,7 +100,7 @@ def create_proven_vs_poisoned_plots(json_lines, path_prefix):
             pairs = [(n, v/test_size[dataset]) for n,v in pairs if n != 0]
             if len(pairs) > 0:
                 xs,ys = tuple(zip(*pairs))
-                plt.plot(xs, ys, label="depth " + str(depth), marker='o')
+                plt.plot(xs, ys, label="depth " + str(depth), marker=marker_map[depth], color=color_map[depth], clip_on=False)
         plt.title("Proven vs Poisoned: " + dataset)
         plt.xlabel("poisoning n (log scale)")
         plt.xscale('log', basex=2)
