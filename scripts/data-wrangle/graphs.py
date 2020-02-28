@@ -3,6 +3,8 @@ import math
 import os
 from collections import namedtuple
 from functools import reduce
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 
 datasets = ["iris", "mammography", "wdbc", "mnist_simple_1_7", "mnist_1_7"]
 depths = [1, 2, 3, 4]
@@ -86,6 +88,29 @@ def create_proven_vs_poisoned_csvs(json_lines):
             filename = dataset + "_d" + str(depth) + ".csv"
             write_csv(path + "/" + filename, "num_dropout,percent_verified", pairs)
 
+def create_proven_vs_poisoned_plots(json_lines, path_prefix):
+    touch_directory(path_prefix)
+    for dataset in datasets:
+        dataset_lines = [x for x in json_lines if x['dataset'] == dataset]
+        for depth in depths:
+            pairs = proven_vs_poisoned([x for x in dataset_lines if x['depth'] == depth])
+            # make the number verified a percentage
+            pairs = [(n, v/test_size[dataset]) for n,v in pairs if n != 0]
+            if len(pairs) > 0:
+                xs,ys = tuple(zip(*pairs))
+                plt.plot(xs, ys, label="depth " + str(depth), marker='o')
+        plt.title("Proven vs Poisoned: " + dataset)
+        plt.xlabel("poisoning n (log scale)")
+        plt.xscale('log', basex=2)
+        plt.gca().xaxis.set_major_formatter(mticker.StrMethodFormatter('{x:.0f}'))
+        plt.ylabel("fraction verified")
+        plt.ylim(0, 1)
+        plt.legend()
+        dest = path_prefix + "/proven_vs_poisoned_" + str(dataset) + ".pdf"
+        plt.savefig(dest)
+        print("written", dest)
+        plt.clf()
+
 
 ##
 # Code to generate the exhaustive reports for each combination
@@ -96,7 +121,7 @@ def create_proven_vs_poisoned_csvs(json_lines):
 StatsTuple = namedtuple('StatsTuple', ['num_dropout', 'num_verified', 'avg_time', 'avg_max_memory'])
 StatsPoint = namedtuple('StatsPoint', ['test_index', 'verified', 'time', 'memory'])
 
-# Give the jsonl_lines restricted toa particular dataset, depth, and domain.
+# Give the jsonl_lines restricted to a particular dataset, depth, and domain.
 # Returns a list of (num_dropout, # verified, avg (non-oom/to) time, avg (non-oom/to) max mem)
 # tuples in ascending num_dropout order
 def stats_vs_poisoned(json_lines):
@@ -138,10 +163,18 @@ def create_stats_vs_poisoned_csvs(json_lines):
 
 
 ##
-# main lol
+# main
 ##
 
-if __name__ == '__main__':
+def make_csvs():
     json_lines = read_jsonl("all.jsonl")
     create_proven_vs_poisoned_csvs(json_lines)
     create_stats_vs_poisoned_csvs(json_lines)
+
+def make_pdfs(all_jsonl, path_prefix):
+    json_lines = read_jsonl(all_jsonl)
+    create_proven_vs_poisoned_plots(json_lines, path_prefix)
+
+if __name__ == '__main__':
+    #make_csvs()
+    make_pdfs("all.jsonl", "graphtest")
