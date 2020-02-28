@@ -535,15 +535,59 @@ The output corresponds to each of the following claims, in order.
 
 ### 2.3 Running on Other Datasets
 
-TODO have to modify code, so you'll need to also install things.
-Pipeline for batch experimentation and figure generation is hard-coded
-for filenames in the paper and would take some dedicated hacking to extend.
+Antidote is still under active development. Unfortunately, the current version
+does not have an extensible interface for loading from new datasets. The details
+of datasets are hard-coded into a few files in the source code: supporting a new
+dataset will require recompiling the code.
+
+In theory, the tool supports any dataset (without missing data) where each
+feature is either a boolean or a numeric value (all numerics are encoded as
+floating-point values), and classification labels can be from any finite set.
+The files themselves need simply be comma-separated values.
+
+We will walk through an example of modifying the code (if you want to follow
+along, we recommend starting up a fresh, clean docker container) so that the
+main executable can run on new datasets; however, the experimental pipeline that
+produced figures and in-text claims would need further hacking to extend to
+those results (not convered in this document).
 
 
-#### 2.3.1 Supported Feature Types
+#### 2.3.1 Compiling the Code
+
+If we're going to modify the code, we will need to compile it. However, in the
+interest of keeping the downloaded docker image small, we did not include the
+tools necessary to do so. Run the following:
+`apt-get update && apt-get install -y g++ make`
+
+Compiling the code is simple: `make`. You can run the (very incomplete) unit
+testing to spot check for obvious errors: `make test`.
+Antidote is written in C++, and the code is split between the top-level
+`include/` and `src/` directories.
 
 
-#### 2.3.2 Compiling the Code
+#### 2.3.2 Modifying the Source to Support New Datasets
 
+We have provided a randomly-generated training and test set in aec/modify/
+given by the files foo-train.csv and foo-test.csv (created by makefoo.py).
+We have included an example of the modified source files in aec/modify/include/
+and aec/modify/src/ that show what changes are needed to support the new data.
+Looking at diffs shows how to update the code:
+```
+diff aec/modify/include/ include/ | grep -v '^Only in'
+diff aec/modify/src/ src/ | grep -v '^Only in'
+```
+(The grep command is to ignore distracting, unimportant lines of the diff).
+We see that there are only a few lines in headers that need some metadata about
+the new files and a few enum classes that need entries: the new enum values then
+need to be included in a few switch statements in the source code.
 
-#### 2.3.3 Modifying the Source to Support New Datasets
+Overwrite the source code with this modified version, then recompile:
+```
+cp aec/modify/include/* include/
+cp aec/modify/src/* src/
+make
+make test
+```
+You should now be able to run Antidote on this fake dataset, e.g.
+`bin/main -f aec/modify foo -d 2 -t 0`
+(Also, "foo" shows up as a dataset option in the usage information for `-f`.)
