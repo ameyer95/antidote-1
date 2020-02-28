@@ -302,8 +302,61 @@ scripts/data-wrangle/accuracy.py to the appropriate bench/concrete/*.jsonl file.
 
 #### 2.2.2 Recreating full Benchmarks (Abstract Semantics)
 
-The remaining figures require a lot of runs, TODO figure out a small fraction
-TODO include the ones we used that they can use to reproduce paper values.
+To produce the results discussed in the paper, we must recreate the experimental
+setup described in Section 6.1, "Experimental Setup," in which we incrementally
+increase the amount of poisoning, testing to see for how large of a poisoning
+amount our tool is able to verify.
+
+For a specific dataset, tree depth, and abstract domain, the script (used in
+the Getting Started Section) scripts/batch-exp/experiment.sh will perform this
+iterative experiment. Another file, scripts/batch-exp/run_all.sh invokes this
+experiment script on each of the 20 combinations of depths and datasets.
+If you have 800 hours to spare on a 160GB machine, you may run the command:
+`scripts/batch-exp/run_all.sh 140000 3600`
+which kills any individual execution of bin/main that exceeds 140000MB RAM or
+runs for longer than 3600 seconds (an hour).
+Since run_all.sh simply repeatedly invokes experiment.sh, this populates the
+bench/abstract/ directory hierarchy with many .jsonl files.
+(((TODO you may see the results of our execution by unzipping the thing)))
+
+If you give much more modest amounts of resources per run, timeouts and memory-
+outs happen much sooner, and the experiments finish faster. The command
+`scripts/batch-exp/run_all.sh 4000 120`
+runs all of the experiments with at most 4GB RAM and 120s per instance.
+On a 4GHz machine, the approximate run times for the benchmarks breaks down as:
+(((TODO get this information)))
+
+Finally, you could modify the run_all.sh file by deleting the lines of any sets
+of experiments you wish not to run (for example, any lines containing a capital
+V, indicating that they use the more expensive disjuncts domain),
+and/or you could remove some of the initial commands in the
+bench/abstract/.../initcommands.txt files, each of which corresponds to a
+single test input, to reduce the total number of verification problems run.
+(You would need to first `apt-get update && apt-get install [a text editor]`.)
+You can always reconstruct the original run_all.sh file by running
+`scripts/batch-exp/make_run_all.sh`.
+Similarly, you can restore the original initcommands...txt files by running
+`rm -rf bench/abstract && scripts/batch-exp/initcommands.sh`
+---but note this also deletes any existing results produced by experiment.sh.
+(As previously mentioned in the Getting Started Guide, this is the way to ensure
+experiment.sh behaves correctly in the future, since it reads from any existing
+*.jsonl files in those directories to determine which experiments to run.)
+
+The most expensive benchmarks come from the cancer (wdbc, not mammography) and
+mnist (both versions) datasets. If you do wish to recreate the full experimental
+evaluation with larger memory and timeouts, we recommend spinning up multiple
+docker containers (on different machines, since RAM is the limited resource)
+and running individual `scripts/batch-exp/experiment.sh MEM TIME COMMANDSFILE`
+invocations on each of them.
+(If you do this, you will have to use docker copy commands to get all of the
+results files into a single container to use the remainder of the data-wrangling
+pipeline.)
+
+Once you have completed running these scripts that create many scattered .jsonl
+files, you should use our data-wrangling script that preprocesses and collects
+all of the results into a single .jsonl file for use in the remaining sections.
+`python3 scripts/data-wrangle/consolidate.py $(find bench/abstract -type f -name "*.jsonl") > bench/all.jsonl`
+(((TODO do this for the provided results as well)))
 
 #### 2.2.3 Reproducing Figures
 
