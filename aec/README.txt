@@ -183,19 +183,115 @@ with `docker rm NAME`.
 
 
 
+
+
+
+
+
 # 2 Step-by-Step Instructions
 
 This section provides a bit more documentation about our tool and instructions
-to reproduce the results presented in our paper.
+to reproduce the results presented in our paper. Completing all the steps should
+walk the reader through:
+
+* How to use our tool in its most basic forms
+* How to run the experimental pipeline to produce the results in the paper
+* How to adapt the set up to support additional datasets
+
+
 
 
 ### 2.1 Antidote Details
 
-TODO the tool implements both concrete and abstract learning.
+The name "Antidote" generally refers to our main executable `bin/main`, which
+implements our algorithms "DTrace" (Section 3.3) and "DTrace#" (Section 4.3),
+including the expressivity and precision improvements for DTrace# (Section 5).
+
 
 #### 2.1.1 Summary of Revelant Flags
 
-TODO -f, -d, -t/-T, epsilon/-a/-V
+Here we describe the command line parameters for the tool necessary to run its
+basic functionalities and to produce the results presented in the paper.
+
+* `-f DIRECTORY ID`:
+  This specifies which dataset to use.
+
+  DIRECTORY is a path to the folder in which the dataset file is located
+  (for this image, it's always /antidote/data).
+
+  ID is string that the tool associates with metadata about each dataset
+  (e.g. the training/test-set splits, the number of features...). In the paper,
+  we test on the values `iris`, `mammography`, `cancer`, `mnist_simple_1_7`, and
+  `mnist_1_7` (the Usage Information output of the tool includes a list of all
+  supported IDs that can be used).
+  To be explicit, we provide the relation of names in the paper (Section 6.1 and
+  Table 1) to the names of the ID arguments:
+
+        Paper Name                             ID argument
+        ==========                             ===========
+        Iris                                   iris
+        Mammographic Masses                    mammography
+        Wisconsin Diagnostic Breast Cancer     cancer
+        MNIST-1-7-Binary                       mnist_simple_1_7
+        MNIST-1-7-Real                         mnist_1_7
+
+  Note that in some parts of the data-wrangling pipeline, there is a display
+  inconsistency where experiments on the `cancer` ID yield data that refers to
+  the string "wdbc".
+  See the end of this document for notes on running on external datasets.
+
+* -d DEPTH:
+  This specifies the maximum depth of the tree to be learned.
+  DEPTH should be a non-negative integer. 0 performs no splits of the training
+  data (not very useful), 1 performs one split, and so on.
+
+* -t TESTINDEX:
+  This specifies which test index to run on.
+  TESTINDEX should be a non-negative integer (0-indexed) smaller than the number
+  of test set elements. There is not an explicit interface to check the range of
+  test indices, but the tool will exit gracefully on those outside of bounds.
+
+* -T:
+  This instructs the tool to perform multiple runs, one for each element in the
+  test set.
+
+* -a NUM_DROPOUT:
+  This instructs the tool to perform the poisoning-robustness analysis using the
+  abstract transformers described in the paper, Section 4.4 (and referred to as
+  the "box domain" in Section 6.3).
+
+  NUM_DROPOUT should be a non-negative integer specifying the poisoning amount
+  (*n* in the paper).
+
+* -V NUM_DROPOUT:
+  The same as the -a flag, but using the disjunctive version of the abstraction
+  as defined in Section 5.2.
+
+The tool exits with an error if necessary flags are not included or if multiple
+conflicting flags are provided. Of the flags above,
+Exactly one of `-t TESTINDEX` and `-T` needs to be used, and at most one of
+`-a NUM_DROPOUT` and `-V NUM_DROPOUT` may be used (when neither is present, the
+tool performs the concrete training/classification algorithm).
+
+Additionally, the -d, -t, -a, and -V flags support sets of arguments, where all
+combinations of the parameters are run. For example, the single command
+`bin/main -f data iris -d "1 2" -t "0 1 2" -a "1 2"`
+is equivalent to running all of
+```
+bin/main -f data iris -d 1 -t 0 -a 1
+bin/main -f data iris -d 1 -t 0 -a 2
+bin/main -f data iris -d 1 -t 1 -a 1
+bin/main -f data iris -d 1 -t 1 -a 2
+bin/main -f data iris -d 1 -t 2 -a 1
+bin/main -f data iris -d 1 -t 2 -a 2
+bin/main -f data iris -d 2 -t 0 -a 1
+bin/main -f data iris -d 2 -t 0 -a 2
+bin/main -f data iris -d 2 -t 1 -a 1
+bin/main -f data iris -d 2 -t 1 -a 2
+bin/main -f data iris -d 2 -t 2 -a 1
+bin/main -f data iris -d 2 -t 2 -a 2
+```
+
 
 #### 2.1.2 Example Usage: Proving Poisoning Robustness
 
@@ -257,6 +353,8 @@ probability *at most* 0.03, so Iris-Setosa always dominates; we have proved
 the poisoning-robustness property for n=1.
 
 
+
+
 ### 2.2 Recreating the Paper's Experiments
 
 In this section, we will walk through recreating all of the experimental claims
@@ -274,13 +372,16 @@ versions of the experiments at smaller scales.
 For completeness, we have also included the raw output of the verification
 experiments as they performed on our machines (described later).
 
+
 #### 2.2.1 Test Set Accuracies (Concrete Semantics)
 
 Section 6.1, Table 1 reports test-set accuracies for each of the combinations
 of datasets and tree depths that we consider.
 This computation requires running the concrete learner on each element of the
 test set (which our tool is not optimized for, and thus takes a while on some
-of the datasets).
+of the datasets). In general, these experiments are much less expensive than the
+verification problems in the next section.
+
 To compute the test set accuracy of a depth-2 tree on iris, run:
 ```
 bin/main -f data iris -d 2 -T > temp.jsonl
@@ -294,30 +395,52 @@ of parameters: it stores the raw output of the main tool in jsonl files in
 bench/concrete, and it invokes the above accuracy.py script on each.
 Run `scripts/batch-exp/test_accuracy.sh`. The results for the iris, mammography,
 and cancer datasets should complete in seconds; the mnist variants take far
-longer, around an hour total on our 4GHz machine.
+longer, around two hours combined, on our 4GHz machine. (Memory is not a
+limiting factor for concrete training: we used a maximum of 150MB for this).
 
 The results should match the numbers that appear in the table in the paper.
 The accuracies can be recomputed quickly by pointing
-scripts/data-wrangle/accuracy.py to the appropriate bench/concrete/*.jsonl file.
+scripts/data-wrangle/accuracy.py to the appropriate bench/concrete/*.jsonl file;
+all can be done with:
+`for F in $(ls bench/concrete/*.jsonl); do echo $F: $(python3 scripts/data-wrangle/accuracy.py $F); done`
+
+(((TODO include our results for this)))
+
+Because the memory overhead for this process is negligible (and our tool is
+single-threaded), you can leave it running and continue to the next section with
+a new docker container, if you wish to continue immediately.
+
 
 #### 2.2.2 Recreating full Benchmarks (Abstract Semantics)
 
 To produce the results discussed in the paper, we must recreate the experimental
 setup described in Section 6.1, "Experimental Setup," in which we incrementally
 increase the amount of poisoning, testing to see for how large of a poisoning
-amount our tool is able to verify.
+amount our tool is able to verify robustness.
 
 For a specific dataset, tree depth, and abstract domain, the script (used in
 the Getting Started Section) scripts/batch-exp/experiment.sh will perform this
-iterative experiment. Another file, scripts/batch-exp/run_all.sh invokes this
-experiment script on each of the 20 combinations of depths and datasets.
-If you have 800 hours to spare on a 160GB machine, you may run the command:
+iterative experiment. Another file, scripts/batch-exp/run_all.sh, invokes this
+experiment script on each of the 40 combinations of depth, dataset, and domain.
+If you have 800 hours to spare on a 160GB machine, you may run the following
+command (although this is not recommended):
 `scripts/batch-exp/run_all.sh 140000 3600`
 which kills any individual execution of bin/main that exceeds 140000MB RAM or
 runs for longer than 3600 seconds (an hour).
 Since run_all.sh simply repeatedly invokes experiment.sh, this populates the
 bench/abstract/ directory hierarchy with many .jsonl files.
 (((TODO you may see the results of our execution by unzipping the thing)))
+
+Note that the memory and time limits are implemented hackily through polling
+(see `cat scripts/batch-exp/run_with_mem_limit.sh` if interested).
+In particular, the memory limit is based on the amount of *RAM* used by *just
+this process*, and will not function correctly if the operating system begins
+swapping some of the data to other virtual memory. Accordingly, you should set
+a limit a bit below the amount of RAM on your system (to accomodate for memory
+used by the operating system and other processes); we used a 140GB limit on the
+160GB machines; a 4GB limit is likely fine on an 8GB machine. The memory limit
+is important to prevent thrashing, etc: without it, our systems tended to hang
+when runs of Antidote using the "-V" flag took exponential amounts of memory.
 
 If you give much more modest amounts of resources per run, timeouts and memory-
 outs happen much sooner, and the experiments finish faster. The command
@@ -327,8 +450,8 @@ On a 4GHz machine, the approximate run times for the benchmarks breaks down as:
 (((TODO get this information)))
 
 Finally, you could modify the run_all.sh file by deleting the lines of any sets
-of experiments you wish not to run (for example, any lines containing a capital
-V, indicating that they use the more expensive disjuncts domain),
+of experiments you wish not to run (for example, any lines for `mnist_1_7`, the
+real-valued version of MNIST that is by far the most expensive benchmark),
 and/or you could remove some of the initial commands in the
 bench/abstract/.../initcommands.txt files, each of which corresponds to a
 single test input, to reduce the total number of verification problems run.
@@ -340,7 +463,7 @@ Similarly, you can restore the original initcommands...txt files by running
 ---but note this also deletes any existing results produced by experiment.sh.
 (As previously mentioned in the Getting Started Guide, this is the way to ensure
 experiment.sh behaves correctly in the future, since it reads from any existing
-*.jsonl files in those directories to determine which experiments to run.)
+*.jsonl files in those directories to inductively run further experiments.)
 
 The most expensive benchmarks come from the cancer (wdbc, not mammography) and
 mnist (both versions) datasets. If you do wish to recreate the full experimental
@@ -354,15 +477,17 @@ pipeline.)
 
 Once you have completed running these scripts that create many scattered .jsonl
 files, you should use our data-wrangling script that preprocesses and collects
-all of the results into a single .jsonl file for use in the remaining sections.
+all of the results into a single .jsonl file for use in the remaining sections:
 `python3 scripts/data-wrangle/consolidate.py $(find bench/abstract -type f -name "*.jsonl") > bench/all.jsonl`
 (((TODO do this for the provided results as well)))
+
 
 #### 2.2.3 Reproducing Figures
 
 Figure generation for summary Section 6.2, Figure 6
 
 Figure generation for Section 6.3, Figure 7 (and supp figures?)
+
 
 #### 2.2.4 Reproducing In-Text Quantitative Claims
 
@@ -401,8 +526,19 @@ mnist binary, disjuncts, n=64
     depth 4: average 933s
 
 
+
+
 ### 2.3 Running on Other Datasets
 
 TODO have to modify code, so you'll need to also install things.
 Pipeline for batch experimentation and figure generation is hard-coded
 for filenames in the paper and would take some dedicated hacking to extend.
+
+
+#### 2.3.1 Supported Feature Types
+
+
+#### 2.3.2 Compiling the Code
+
+
+#### 2.3.3 Modifying the Source to Support New Datasets
