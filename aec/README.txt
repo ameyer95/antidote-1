@@ -491,41 +491,46 @@ Figure generation for Section 6.3, Figure 7 (and supp figures?)
 
 #### 2.2.4 Reproducing In-Text Quantitative Claims
 
-TODO intro's example (repeated in Section 2, "An Involved Example"):
-`/usr/bin/time -v bin/main -f data mnist_simple_1_7 -d 3 -t 511 -V 192`
-note: this computation takes around 4.5GB of memory
-("Maximum resident set size")
-alternatively,
-`grep "\"dataset\": \"mnist_simple_1_7\", \"depth\": 3, \"test_index\": 511, \"domain\": \"disjuncts\", \"num_dropout\": 192," all.jsonl | jq`
-(line 14487 of the vmres-gen'd one)
+* At the end of the paper's introduction, and repeated in Section 2, "An
+  Involved Example," we give an example of an MNIST test instance and state:
+  "Antidote proves that it is poisoning robust (always classified as a seven)
+  for up to 192 poisoned elements in 90 seconds."
+  To reproduce this, run
+  `time bin/main -f data mnist_simple_1_7 -d 3 -t 511 -V 192`
+  although note that this computation uses around 4.5GB of memory.
+  Alternatively, the output for this run from our raw data can be found via
+  `grep "\"dataset\": \"mnist_simple_1_7\", \"depth\": 3, \"test_index\": 511, \"domain\": \"disjuncts\", \"num_dropout\": 192," all.jsonl | jq`
+  (((TODO make sure that this matches the all.jsonl naming---actually, everywhere in the section)))
 
-Section 6.2:
-mnist real 1 7 depth 2: 38 proven for n=64, average 800s run time
+For the remaining claims, we have provided a single script that extracts the
+relevant data for all of what follows (though much of it can be taken directly
+from the plots produced prior):
+`python3 scripts/data-wrangle/paperstats.py all.jsonl`
+(You may substitute the all.jsonl that you compute, which is likely less
+complete, and may see reduced numbers of verified instances and more timeouts.)
+The output corresponds to each of the following claims, in order.
 
-Section 6.3, "Box vs Disjuncts":
-mnist bin 1 7 depth=3 n=64:
-    disjuncts: 52 verif, average 32s 1650MB
-    Box: 15 verif, average 0.7s 150MB
+* In Section 6.2, we summarize that we prove 38 verification problems for
+  `mnist_1_7`, depth=2, n=64, with 800s average runtime.
 
-Section 6.3, "Number of Poisoned Elements":
-95% of exp with Box finished within 20s, no TO, longest 232 seconds
+* In Section 6.3, "Box vs Disjuncts," we state that on `mnist_simple_1_7` with
+  depth=3 and n=64, disjuncts verifies 52 problems (avg 32s, 1650MB) while box
+  verifies 15 problems (0.7s, 150MB).
+  We state, contrasting, that for depth=4, n=128, disjuncts always timeouts,
+  while box is able to verify one problem instance.
 
-Section 6.3, "Size of Dataset and Number of Features":
-depth=3, disjuncts, n~0.5%
-    Iris: average 0.1s
-    Mammography: average 0.2s
-    wdbc: average 26s
-    mnist simple: average 32s
-    mnist real: 100% timeout, hah.
+* In Section 6.3, "Number of Poisoned Elements," we state that, out of all of
+  the experiments conducted, 95% of instances using the box domain finished
+  within 20s, none timed out, and the longest took 232s.
 
-Section 6.3, "Depth of the Tree":
-mnist binary, disjuncts, n=64
-    depth 1: average 0.3s
-    depth 2: average 0.5s
-    depth 3: average 32s
-    depth 4: average 933s
+* In Section 6.3, "Size of Dataset and Number of Features," we state average
+  runtimes for each of the datasets using disjuncts, depth=3, n=0.5% as follows:
+  `iris` 0.1s, `mammography` 0.2s, `cancer` 26s, `mnist_simple_1_7` 32s, and
+  `mnist_1_7` always times out.
 
-
+* In Section 6.3, "Depth of the Tree," we state average runtimes for the binary
+  MNIST variant using disjuncts and n=64, for varying depths:
+  depth 1 as 0.3s, 2 as 0.5s, 3 as 32s, and 4 as 933s.
 
 
 ### 2.3 Running on Other Datasets
