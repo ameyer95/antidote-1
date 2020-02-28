@@ -168,10 +168,16 @@ def create_stats_vs_poisoned_plots(json_lines, path_prefix):
         fig, axs = plt.subplots(3, len(depths), sharex=True, sharey='row', figsize=(14,8))
         fig.suptitle(dataset)
         axs[0, 0].set_ylabel("# Verified")
-        axs[1, 0].set_ylabel("Avg Time (s)")
-        axs[1, 0].set_yscale('symlog')
-        axs[2, 0].set_ylabel("Avg Max Memory (MB)")
-        axs[2, 0].set_yscale('symlog')
+        if dataset not in {'iris', 'mammography'}:
+            axs[1, 0].set_ylabel("Avg Time (s) (log scale)")
+            axs[1, 0].set_yscale('log')
+        else:
+            axs[1, 0].set_ylabel("Avg Time (s)")
+        if dataset != 'iris':
+            axs[2, 0].set_ylabel("Avg Max Memory (MB) (log scale)")
+            axs[2, 0].set_yscale('log')
+        else:
+            axs[2, 0].set_ylabel("Avg Max Memory (MB)")
         plt.xscale('log', basex=2)
         plt.gca().xaxis.set_major_formatter(mticker.StrMethodFormatter('{x:.0f}'))
         for i in range(len(depths)):
@@ -181,13 +187,16 @@ def create_stats_vs_poisoned_plots(json_lines, path_prefix):
             for domain in domains:
                 these_lines = [x for x in dataset_lines if x['depth'] == depth and x['domain'] == domain]
                 stats = stats_vs_poisoned(these_lines)
-                stats = [stat for stat in stats if stat[0] != 0]
+                stats = [tuple(stat) for stat in stats if stat[0] != 0]
                 if len(stats) > 0:
                     ns,vs,ts,ms = tuple(zip(*stats))
+                    ts = [t if t != "nan" else None for t in ts]
+                    ms = [m if m != "nan" else None for m in ms]
                     for axisrow,ptsy in [(0, vs), (1, ts), (2, ms)]:
                         thismarker = 'o' if domain == 'box' else 's'
                         thiscolor = 'b' if domain == 'box' else 'r'
                         axs[axisrow, i].plot(ns, ptsy, label=domain, marker=thismarker, color=thiscolor)
+        fig.legend(labels=domains)
         dest = path_prefix + "/stats_vs_poisoned_" + str(dataset) + ".pdf"
         plt.savefig(dest)
         print("written", dest)
