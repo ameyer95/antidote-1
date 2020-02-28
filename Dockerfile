@@ -26,11 +26,16 @@ RUN data/fetch-mnist.sh && data/fetch-uci.sh
 # (ubuntu + apt-get python3 seems to be ~100MB smaller than python:3.8-slim-buster).
 # `column` (from bsdmainutils) and jq are convenient for command-line data readability
 # (and we explicitly invoke the former from the experiment scripts)
+# We also now have the graph generation pipeline using matplotlib
 FROM ubuntu:18.04
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 bsdmainutils jq time \
+    && apt-get install -y --no-install-recommends python3 python3-matplotlib bsdmainutils jq time \
     && rm -rf /var/lib/apt/lists*
+
+# matplotlib shouldn't need GUI since we only use savefig, but it still tries unless we disable
+# https://github.com/matplotlib/matplotlib/issues/8929#issuecomment-317233404
+RUN mkdir -p /root/.config/matplotlib && echo "backend : Agg" > /root/.config/matplotlib/matplotlibrc
 
 COPY --from=builder /antidote /antidote
 WORKDIR /antidote
