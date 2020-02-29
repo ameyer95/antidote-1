@@ -295,7 +295,7 @@ bin/main -f data iris -d 2 -t 2 -a 2
 
 #### 2.1.2 Example Usage: Proving Poisoning Robustness
 
-In the Getting Started section, we invoked the tool to classify an particular
+In the Getting Started section, we invoked the tool to classify a particular
 test set instance of an iris using `bin/main -f data iris -d 2 -t 0`.
 This performed the concrete learning algorithm described in our paper, Section
 3.3 (this is the "DTrace" from Figure 4).
@@ -392,7 +392,7 @@ This should report `0.9` (meaning 90% accuracy).
 
 We have a script to compute the test set accuracies for all our combination
 of parameters: it stores the raw output of the main tool in jsonl files in
-bench/concrete, and it invokes the above accuracy.py script on each.
+concrete/, and it invokes the above accuracy.py script on each.
 Run `scripts/batch-exp/test_accuracy.sh`. The results for the iris, mammography,
 and cancer datasets should complete in seconds; the mnist variants take far
 longer, around two hours combined, on our 4GHz machine. (Memory is not a
@@ -402,7 +402,7 @@ The results should match the numbers that appear in the table in the paper.
 The accuracies can be recomputed quickly by pointing
 scripts/data-wrangle/accuracy.py to the appropriate bench/concrete/*.jsonl file;
 all can be done with:
-`for F in $(ls bench/concrete/*.jsonl); do echo $F: $(python3 scripts/data-wrangle/accuracy.py $F); done`
+`for F in $(ls concrete/*.jsonl); do echo $F: $(python3 scripts/data-wrangle/accuracy.py $F); done`
 
 (((TODO include our results for this)))
 
@@ -446,24 +446,33 @@ If you give much more modest amounts of resources per run, timeouts and memory-
 outs happen much sooner, and the experiments finish faster. The command
 `scripts/batch-exp/run_all.sh 4000 120`
 runs all of the experiments with at most 4GB RAM and 120s per instance.
-On a 4GHz machine, the approximate run times for the benchmarks breaks down as:
-(((TODO get this information)))
+On a 4GHz machine, the approximate run times for the benchmarks broke down as:
 
-Finally, you could modify the run_all.sh file by deleting the lines of any sets
-of experiments you wish not to run (for example, any lines for `mnist_1_7`, the
-real-valued version of MNIST that is by far the most expensive benchmark),
-and/or you could remove some of the initial commands in the
-bench/abstract/.../initcommands.txt files, each of which corresponds to a
-single test input, to reduce the total number of verification problems run.
-(You would need to first `apt-get update && apt-get install [a text editor]`.)
-You can always reconstruct the original run_all.sh file by running
-`scripts/batch-exp/make_run_all.sh`.
-Similarly, you can restore the original initcommands...txt files by running
-`rm -rf bench/abstract && scripts/batch-exp/initcommands.sh`
----but note this also deletes any existing results produced by experiment.sh.
-(As previously mentioned in the Getting Started Guide, this is the way to ensure
-experiment.sh behaves correctly in the future, since it reads from any existing
-*.jsonl files in those directories to inductively run further experiments.)
+    Dataset            Parameters      Total Time
+    =======            ==========      ==========
+    iris               (all)           2 minutes
+    mammography        box             5 minutes
+                       disjuncts       15 minutes (5 for box, 15 for disjuncts)
+    cancer             box             5 minutes
+                       disjuncts       2 hours (1 hour just for depth 4)
+    mnist_simple_1_7   box             30 minutes
+                       disjuncts       6.5 hours (4 hours just for depth 4)
+    mnist_1_7          box, depth 1    4 hours
+                            depth 2    3 hours
+                            depth 3    3 hours (yielding no proofs)
+                            depth 4    4 hours (yielding no proofs)
+                       disjuncts       (at least several hours; did not finish
+                                       in time for this artifact)
+
+We have provided another script that runs most of the benchmarks and terminates
+in just 5 hours, using modest resources:
+`scripts/batch-exp/run_most.sh 4000 120`
+This file is a copy of the run-all script, but with the most expensive lines
+commented out: specifically, we skip all of the MNIST-1-7-Real experiments,
+and we skip the depth-4-disjuncts experiments for MNIST-1-7-Binary and cancer.
+(Again, all of these batch scripts read and write from the same bench/ directory
+structure, so be careful not to cause weird behavior through repeated commands
+in the same container.)
 
 The most expensive benchmarks come from the cancer (wdbc, not mammography) and
 mnist (both versions) datasets. If you do wish to recreate the full experimental
@@ -478,7 +487,7 @@ pipeline.)
 Once you have completed running these scripts that create many scattered .jsonl
 files, you should use our data-wrangling script that preprocesses and collects
 all of the results into a single .jsonl file for use in the remaining sections:
-`python3 scripts/data-wrangle/consolidate.py $(find bench/abstract -type f -name "*.jsonl") > bench/all.jsonl`
+`python3 scripts/data-wrangle/consolidate.py $(find bench -type f -name "*.jsonl") > all.jsonl`
 (((TODO do this for the provided results as well)))
 
 

@@ -1,6 +1,6 @@
 cd $(dirname "$0")
 
-OUTDIR=../../bench/concrete
+OUTDIR=../../concrete
 
 # Make the directory in which we store results (if it doesn't exist)
 mkdir -p $OUTDIR
