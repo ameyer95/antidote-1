@@ -36,8 +36,7 @@ Load the image from the .tar file into docker's internal storage
 `docker load -i antidote-image.tar`
 This should end with a successful "Loaded image: antidote:ae" message.
 You can verify that the image appears in the output of `docker images`,
-where it should have a reported size of approximately 160MB.
-(((TODO finalize this file size)))
+where it should have a reported size of approximately 225MB.
 
 Start up an interactive shell in a container from the image:
 `docker run -it --name testae antidote:ae`
@@ -221,8 +220,8 @@ walk the reader through:
 * How to adapt the set up to support additional datasets
 
 You will again need to start up an interactive docker container; why not make a
-new one named "stepbystep":
-`docker run -it --name stepbystep antidote:ae`
+new one named "antidote-sbs":
+`docker run -it --name antidote-sbs antidote:ae`
 
 
 
@@ -430,8 +429,6 @@ scripts/data-wrangle/accuracy.py to the appropriate bench/concrete/*.jsonl file;
 all can be done with:
 `for F in $(ls concrete/*.jsonl); do echo $F: $(python3 scripts/data-wrangle/accuracy.py $F); done`
 
-(((TODO include our results for this)))
-
 Because the memory overhead for this process is negligible (and our tool is
 single-threaded), you can leave it running and continue to the next section with
 a new docker container, if you wish to continue immediately.
@@ -478,7 +475,7 @@ On a 4GHz machine, the approximate run times for the benchmarks broke down as:
     =======            ==========      ==========
     iris               (all)           2 minutes
     mammography        box             5 minutes
-                       disjuncts       15 minutes (5 for box, 15 for disjuncts)
+                       disjuncts       15 minutes
     cancer             box             5 minutes
                        disjuncts       2 hours (1 hour just for depth 4)
     mnist_simple_1_7   box             30 minutes
@@ -491,7 +488,7 @@ On a 4GHz machine, the approximate run times for the benchmarks broke down as:
                                        in time for this artifact)
 
 We have provided another script that runs most of the benchmarks and terminates
-in just 5 hours, using modest resources:
+in around 5 hours, using modest resources:
 `scripts/batch-exp/run_most.sh 4000 120`
 This file is a copy of the run-all script, but with the most expensive lines
 commented out: specifically, we skip all of the MNIST-1-7-Real experiments,
@@ -514,14 +511,40 @@ Once you have completed running these scripts that create many scattered .jsonl
 files, you should use our data-wrangling script that preprocesses and collects
 all of the results into a single .jsonl file for use in the remaining sections:
 `python3 scripts/data-wrangle/consolidate.py $(find bench -type f -name "*.jsonl") > all.jsonl`
-(((TODO do this for the provided results as well)))
+
+Again, to use the raw data from our experiments on high performant machines, do:
+```
+tar -zxvf aec/vmres.tar.gz
+python3 scripts/data-wrangle/consolidate.py $(find vmres -type f -name "*.jsonl") > allvmres.jsonl
+```
+and pass allvrmes.jsonl as the argument in the subsequent sections.
+We have also included our results from the reduced set of experiments described
+above, `scripts/batch-exp/run_most.sh 4000 120`, which can be accessed:
+```
+tar -zxvf aec/abstract_most.tar.gz
+python3 scripts/data-wrangle/consolidate.py $(find abstract_most -type f -name "*.jsonl") > allmost.jsonl
+```
 
 
 #### 2.2.3 Reproducing Figures
 
-Figure generation for summary Section 6.2, Figure 6
+The main results of the paper are presented in a few figures.
+All of them can be generated (as pdfs) using
+`python3 scripts/data-wrangle/graphs.py all.jsonl graphs`
+and then viewed externally by (from outside the container) running
+`docker cp antidote-sbs:/antidote/graphs ./graphs`
+If you did not run the full experiments, many of these numbers will differ
+(although you can more closely reference the results produced by allmost.jsonl).
 
-Figure generation for Section 6.3, Figure 7 (and supp figures?)
+Section 6.2, Figure 6 shows, for each dataset, the ability of our tool to verify
+poisoning robustness problems as a function of the depth of the tree and the
+amount of poisoning: these correspond to the pdfs `proven_vs_poisoned*.pdf`.
+
+Section 6.3, Figure 7 shows detailed joint information of depth, time, memory,
+and provability for the `mnist_simple_1_7` dataset: this corresponds to the
+`stats_vs_poisoned_mnist_simple_1_7.pdf` file. Analagous plots for the other
+datasets are presented in the appendix of the supplementary material and have
+similar filenames in the graph output directory.
 
 
 #### 2.2.4 Reproducing In-Text Quantitative Claims
@@ -534,15 +557,13 @@ Figure generation for Section 6.3, Figure 7 (and supp figures?)
   `time bin/main -f data mnist_simple_1_7 -d 3 -t 511 -V 192`
   although note that this computation uses around 4.5GB of memory.
   Alternatively, the output for this run from our raw data can be found via
-  `grep "\"dataset\": \"mnist_simple_1_7\", \"depth\": 3, \"test_index\": 511, \"domain\": \"disjuncts\", \"num_dropout\": 192," all.jsonl | jq`
-  (((TODO make sure that this matches the all.jsonl naming---actually, everywhere in the section)))
+  `grep "\"dataset\": \"mnist_simple_1_7\", \"depth\": 3, \"test_index\": 511, \"domain\": \"disjuncts\", \"num_dropout\": 192," allvmres.jsonl | jq`
 
 For the remaining claims, we have provided a single script that extracts the
 relevant data for all of what follows (though much of it can be taken directly
 from the plots produced prior):
 `python3 scripts/data-wrangle/paperstats.py all.jsonl`
-(You may substitute the all.jsonl that you compute, which is likely less
-complete, and may see reduced numbers of verified instances and more timeouts.)
+(The reduced experiments will yield fewer verified instances and more timeouts.)
 The output corresponds to each of the following claims, in order.
 
 * In Section 6.2, we summarize that we prove 38 verification problems for
