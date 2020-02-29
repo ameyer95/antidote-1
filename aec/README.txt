@@ -37,17 +37,15 @@ Load the image from the .tar file into docker's internal storage
 This should end with a successful "Loaded image: antidote:ae" message.
 You can verify that the image appears in the output of `docker images`,
 where it should have a reported size of approximately 160MB.
+(((TODO finalize this file size)))
 
 Start up an interactive shell in a container from the image:
-`docker run -it --rm antidote:ae`
+`docker run -it --name testae antidote:ae`
 This should give you a bash shell prompt of "root@HASH:/antidote#".
 Everything needed is contained in the top-level `/antidote` directory.
 
 At any time you may exit the interactive docker container by using `exit`,
-but because we used the `--rm` flag in the run command,
-the container automatically deletes itself upon exiting.
-If you do `exit`, you must perform the prior `docker run ...` command before
-proceeding to the next section.
+and you can return with `docker start -i testae`.
 
 
 ### 1.3 Running the Tool
@@ -149,11 +147,44 @@ The table above can always be recreated from the existing data via
 `python3 scripts/data-wrangle/summarize.py $(ls bench/iris/d2_V/*.jsonl) | column -t -s ,`
 (the pipe to `column` is just for readability).
 
+
+### 1.5 Automated Data Wrangling
+
+We have scripts that automatically reproduce the summarized results and figures
+that appear in the paper. For reproducibility reasons, we have also included the
+raw data from our experiments that can be fed through the data wrangling again.
+The file aec/vmres.tar.gz contains our full results: extract it with
+`tar -zxvf aec/vmres.tar.gz` (which should create a new vmres/ directory).
+This directory mimics the structure of bench/ but is filled with .jsonl results.
+This extraction also gave us a file called all.jsonl, which contains processed
+and consolidated versions of all the files; we can rebuild it ourselves with:
+`python3 scripts/data-wrangle/consolidate.py $(find vmres -type f -name "*.jsonl") > all.jsonl`
+
+This all.jsonl file is passed into the summarization scripts. Run
+`python3 scripts/data-wrangle/paperstats.py all.jsonl`
+and verify that it prints a lot of statistics to stdout.
+We can also generate the figures used in this paper:
+`python3 scripts/data-wrangle/graphs.py all.jsonl graphs`
+There may be some number of warnings that have to do with taking a log scale
+when values are at-or-near 0, but this should write a number of pdf files to a
+newly created directory called "graphs"; `ls graphs` should show 10 pdfs.
+
+Exit the docker container with `exit` and, now from with a shell on your local
+machine, copy the pdfs from the container to view them:
+`docker cp testae:/antidote/graphs ./graphs`
+The ./graphs directory you've created should contain graphs that match figures
+that can be found in the paper (since, after all, they were generated from the
+same data).
+
 This concludes ensuring the basics of experimentation function correctly;
-at this point you may `exit` the container.
+at this point you should stop the container
+`docker stop testae`
+and may even delete it
+`docker rm testae`
+(note this deletes all of the results that were just generated).
 
 
-### 1.5 Additional Notes About Docker
+### 1.6 Additional Notes About Docker
 
 A docker "container" is like a virtual machine whose initial internal state
 is given from some specified docker "image."
@@ -168,15 +199,6 @@ Eventually, when you are finally done with all of the containers/evaluation,
 you can remove the image from your system with `docker rmi antidote:ae`
 (although you will need to remove all containers based on the image first)
 and confirm it is then absent from `docker images`.
-
-Previously, we started a container with the `--rm` flag so that it would delete
-itself upon exit (for easy cleanup).
-To create persistent containers that can later be resumed, omit this flag
-(and for convenience use the `--name NAME` functionality).
-Resume such containers with `docker start -i NAME`;
-you can see a list of all your containers with `docker ps -a`;
-manually delete containers you no longer need (which includes their contents!)
-with `docker rm NAME`.
 
 
 
@@ -195,8 +217,12 @@ to reproduce the results presented in our paper. Completing all the steps should
 walk the reader through:
 
 * How to use our tool in its most basic forms
-* How to run the experimental pipeline to produce the results in the paper
+* How to run the experimental pipeline to reproduce the results in the paper
 * How to adapt the set up to support additional datasets
+
+You will again need to start up an interactive docker container; why not make a
+new one named "stepbystep":
+`docker run -it --name stepbystep antidote:ae`
 
 
 
@@ -268,10 +294,10 @@ basic functionalities and to produce the results presented in the paper.
   as defined in Section 5.2.
 
 The tool exits with an error if necessary flags are not included or if multiple
-conflicting flags are provided. Of the flags above,
-Exactly one of `-t TESTINDEX` and `-T` needs to be used, and at most one of
-`-a NUM_DROPOUT` and `-V NUM_DROPOUT` may be used (when neither is present, the
-tool performs the concrete training/classification algorithm).
+conflicting flags are provided. Of the flags above:
+Exactly one of `-t TESTINDEX` and `-T` needs to be used;
+At most one of `-a NUM_DROPOUT` and `-V NUM_DROPOUT` may be used
+(and when neither is present, the tool performs the concrete DTrace algorithm).
 
 Additionally, the -d, -t, -a, and -V flags support sets of arguments, where all
 combinations of the parameters are run. For example, the single command
@@ -295,7 +321,7 @@ bin/main -f data iris -d 2 -t 2 -a 2
 
 #### 2.1.2 Example Usage: Proving Poisoning Robustness
 
-In the Getting Started section, we invoked the tool to classify a particular
+In the Getting Started Guide, we invoked the tool to classify a particular
 test set instance of an iris using `bin/main -f data iris -d 2 -t 0`.
 This performed the concrete learning algorithm described in our paper, Section
 3.3 (this is the "DTrace" from Figure 4).
@@ -370,7 +396,7 @@ the number of verification problems that the tool is able to prove.
 In each of the following sections, where appropriate, we describe how to run
 versions of the experiments at smaller scales.
 For completeness, we have also included the raw output of the verification
-experiments as they performed on our machines (described later).
+experiments as they performed on our machines.
 
 
 #### 2.2.1 Test Set Accuracies (Concrete Semantics)

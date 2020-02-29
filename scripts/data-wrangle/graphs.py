@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import sys
 from collections import namedtuple
 from functools import reduce
 import matplotlib.pyplot as plt
@@ -221,4 +222,6 @@ def make_pdfs(all_jsonl, path_prefix):
 
 if __name__ == '__main__':
     #make_csvs()
-    make_pdfs("all.jsonl", "graphtest")
+    jsonl_file = sys.argv[1]
+    file_prefix = sys.argv[2]
+    make_pdfs(jsonl_file, file_prefix)
