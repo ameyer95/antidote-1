@@ -6,8 +6,8 @@ using Docker version 18.09.9, build 1752eb3.
 Docker images are portable and run on a variety of operating systems,
 but the instructions given in this guide will assume the user is operating
 in a bash shell on a unix-like system.
-All you should need to begin is the given antidote-image.tar file and a working
-docker installation.
+All you should need to begin is the given antidote-image.tar.gz file and a
+working docker installation.
 
 
 ### 1.1 Setting up Docker
@@ -32,8 +32,8 @@ maintenance of docker images and containers.)
 
 ### 1.2 Running the Image
 
-Load the image from the .tar file into docker's internal storage
-`docker load -i antidote-image.tar`
+Load the image from the .tar.gz file into docker's internal storage
+`gzip -dc antidote-image.tar.gz | docker load`
 This should end with a successful "Loaded image: antidote:ae" message.
 You can verify that the image appears in the output of `docker images`,
 where it should have a reported size of approximately 225MB.
@@ -192,7 +192,7 @@ each of which runs independently and has its own storage.
 
 The `docker load` command only needs to be performed once.
 Docker then maintains a copy of antidote:ae in its internal image storage;
-the antidote-image.tar file can be deleted after the load command, and any
+the antidote-image.tar.gz file can be deleted after the load command, and any
 number of containers can still be made from the image.
 Eventually, when you are finally done with all of the containers/evaluation,
 you can remove the image from your system with `docker rmi antidote:ae`
@@ -452,7 +452,6 @@ which kills any individual execution of bin/main that exceeds 140000MB RAM or
 runs for longer than 3600 seconds (an hour).
 Since run_all.sh simply repeatedly invokes experiment.sh, this populates the
 bench/abstract/ directory hierarchy with many .jsonl files.
-(((TODO you may see the results of our execution by unzipping the thing)))
 
 Note that the memory and time limits are implemented hackily through polling
 (see `cat scripts/batch-exp/run_with_mem_limit.sh` if interested).
