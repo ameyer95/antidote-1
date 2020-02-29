@@ -5,6 +5,8 @@
 !Dockerfile
 !.dockerignore
 !Makefile
+!aec/**
+!bench/vmres.tar.gz
 !data/*.sh
 !data/*.py
 !include/**

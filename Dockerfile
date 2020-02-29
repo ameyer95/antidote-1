@@ -41,4 +41,6 @@ COPY --from=builder /antidote /antidote
 WORKDIR /antidote
 
 # Generate the initcommands files for the experiment pipeline
-RUN scripts/batch-exp/initcommands.sh
+# and move the large-scale experiment results into antidote/aec
+RUN scripts/batch-exp/initcommands.sh \
+    && mv bench/vmres.tar.gz aec/
