@@ -4,6 +4,7 @@
 #include "ExperimentBackend.h"
 #include "ExperimentDataWrangler.h"
 #include "Interval.h"
+#include "ArffParser.h"
 #include <iostream>
 #include <map>
 #include <set>
@@ -75,13 +76,18 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.createArgument("depth", "-d", 1, "Space-separated list of depths of the tree to be built");
     p.createArgument("test_all", "-T", 0, "Run on each element in the test set", true);
     p.createArgument("test_indices", "-t", 1, "Space-separated list of test indices", true);
-    p.createArgument("dataset", "-f", 2, "Dataset information: (1) the path to the data folder and (2) the name from one of " + setToString(dataset_options));
+    p.createArgument("dataset", "-f", 2, "Dataset information: (1) the path to the data folder and (2) the name from one of " + setToString(dataset_options), true);
+    p.createArgument("dataset(arff)", "-D", 2, "Dataset information in arff format: (1) train set (2) test set", true); 
     p.createArgument("use_abstract", "-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
     p.createArgument("use_disjuncts", "-V", 1, "Like -a, but with disjuncts", true);
     p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from " + setToString(merge_options), true);
     p.createArgument("verbose", "-v", 0, "", true);
     p.createArgument("random_test", "-r", 3, "Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed.", true);
+    p.createArgument("binary", "-B", 1, "Transform dataset into binary form by threshold (only effective with arff datasets)", true);
     
+    p.requireAtLeastOne({"dataset", "dataset(arff)"});
+    p.requireAtMostOne({"dataset", "dataset(arff)"});
+
     p.requireAtLeastOne({"test_all", "test_indices"});
     p.requireAtMostOne({"test_all", "test_indices"});
     p.requireAtMostOne({"use_abstract", "use_disjuncts", "random_test"});
@@ -220,8 +226,14 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
         if(!params.test_all) {
             vectorizeIntStringSplit(params.test_indices, p["test_indices"].tokens[0]);
         }
-        params.data_prefix = p["dataset"].tokens[0];
-        params.dataset = string_to_ExperimentDataEnum(p["dataset"].tokens[1]);
+        if(p["dataset"].included) {
+            params.data_prefix = p["dataset"].tokens[0];
+            params.dataset = string_to_ExperimentDataEnum(p["dataset"].tokens[1]);
+        } else if(p["dataset(arff)"].included) {
+            params.arff_train = p["dataset(arff)"].tokens[0];
+            params.arff_test = p["dataset(arff)"].tokens[1];
+            params.dataset = ExperimentDataEnum::USE_ARFF; 
+        }
         params.random_test.flag = p["random_test"].included;
         params.use_abstract = p["use_abstract"].included || p["use_disjuncts"].included;
         if(p["random_test"].included) {
@@ -241,6 +253,12 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
                 params.disjunct_bound = {};
             }
         }
+        if(p["binary"].included) {
+            params.use_bin = true;
+            params.bin_thres = stof(p["binary"].tokens[0]);
+        } else {
+            params.use_bin = false;
+        }
         return true;
     } else {
         std::cout << p.message() << std::endl;
@@ -250,8 +268,15 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
 }
 
 void ExperimentFrontend::performExperiments() {
-    wrangler = new ExperimentDataWrangler(params.data_prefix);
-    current_data = wrangler->fetch(params.dataset);
+    if(params.dataset != ExperimentDataEnum::USE_ARFF) {
+        wrangler = new ExperimentDataWrangler(params.data_prefix);
+        current_data = wrangler->fetch(params.dataset);
+    } else {
+        if(params.use_bin) 
+            current_data = ArffParser::loadArff(params.arff_train, params.arff_test, true, params.bin_thres); 
+        else 
+            current_data = ArffParser::loadArff(params.arff_train, params.arff_test); 
+    }
     e = new ExperimentBackend(current_data->training, current_data->test);
     for(auto depth = params.depths.begin(); depth != params.depths.end(); depth++) {
         if(params.test_all) {
@@ -265,5 +290,7 @@ void ExperimentFrontend::performExperiments() {
         }
     }
     delete e;
-    delete wrangler;
+    if(params.dataset != ExperimentDataEnum::USE_ARFF) {
+        delete wrangler;
+    } 
 }

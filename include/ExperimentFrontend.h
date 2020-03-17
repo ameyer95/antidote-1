@@ -25,6 +25,10 @@ private:
         std::vector<int> test_indices;
         std::string data_prefix;
         ExperimentDataEnum dataset;
+        std::string arff_train; 
+        std::string arff_test; 
+        bool use_bin; 
+        float bin_thres; 
         bool use_abstract; // When false, use concrete semantics
         bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
         std::vector<int> num_dropouts; // For when use_abstract == true

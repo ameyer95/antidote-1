@@ -7,3 +7,6 @@ bin/
 
 # Scratch work directory
 scratch/
+
+# vscode temporary files 
+.vscode/
