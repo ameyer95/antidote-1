@@ -1,6 +1,8 @@
 #ifndef ARFFSCANNER_H
 #define ARFFSCANNER_H
 
+#include "Error.h"
+
 #include <string> 
 #include <iostream> 
 #include <fstream>
@@ -9,23 +11,20 @@
 using namespace std;
 
 class ArffScanner {
-public: 
-    ArffScanner(const string& _file);
-
-    ~ArffScanner(); 
-
-    bool nextLine();
-
-    std::string nextWord();
-    
-    bool isEOF;
-
-    string curLine; 
-    
-    istringstream iss; 
 private:
     string file;
     ifstream fp;
+    Error *err_handler; 
+
+public: 
+    ArffScanner(const string& _file);
+    ~ArffScanner(); 
+
+    bool nextLine();
+    std::string nextWord();
+    bool isEOF;
+    string curLine; 
+    istringstream iss; 
 };
 
 #endif // ARFFSCANNER_H

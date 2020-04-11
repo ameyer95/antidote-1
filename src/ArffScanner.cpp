@@ -1,5 +1,7 @@
 #include "ArffScanner.h"
-#include "Errors.h"
+#include "Error.h"
+
+#include <algorithm>
 
 using namespace std;
 
@@ -26,8 +28,9 @@ ArffScanner::ArffScanner(const string& _file): isEOF(false),
                                             file(_file),
                                             fp(NULL) {
     fp = ifstream(file);
+    err_handler = new Error(); 
     if(!fp.is_open()) { 
-        err("Cannot open specified arff file");
+        err_handler->fatal("Cannot open specified arff file");
     }
 }
 
@@ -35,6 +38,7 @@ ArffScanner::~ArffScanner() {
     if(fp.is_open()) {
         fp.close();
     }
+    delete err_handler; 
 }
 
 bool ArffScanner::nextLine() {
@@ -52,5 +56,12 @@ bool ArffScanner::nextLine() {
 string ArffScanner::nextWord() {
     string ret; 
     iss >> skipws >> ret;
+    if(ret.at(0) == '"') {
+        while(ret.at(ret.size() - 1) != '"') {
+            string tmp; 
+            iss >> tmp; 
+            ret = ret + " " + tmp; 
+        }
+    }
     return ret;  
 }
