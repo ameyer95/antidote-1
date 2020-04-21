@@ -1,5 +1,3 @@
-#include <string>
-
 #include "ArffParser.h"
 
 using namespace std; 
@@ -22,16 +20,14 @@ float ArffParser::stofloat(string s) {
     if(iss.eof() && !iss.fail()) {
         return f;
     } else {
-        err_handler->warning("Invalid number");
+        err_handler->warning("Invalid number: " + s);
         return f;
     }
 }
 
-ArffParser::ArffParser(const string& _file): scanner(NULL),
-                                             label_id(0) {
+ArffParser::ArffParser(const string& _file) {
+    label_id = 0;
     scanner = new ArffScanner(_file);
-    labels = vector<string>(); 
-    label_map = map<string, int>();
     err_handler = new Error(); 
 }
 
@@ -59,7 +55,7 @@ DataSet* ArffParser::parse(float thres) {
 
 void ArffParser::parseRelation(DataSet *data, bool booleanized) {
     string cur; 
-    int lineNum = 0;
+    int attrNum = 0;
     scanner->nextLine(); 
     if(!scompare(scanner->nextWord(), "@RELATION")) {
         err_handler->fatal("Incorrect header (\"@RELATION\" declaration not found)");
@@ -74,32 +70,49 @@ void ArffParser::parseRelation(DataSet *data, bool booleanized) {
             err_handler->fatal("Incorrect header (line begin with token other than \"@DATA\" or \"@ATTRIBUTE\")"); 
         }
         cur = scanner->nextWord(); 
-        if(cur.compare("class") == 0 || cur.compare("label") == 0) {
-            if(label_id) {
-                err_handler->fatal("Multiple class or label declaration");
-            }
-            label_id = lineNum;
-            string tmp = scanner->curLine;
-            if(tmp.find("{") == string::npos || tmp.find("}") == string::npos) {
-                err_handler->fatal("Incorrect class or label declaration"); 
-            }
-            tmp.erase(0, tmp.find("{") + 1);
-            tmp.erase(tmp.find("}"));
-            istringstream iss(tmp);
-            string label; 
-            while(getline(iss, label, ',')) {
-                labels.push_back(label);
-                label_map.emplace(label, labels.size() - 1);
-            }
-        }
         cur = scanner->nextWord(); 
         if(scompare(cur, "NUMERIC")) {
             if(booleanized)
                 data->feature_types.push_back(FeatureType::BOOLEAN);
             else
                 data->feature_types.push_back(FeatureType::NUMERIC);
+        } else {    // attempt to parse as label or boolean line 
+            string tmp = scanner->curLine;
+            if(tmp.find("{") == string::npos) {
+                if(tmp.find("}") == string::npos) {
+                    err_handler->fatal("Unsupported Attribute line"); 
+                } else {
+                    err_handler->fatal("Incorrect class or label declaration"); 
+                } 
+            } 
+            if(tmp.find("}") == string::npos) {
+                err_handler->fatal("Incorrect class or label declaration2"); 
+            }
+
+            tmp.erase(0, tmp.find("{") + 1);
+            tmp.erase(tmp.find("}"));
+            istringstream iss(tmp);
+            vector<string> tags = vector<string>(); 
+            map<string, int> tag_map = map<string, int>(); 
+            string tag; 
+            while(getline(iss, tag, ',')) {
+                tags.push_back(tag);
+                tag_map.emplace(tag, tags.size() - 1);
+            }
+
+            if(tag_map.size() > 2) { // treat as label
+                if(label_id) {
+                    err_handler->fatal("Multiple class or label declaration");
+                }
+                label_id = attrNum;
+                label_map = tag_map; 
+                labels = tags; 
+            } else {// treat as boolean 
+                data->feature_types.push_back(FeatureType::BOOLEAN);
+                boolean_maps.emplace(attrNum, tag_map);
+            }
         }
-        lineNum++;
+        attrNum++;
     }
     data->num_categories = labels.size();
 }
@@ -117,14 +130,21 @@ void ArffParser::parseData(DataSet *data, float thres) {
             }
             if(id == label_id) {
                 if(label_map.count(val) == 0) {
-                    err_handler->warning("Invalid label");
+                    err_handler->warning("Invalid label: " + val);
                 } else {
                     curRow.y = label_map[val];
                 }
             } else {
-                vals[id] = stofloat(val);
-                if(thres) {
-                    vals[id] = vals[id].getNumericValue() > thres;
+                if(boolean_maps.count(id)) {    // boolean 
+                    if(!boolean_maps[id].count(val)) {
+                        err_handler->warning("invalid binary value: " + val);
+                    }
+                    vals[id] = (bool)boolean_maps[id][val];
+                } else {    // float  
+                    vals[id] = stofloat(val);
+                    if(thres) {
+                        vals[id] = vals[id].getNumericValue() > thres;
+                    }
                 }
                 id++;
             }

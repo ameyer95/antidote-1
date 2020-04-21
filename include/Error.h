@@ -11,6 +11,7 @@ private:
 public: 
     Error(); 
     void fatal(const std::string msg); 
+    void fatal(int lineNum, const std::string msg); 
     void warning(const std::string msg); 
     bool isFatal(); 
     bool isWarning(); 

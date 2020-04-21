@@ -1,0 +1,23 @@
+% Arff example file with binary attributes  
+@RELATION iris
+
+@ATTRIBUTE "sepallength with space"  NUMERIC
+@ATTRIBUTE sepalwidth   NUMERIC
+@ATTRIBUTE petallength  NUMERIC
+@ATTRIBUTE binary1      {0,1}
+@ATTRIBUTE petalwidth   NUMERIC
+@ATTRIBUTE binary2      {true,false}
+@ATTRIBUTE class        {Iris-setosa,Iris-versicolor,"Iris virginica"}
+           
+
+@DATA
+4.9,3.0,1.4,1,0.2,true,Iris-setosa
+4.7,3.2,1.3,0,0.2,true,Iris-setosa
+4.6,3.1,1.5,1,0.2,false,Iris-setosa
+5.0,3.6,1.4,1,0.2,true,Iris-versicolor
+5.4,3.9,1.7,0,0.4,true,Iris-setosa
+4.6,3.4,1.4,1,0.3,false,"Iris virginica"
+5.0,3.4,1.5,1,0.2,true,Iris-setosa
+4.4,2.9,1.4,0,0.2,true,Iris-setosa
+4.9,3.1,1.5,0,0.1,true,Iris-setosa
+

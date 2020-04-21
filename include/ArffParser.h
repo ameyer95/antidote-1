@@ -2,6 +2,8 @@
 #define ARFFPARSER_H
 
 #include <map>
+#include <vector> 
+#include <string> 
 
 #include "ArffScanner.h"
 #include "DataSet.hpp"
@@ -21,6 +23,7 @@ private:
     map<string, int> label_map;
     vector<string> labels;
     int label_id;
+    map<int, map<string, int> > boolean_maps;
     Error* err_handler; 
 
 public: 

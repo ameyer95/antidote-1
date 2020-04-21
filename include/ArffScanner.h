@@ -22,6 +22,7 @@ public:
 
     bool nextLine();
     std::string nextWord();
+    int lineNum; 
     bool isEOF;
     string curLine; 
     istringstream iss; 

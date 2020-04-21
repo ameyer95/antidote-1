@@ -24,9 +24,10 @@ static inline void trim(string &s) {
     rtrim(s);
 }
 
-ArffScanner::ArffScanner(const string& _file): isEOF(false),
-                                            file(_file),
-                                            fp(NULL) {
+ArffScanner::ArffScanner(const string& _file): file(_file),
+                                            fp(NULL),
+                                            lineNum(0),
+                                            isEOF(false) {
     fp = ifstream(file);
     err_handler = new Error(); 
     if(!fp.is_open()) { 
@@ -46,10 +47,13 @@ bool ArffScanner::nextLine() {
         isEOF = true;
     else {
         trim(curLine);
-        if(curLine.length() == 0 || curLine.at(0) == '%')
+        if(curLine.length() == 0 || curLine.at(0) == '%') {
+            lineNum++; 
             nextLine();
+        }
         iss = istringstream(curLine);
     }
+    lineNum++; 
     return isEOF;
 }
 
