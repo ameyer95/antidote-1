@@ -37,9 +37,9 @@ ArffParser::~ArffParser() {
     delete err_handler;
 }
 
-DataSet* ArffParser::parse(float thres) {
+DataSet* ArffParser::parse(float thres, int label_ind) {
     DataSet* data = new DataSet();
-    parseRelation(data, thres > 0);
+    parseRelation(data, thres > 0, label_ind);
     if(isFatal()) {
         delete data; 
         return NULL; 
@@ -53,7 +53,7 @@ DataSet* ArffParser::parse(float thres) {
     }
 }
 
-void ArffParser::parseRelation(DataSet *data, bool booleanized) {
+void ArffParser::parseRelation(DataSet *data, bool booleanized, int label_ind) {
     string cur; 
     int attrNum = 0;
     scanner->nextLine(); 
@@ -86,7 +86,7 @@ void ArffParser::parseRelation(DataSet *data, bool booleanized) {
                 } 
             } 
             if(tmp.find("}") == string::npos) {
-                err_handler->fatal("Incorrect class or label declaration2"); 
+                err_handler->fatal("Incorrect class or label declaration"); 
             }
 
             tmp.erase(0, tmp.find("{") + 1);
@@ -101,12 +101,14 @@ void ArffParser::parseRelation(DataSet *data, bool booleanized) {
             }
 
             if(tag_map.size() > 2) { // treat as label
-                if(label_id) {
-                    err_handler->fatal("Multiple class or label declaration");
+                if(label_ind != -1 && attrNum != label_id) {
+                    // ignore label 
+                    ignored_inds.emplace(attrNum); 
+                } else {
+                    label_id = attrNum;
+                    label_map = tag_map; 
+                    labels = tags; 
                 }
-                label_id = attrNum;
-                label_map = tag_map; 
-                labels = tags; 
             } else {// treat as boolean 
                 data->feature_types.push_back(FeatureType::BOOLEAN);
                 boolean_maps.emplace(attrNum, tag_map);
@@ -135,7 +137,9 @@ void ArffParser::parseData(DataSet *data, float thres) {
                     curRow.y = label_map[val];
                 }
             } else {
-                if(boolean_maps.count(id)) {    // boolean 
+                if(ignored_inds.count(id)) {
+                    // ignored
+                } else if(boolean_maps.count(id)) {    // boolean 
                     if(!boolean_maps[id].count(val)) {
                         err_handler->warning("invalid binary value: " + val);
                     }
@@ -166,13 +170,13 @@ vector<string> ArffParser::getLabels() {
     return ret;  
 }
 
-ExperimentData* ArffParser::loadArff(std::string train_path, std::string test_path, bool booleanized, float thres) {
+ExperimentData* ArffParser::loadArff(std::string train_path, std::string test_path, bool booleanized, float thres, int label_ind) {
     ArffParser train_parser(train_path);
     ArffParser test_parser(test_path);
     Error* err_handler = new Error(); 
     DataSet *train_dat, *test_dat;
-    train_dat = train_parser.parse(booleanized ? thres : 0);
-    test_dat = test_parser.parse(booleanized ? thres : 0);
+    train_dat = train_parser.parse(booleanized ? thres : 0, label_ind);
+    test_dat = test_parser.parse(booleanized ? thres : 0, label_ind);
     // checks for label consistency 
     std::vector<std::string> train_label = train_parser.getLabels(); 
     std::vector<std::string> test_label = test_parser.getLabels(); 

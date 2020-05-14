@@ -27,6 +27,7 @@ private:
         ExperimentDataEnum dataset;
         std::string arff_train; 
         std::string arff_test; 
+        int arff_label_ind;
         bool use_bin; 
         float bin_thres; 
         bool use_abstract; // When false, use concrete semantics

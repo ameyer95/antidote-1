@@ -207,7 +207,7 @@ ExperimentData* ExperimentDataWrangler::loadUCI(const UCINames &dataset) {
     UCI raw_uci(dataset, path_prefix);
     DataSet *uci_training = new DataSet {
         FeatureVectorHeader(raw_uci.getTrainingData()[0].x.size(), FeatureType::NUMERIC), // XXX many assumptions
-        raw_uci.getLabels().size(),
+        static_cast<int>(raw_uci.getLabels().size()),
         std::vector<DataRow>(raw_uci.getTrainingData().size())
     };
     DataSet *uci_test = new DataSet {

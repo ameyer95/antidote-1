@@ -14,7 +14,7 @@ using namespace std;
 
 class ArffParser {
 private: 
-    void parseRelation(DataSet *data, bool booleanized = false);
+    void parseRelation(DataSet *data, bool booleanized, int label_ind);
     void parseData(DataSet *data, float thres);
 
     float stofloat(string s);
@@ -24,15 +24,16 @@ private:
     vector<string> labels;
     int label_id;
     map<int, map<string, int> > boolean_maps;
+    set<int> ignored_inds; 
     Error* err_handler; 
 
 public: 
     ArffParser(const string& _file);
     ~ArffParser(); 
-    DataSet* parse(float thres = 0);
+    DataSet* parse(float thres = 0.0, int label_ind = -1);
     // copies and returns copy of labels. 
     vector<string> getLabels(); 
-    static ExperimentData* loadArff(std::string train_path, std::string test_path, bool booleanized = false, float thres = 0); 
+    static ExperimentData* loadArff(std::string train_path, std::string test_path, bool booleanized = false, float thres = 0, int label_ind = -1); 
     bool isFatal(); 
     bool isWarning(); 
 };

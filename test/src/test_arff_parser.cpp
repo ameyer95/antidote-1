@@ -32,4 +32,15 @@ TEST_CASE("Check Arff Parser function for correct Arff file") {
     REQUIRE(data->feature_types.at(3) == FeatureType::BOOLEAN); 
     r0 = data->rows[0]; 
     REQUIRE(r0.x.at(3).getBooleanValue() == true);
+
+    delete parser; 
+    delete data; 
+
+    parser = new ArffParser("test/data/arff_test4(label_ind).arff"); 
+    data = parser->parse(0.0, 6);
+
+    REQUIRE(data->feature_types.size() == 6); 
+    REQUIRE(data->rows.size() == 9);
+    r0 = data->rows[0]; 
+    REQUIRE(r0.y == 0);
 } 
