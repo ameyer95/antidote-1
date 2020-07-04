@@ -18,13 +18,16 @@ private:
     void parseData(DataSet *data, float thres);
 
     float stofloat(string s);
+    vector<string> readNominal(string vals);
+    map<string, int> makeNominalMap(vector<string> tags);
+    string trimBrackets(string s); 
 
     ArffScanner* scanner;
     map<string, int> label_map;
     vector<string> labels;
     int label_id;
-    map<int, map<string, int> > boolean_maps;
-    set<int> ignored_inds; 
+    map<int, map<string, int> > boolean_maps; // stores mapping info for boolean attributes (index + val = boolean val)
+    set<int> ignored_inds; // indices with nominal data that is not used 
     Error* err_handler; 
 
 public: 

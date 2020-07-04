@@ -40,6 +40,7 @@ TEST_CASE("Check Arff Parser function for correct Arff file") {
     data = parser->parse(0.0, 6);
 
     REQUIRE(data->feature_types.size() == 6); 
+    REQUIRE(data->num_categories == 3); 
     REQUIRE(data->rows.size() == 9);
     r0 = data->rows[0]; 
     REQUIRE(r0.y == 0);

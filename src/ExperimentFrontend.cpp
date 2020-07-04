@@ -78,7 +78,7 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.createArgument("test_indices", "-t", 1, "Space-separated list of test indices", true);
     p.createArgument("dataset", "-f", 2, "Dataset information: (1) the path to the data folder and (2) the name from one of " + setToString(dataset_options), true);
     p.createArgument("dataset(arff)", "-D", 2, "Dataset information in arff format: (1) train set (2) test set", true); 
-    p.createArgument("label_indice", "-i", 1, "Indice of attribute to use as label (effective only for arff datasets)", true);
+    p.createArgument("label_index", "-i", 1, "Index of attribute to use as label (effective only for arff datasets)", true);
     p.createArgument("use_abstract", "-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
     p.createArgument("use_disjuncts", "-V", 1, "Like -a, but with disjuncts", true);
     p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from " + setToString(merge_options), true);
@@ -234,8 +234,8 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
             params.arff_train = p["dataset(arff)"].tokens[0];
             params.arff_test = p["dataset(arff)"].tokens[1];
             params.dataset = ExperimentDataEnum::USE_ARFF; 
-            if(p["label_indice"].included) {
-                params.arff_label_ind = std::stoi(p["label_indice"].tokens[0]); 
+            if(p["label_index"].included) {
+                params.arff_label_ind = std::stoi(p["label_index"].tokens[0]); 
             } else {
                 params.arff_label_ind = -1;
             }
