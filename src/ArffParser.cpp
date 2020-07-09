@@ -147,15 +147,13 @@ void ArffParser::parseRelation(DataSet *data, bool booleanized, int label_ind) {
             tmp = trimBrackets(tmp); 
             vector<string> tags = readNominal(tmp);
 
-            if (tags.size() > 2) { // treat as label
-                if (label_id != -1 && attrNum != label_id) {
-                    // ignore label 
-                    ignored_inds.emplace(attrNum); 
-                } else {
-                    label_id = attrNum;
-                    label_map = makeNominalMap(tags); 
-                    labels = tags; 
-                }
+            if (tags.size() >= 2 && (label_id == -1 || label_id == attrNum)) { // treat as label
+                label_id = attrNum;
+                label_map = makeNominalMap(tags); 
+                labels = tags; 
+            } else if (tags.size() > 2) { // ignore 
+                // ignore label 
+                ignored_inds.emplace(attrNum); 
             } else {// treat as boolean 
                 data->feature_types.push_back(FeatureType::BOOLEAN);
                 boolean_maps.emplace(attrNum, makeNominalMap(tags));
@@ -240,7 +238,7 @@ vector<string> ArffParser::getLabels() {
  * @param test_path path to the test set 
  * @param booleanized booleanize numeric attributes (default to false)
  * @param thres threshold to booleanize numeric attributes (used together with booleanized)
- * @param label_ind index to be treated as label (default to the -1:the last attribute)
+ * @param label_ind index to be treated as label (default to the -1:the first nominal attribute)
  */
 ExperimentData* ArffParser::loadArff(std::string train_path, std::string test_path, bool booleanized, float thres, int label_ind) {
     ArffParser train_parser(train_path);
