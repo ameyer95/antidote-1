@@ -4,6 +4,7 @@
 #include <map>
 #include <vector> 
 #include <string> 
+#include <fstream>
 
 #include "ArffScanner.h"
 #include "DataSet.hpp"
@@ -37,6 +38,7 @@ public:
     // copies and returns copy of labels. 
     vector<string> getLabels(); 
     static ExperimentData* loadArff(std::string train_path, std::string test_path, bool booleanized = false, float thres = 0, int label_ind = -1); 
+    static void writeArff(DataSet *data, std::string output_path, const std::vector<string>* class_labels = NULL);
     bool isFatal(); 
     bool isWarning(); 
 };

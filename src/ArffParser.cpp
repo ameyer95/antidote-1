@@ -261,10 +261,62 @@ ExperimentData* ArffParser::loadArff(std::string train_path, std::string test_pa
         }
     }
     if (err_handler->isFatal()) {
+        delete err_handler; 
         return NULL; 
     }
     ExperimentData *ret = new ExperimentData { train_dat, test_dat, train_parser.getLabels() };
+    delete err_handler;
     return ret;
+}
+
+void ArffParser::writeArff(DataSet *data, string output_path, const vector<string>* class_labels) {
+    Error* err_handler = new Error(); 
+    bool use_label = (class_labels != NULL);
+    ofstream of(output_path, ofstream::out); 
+    if(!of) {
+        err_handler->fatal("Cannot open output file!"); 
+        delete err_handler; 
+        return; 
+    }
+    // write @RELATION part 
+    of << "@RELATION Experiment_data\n\n"; 
+    for (int i = 0; i < data->feature_types.size(); i++) {
+        of << "@ATTRIBUTE attr" << i << "\t"; 
+        if (data->feature_types[i] == FeatureType::NUMERIC)
+            of << "NUMERIC\n"; 
+        else if (data->feature_types[i] == FeatureType::BOOLEAN)
+            of << "{false,true}\n";
+    }
+    of << "@ATTRIBUTE label\t{";
+    for (int i = 0; i < data->num_categories; i++) {
+        if (i > 0) 
+            of << ",";
+        if (use_label) 
+            of << class_labels->at(i);
+        else 
+            of << i;
+    }
+    of << "}\n"; 
+
+    // write @DATA part 
+    of << "\n@DATA\n"; 
+    for (int i = 0; i < data->rows.size(); i++) {
+        for (int j = 0; j < data->rows[i].x.size(); j++) {
+            if (data->feature_types[j] == FeatureType::NUMERIC) {
+                of << data->rows[i].x[j].getNumericValue(); 
+            } else if (data->feature_types[j] == FeatureType::BOOLEAN) {
+                of << (data->rows[i].x[j].getBooleanValue() ? "true" : "false");
+            }
+            of << ",";
+        }
+        if(use_label) 
+            of << class_labels->at(data->rows[i].y) << "\n";
+        else 
+            of << data->rows[i].y << "\n"; 
+    }
+    of.close(); 
+    delete err_handler;
+    return;
 }
 
 bool ArffParser::isFatal() {

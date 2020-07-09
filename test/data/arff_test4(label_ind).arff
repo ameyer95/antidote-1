@@ -6,7 +6,7 @@
 @ATTRIBUTE petallength  NUMERIC
 @ATTRIBUTE binary1      {0,1}
 @ATTRIBUTE petalwidth   NUMERIC
-@ATTRIBUTE binary2      {true,false}
+@ATTRIBUTE binary2      {false,true}
 @ATTRIBUTE class        {Iris-setosa,Iris-versicolor,"Iris virginica"}
 @ATTRIBUTE ignore       {2,1,3}
            
