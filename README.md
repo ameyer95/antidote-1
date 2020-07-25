@@ -25,3 +25,11 @@ Testing is currently very incomplete.
 The latex document in [doc/](doc/) details the specification of the
 concrete and abstract semantics implemented by the code base;
 running `pdflatex paper` within the directory will generate the pdf.
+
+## File format support 
+
+We use ARFF format for user data. A general specification of the format is [here](https://www.cs.waikato.ac.nz/ml/weka/arff.html). 
+
+There are some additional assumptions of the input data, mainly to support data labeling and boolean attributes: 
+* If no `-i` argument (`label_index`) is specified, the first nominal data will be treated as label, while others are ignored 
+* If `-i` argument is used, the parser will look for the attribute specified as label, and treat other binary nominal values as booleans, ignoring others. 
