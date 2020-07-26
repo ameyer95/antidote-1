@@ -1,0 +1,19 @@
+@RELATION impurity 
+
+@ATTRIBUTE a1       NUMERIC 
+@ATTRIBUTE label    {b,w}
+
+@DATA
+0,w
+1,w
+2,w
+3,w
+4,w
+5,w
+6,w
+7,w
+8,w
+9,b
+10,b
+11,b
+12,b

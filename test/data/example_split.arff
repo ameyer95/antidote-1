@@ -1,0 +1,22 @@
+% data for the "Illustrative example" from the paper (Fig. 2)
+% b for black, w for white
+@RELATION example 
+
+@ATTRIBUTE num      NUMERIC 
+@ATTRIBUTE label    {b,w}
+
+@DATA 
+5,w
+5,w
+5,w
+5,w
+5,w
+5,w
+8,b
+8,b
+8,w
+14,b
+14,b
+14,b
+14,b
+14,b
