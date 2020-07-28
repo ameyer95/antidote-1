@@ -176,6 +176,9 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
         case ExperimentDataEnum::UCI_MAMMOGRAPHY:
             cache.insert(std::make_pair(dataset, loadUCI(UCINames::MAMMOGRAPHY)));
             break;
+        case ExperimentDataEnum::USE_ARFF:
+            // will be handled by arff parser
+            break; 
     }
 }
 
