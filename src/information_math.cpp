@@ -109,7 +109,22 @@ Interval<double> impurity(const std::vector<int> &counts, int num_dropout) {
     CategoricalDistribution<Interval<double>> p = estimateCategorical(counts, num_dropout);
     Interval<double> total(0);
     for(auto i = p.cbegin(); i != p.cend(); i++) {
-        total = total + (*i * (Interval<double>(1) - *i));
+        // total = total + (*i * (Interval<double>(1) - *i));
+
+        // Instead of using a direct interval multiplication, we compute the bounds of each p(1-p) terms 
+        // locally. This method does not give actual reachable minimum/maximum, but it does not affect the 
+        // correctness of our algorithm because it does not miss intervals that would intersect. 
+
+        double lmin, lmax; 
+        if(i->get_lower_bound() <= 0.5 && i->get_upper_bound() >= 0.5) {
+            lmax = 0.25; 
+        } else {
+            lmax = max(i->get_lower_bound() * (1 - i->get_lower_bound()), 
+                        i->get_upper_bound() * (1 - i->get_upper_bound())); 
+        }
+        lmin = min(i->get_lower_bound() * (1 - i->get_lower_bound()), 
+            i->get_upper_bound() * (1 - i->get_upper_bound())); 
+        total = Interval<double>(lmin, lmax);
     }
     return total;
 }
