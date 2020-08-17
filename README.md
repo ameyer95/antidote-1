@@ -33,3 +33,5 @@ We use ARFF format for user data. A general specification of the format is [here
 There are some additional assumptions of the input data, mainly to support data labeling and boolean attributes: 
 * If no `-i` argument (`label_index`) is specified, the first nominal data will be treated as label, while others are ignored 
 * If `-i` argument is used, the parser will look for the attribute specified as label, and treat other binary nominal values as booleans, ignoring others. 
+
+For an example arff dataset with the data of the "Illustrative example" from the paper (Fig. 2), see `data/example.arff`. 

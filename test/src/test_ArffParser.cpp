@@ -11,6 +11,7 @@ TEST_CASE("Check Arff Parser function for correct Arff file") {
     ArffParser* parser = new ArffParser("test/data/arff_test1.arff");
     DataSet* data = parser->parse(); 
 
+    REQUIRE(data != NULL);
     REQUIRE(data->feature_types.size() == 4); 
     REQUIRE(data->num_categories == 3); 
     REQUIRE(data->rows.size() == 10); 
@@ -29,6 +30,7 @@ TEST_CASE("Check Arff Parser function for correct Arff file") {
     parser = new ArffParser("test/data/arff_test_boolean.arff");
     data = parser->parse(0.0, 6); 
 
+    REQUIRE(data != NULL);
     REQUIRE(data->feature_types.size() == 6); 
     REQUIRE(data->rows.size() == 9);
     REQUIRE(data->feature_types.at(3) == FeatureType::BOOLEAN); 
@@ -41,13 +43,15 @@ TEST_CASE("Check Arff Parser function for correct Arff file") {
     parser = new ArffParser("test/data/arff_test4(label_ind).arff"); 
     data = parser->parse(0.0, 6);
 
+    REQUIRE(data != NULL); 
     REQUIRE(data->feature_types.size() == 6); 
     REQUIRE(data->num_categories == 3); 
     REQUIRE(data->rows.size() == 9);
     r0 = data->rows[0]; 
     REQUIRE(r0.y == 0);
 
-    ExperimentData* example = ArffParser::loadArff("test/data/example.arff", "test/data/example.arff"); 
+    ExperimentData* example = ArffParser::loadArff("data/example.arff", "data/example.arff"); 
+    REQUIRE(example != NULL); 
     REQUIRE(example->test->rows[0].x[0].getNumericValue() == 0);
     REQUIRE(example->training->num_categories == 2);
     REQUIRE(example->training->rows.size() == 13);
