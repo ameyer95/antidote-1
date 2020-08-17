@@ -271,13 +271,13 @@ void BoxDropoutDomain::computePredicatesAndScores(std::list<ScoreEntry> &exists_
 void BoxDropoutDomain::computeBooleanFeaturePredicateAndScore(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropout &training_set_abstraction, int feature_index) const {
     SymbolicPredicate phi(feature_index);
     auto counts = training_set_abstraction.splitCounts(phi);
-    if(!couldBeEmpty(counts.first) && !couldBeEmpty(counts.second)) {
+    if(!mustBeEmpty(counts.first) && !mustBeEmpty(counts.second)) {
         Interval<double> temp = jointImpurity(counts.first.counts,
                                               counts.first.num_dropout,
                                               counts.second.counts,
                                               counts.second.num_dropout);
         exists_nontrivial.push_back(std::make_pair(phi, temp));
-        if(!mustBeEmpty(counts.first) && !mustBeEmpty(counts.second)) {
+        if(!couldBeEmpty(counts.first) && !couldBeEmpty(counts.second)) {
             forall_nontrivial.push_back(&exists_nontrivial.back());
         }
     }
@@ -321,7 +321,7 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
                                               split_counts.second.counts,
                                               split_counts.second.num_dropout);
         exists_nontrivial.push_back(std::make_pair(phi, temp));
-        if(!mustBeEmpty(split_counts.first) && !mustBeEmpty(split_counts.second)) {
+        if(!couldBeEmpty(split_counts.first) && !couldBeEmpty(split_counts.second)) {
             forall_nontrivial.push_back(&exists_nontrivial.back());
         }
     }
