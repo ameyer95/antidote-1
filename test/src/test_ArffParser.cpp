@@ -58,7 +58,7 @@ TEST_CASE("Check Arff Parser function for correct Arff file") {
 } 
 
 TEST_CASE("Convert UCI IRIS to arff (remove this later)") {
-    ExperimentDataWrangler* wrangler = new ExperimentDataWrangler("data/"); 
+    ExperimentDataWrangler* wrangler = new ExperimentDataWrangler("data"); 
     const ExperimentData* iris = wrangler->fetch(ExperimentDataEnum::UCI_IRIS);
     ArffParser::writeArff(iris->training, "test/data/iris_train.arff", &iris->class_labels);
     ArffParser::writeArff(iris->test, "test/data/iris_test.arff", &iris->class_labels);

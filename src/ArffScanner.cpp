@@ -25,10 +25,9 @@ static inline void trim(string &s) {
 }
 
 ArffScanner::ArffScanner(const string& _file): file(_file),
-                                            fp(NULL),
+                                            fp(file),
                                             lineNum(0),
                                             isEOF(false) {
-    fp = ifstream(file);
     err_handler = new Error(); 
     if(!fp.is_open()) { 
         err_handler->fatal("Cannot open specified arff file");
