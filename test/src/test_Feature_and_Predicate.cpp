@@ -65,6 +65,7 @@ TEST_CASE("Check that Predicates behave as expected on FeatureVectors") {
 
         REQUIRE(phi0.evaluate(x3) == optional<bool>(false));
         REQUIRE(phi1.evaluate(x3) == optional<bool>(false));
-        REQUIRE(phi2.evaluate(x3) == optional<bool>({}));
+        // REQUIRE(phi2.evaluate(x3) == optional<bool>({}));
+        REQUIRE(!phi2.evaluate(x3).has_value()); 
     }
 }

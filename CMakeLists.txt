@@ -45,7 +45,7 @@ target_link_libraries(test common)
 if(MSVC)
     # target_compile_options(common INTERFACE /O2) # equivalent to -O3 
     target_compile_options(common INTERFACE /GL) # equivalent to -flto
-    target_compile_options(common INTERFACE /Wall) 
+    target_compile_options(common INTERFACE /W4) 
 
     set_property(TARGET antidote PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
     set_property(TARGET test PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")

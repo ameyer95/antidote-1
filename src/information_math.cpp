@@ -124,7 +124,7 @@ Interval<double> impurity(const std::vector<int> &counts, int num_dropout) {
         }
         lmin = min(i->get_lower_bound() * (1 - i->get_lower_bound()), 
             i->get_upper_bound() * (1 - i->get_upper_bound())); 
-        total = Interval<double>(lmin, lmax);
+        total = total + Interval<double>(lmin, lmax);
     }
     return total;
 }
