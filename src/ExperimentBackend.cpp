@@ -1,5 +1,6 @@
 #include "ExperimentBackend.h"
 #include "AbstractSemanticsInstantiations.hpp"
+#include "AbstractSemanticsTemplate.cpp"
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
 #include "DropoutDomains.hpp"
@@ -120,48 +121,92 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract(int 
 
 ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
     ProgramNode *program = buildTree(depth);
-    DropoutDomains d;
-    BoxDisjunctsDropoutSemantics sem(&d.disjuncts_domain);
-    FeatureVector test_input = test->rows[test_index].x;
-    DataReferences training_references(training);
-    BoxDropoutDomain::AbstractionType initial_box = {
-        TrainingReferencesWithDropout(training_references, num_dropout),
-        PredicateAbstraction(1), // XXX any non-bot value, ideally top?
-        PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
-    };
-    BoxDisjunctsDomainDropoutInstantiation::AbstractionType initial_state = {initial_box};
-    auto final_state = sem.execute(test_input, initial_state, program);
-    delete program;
-    std::vector<CategoricalDistribution<Interval<double>>> posteriors;
-    for(auto i = final_state.cbegin(); i != final_state.cend(); i++) {
-        posteriors.push_back(i->posterior_distribution_abstraction);
+    if (this->use_label_flipping) {
+        DropoutDomainsLabels d;
+        BoxDisjunctsDropoutSemanticsLabels sem(&d.disjuncts_domain);
+        FeatureVector test_input = test->rows[test_index].x;
+        DataReferences training_references(training);
+        BoxDropoutDomainLabels::AbstractionType initial_box = {
+            TrainingReferencesWithDropoutLabels(training_references, num_dropout),
+            PredicateAbstractionLabels(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstractionLabels(1) // XXX any non-bot value, ideally top?
+        };
+        BoxDisjunctsDomainDropoutInstantiationLabels::AbstractionType initial_state = {initial_box};
+        auto final_state = sem.execute(test_input, initial_state, program);
+        delete program;
+        std::vector<CategoricalDistribution<Interval<double>>> posteriors;
+        for(auto i = final_state.cbegin(); i != final_state.cend(); i++) {
+            posteriors.push_back(i->posterior_distribution_abstraction);
+        }
+        auto ret = d.D_domain.join(posteriors);
+        return { ret, softMax(ret), groundTruth(test_index) };
+    } else {
+        DropoutDomains d;
+        BoxDisjunctsDropoutSemantics sem(&d.disjuncts_domain);
+        FeatureVector test_input = test->rows[test_index].x;
+        DataReferences training_references(training);
+        BoxDropoutDomain::AbstractionType initial_box = {
+            TrainingReferencesWithDropout(training_references, num_dropout),
+            PredicateAbstraction(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
+        };
+        BoxDisjunctsDomainDropoutInstantiation::AbstractionType initial_state = {initial_box};
+        auto final_state = sem.execute(test_input, initial_state, program);
+        delete program;
+        std::vector<CategoricalDistribution<Interval<double>>> posteriors;
+        for(auto i = final_state.cbegin(); i != final_state.cend(); i++) {
+            posteriors.push_back(i->posterior_distribution_abstraction);
+        }
+        auto ret = d.D_domain.join(posteriors);
+        return { ret, softMax(ret), groundTruth(test_index) };
     }
-    auto ret = d.D_domain.join(posteriors);
-    return { ret, softMax(ret), groundTruth(test_index) };
 }
 
 ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int disjunct_bound, const DisjunctsMergeMode &merge_mode) {
     ProgramNode *program = buildTree(depth);
-    DropoutDomains d;
-    FeatureVector test_input = test->rows[test_index].x;
+    if (this->use_label_flipping) {
+        DropoutDomainsLabels d;
+        FeatureVector test_input = test->rows[test_index].x;
 
-    d.bounded_disjuncts_domain.setMergeDetails(disjunct_bound, merge_mode);
-    BoxDisjunctsDropoutSemantics sem(&d.bounded_disjuncts_domain);
-    DataReferences training_references(training);
-    BoxDropoutDomain::AbstractionType initial_box = {
-        TrainingReferencesWithDropout(training_references, num_dropout),
-        PredicateAbstraction(1), // XXX any non-bot value, ideally top?
-        PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
-    };
-    BoxDisjunctsDomainDropoutInstantiation::AbstractionType initial_state = {initial_box};
-    auto final_state = sem.execute(test_input, initial_state, program);
-    delete program;
-    std::vector<CategoricalDistribution<Interval<double>>> posteriors;
-    for(auto i = final_state.cbegin(); i != final_state.cend(); i++) {
-        posteriors.push_back(i->posterior_distribution_abstraction);
+        d.bounded_disjuncts_domain.setMergeDetails(disjunct_bound, merge_mode);
+        BoxDisjunctsDropoutSemanticsLabels sem(&d.bounded_disjuncts_domain);
+        DataReferences training_references(training);
+        BoxDropoutDomainLabels::AbstractionType initial_box = {
+            TrainingReferencesWithDropoutLabels(training_references, num_dropout),
+            PredicateAbstractionLabels(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstractionLabels(1) // XXX any non-bot value, ideally top?
+        };
+        BoxDisjunctsDomainDropoutInstantiationLabels::AbstractionType initial_state = {initial_box};
+        auto final_state = sem.execute(test_input, initial_state, program);
+        delete program;
+        std::vector<CategoricalDistribution<Interval<double>>> posteriors;
+        for(auto i = final_state.cbegin(); i != final_state.cend(); i++) {
+            posteriors.push_back(i->posterior_distribution_abstraction);
+        }
+        auto ret = d.D_domain.join(posteriors);
+        return { ret, softMax(ret), groundTruth(test_index) };
+    } else {
+        DropoutDomains d;
+        FeatureVector test_input = test->rows[test_index].x;
+
+        d.bounded_disjuncts_domain.setMergeDetails(disjunct_bound, merge_mode);
+        BoxDisjunctsDropoutSemantics sem(&d.bounded_disjuncts_domain);
+        DataReferences training_references(training);
+        BoxDropoutDomain::AbstractionType initial_box = {
+            TrainingReferencesWithDropout(training_references, num_dropout),
+            PredicateAbstraction(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
+            };
+        BoxDisjunctsDomainDropoutInstantiation::AbstractionType initial_state = {initial_box};
+        auto final_state = sem.execute(test_input, initial_state, program);
+        delete program;
+        std::vector<CategoricalDistribution<Interval<double>>> posteriors;
+        for(auto i = final_state.cbegin(); i != final_state.cend(); i++) {
+            posteriors.push_back(i->posterior_distribution_abstraction);
+        }
+        auto ret = d.D_domain.join(posteriors);
+        return { ret, softMax(ret), groundTruth(test_index) };
     }
-    auto ret = d.D_domain.join(posteriors);
-    return { ret, softMax(ret), groundTruth(test_index) };
 }
 
 std::map<int,int> ExperimentBackend::run_test(int depth, int test_index, int num_dropout, int num_trials, unsigned int seed) {

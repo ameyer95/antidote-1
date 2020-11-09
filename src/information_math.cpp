@@ -108,7 +108,7 @@ double impurity(const vector<int> &counts) {
 }
 
 double impurityLabels(const vector<int> &counts) {
-    CategoricalDistribution<double> p = estimateCategorical(counts);
+    CategoricalDistribution<double> p = estimateCategoricalLabels(counts);
     double total = 0;
     for (auto i = p.cbegin(); i!= p.cend(); i++) {
         total += *i * (1 - *i);
