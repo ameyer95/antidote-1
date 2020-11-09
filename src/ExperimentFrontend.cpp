@@ -85,7 +85,8 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.createArgument("verbose", "-v", 0, "", true);
     p.createArgument("random_test", "-r", 3, "Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed.", true);
     p.createArgument("binary", "-B", 1, "Transform dataset into binary form by threshold (only effective with arff datasets)", true);
-    
+    p.createArgument("label_flipping","-l", 0, "Use the label-flipping data poisoning model", true);
+
     p.requireAtLeastOne({"dataset", "dataset(arff)"});
     p.requireAtMostOne({"dataset", "dataset(arff)"});
 
@@ -125,6 +126,9 @@ void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
                 message += "(with disjuncts) ";
             }
         }
+        if (params.label_flipping) {
+            message += "(with label fipping)";
+        }
         message += "on test " + std::to_string(test_index);
         output(message);
         ExperimentBackend::Result<Interval<double>> ret;
@@ -136,8 +140,8 @@ void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
             } else {
                 ret = e->run_abstract_disjuncts(depth, test_index, *n);
             }
-        }
-        output(output_to_json(depth, test_index, ret), true);
+        } 
+        output(output_to_json(depth, test_index, ret), true);  
     }
 }
 
@@ -265,6 +269,8 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
         } else {
             params.use_bin = false;
         }
+
+        params.label_flipping = p["label_flipping"].included;
         return true;
     } else {
         std::cout << p.message() << std::endl;
@@ -284,7 +290,8 @@ void ExperimentFrontend::performExperiments() {
                                             params.use_bin ? params.bin_thres : 0.0, 
                                             params.arff_label_ind); 
     }
-    e = new ExperimentBackend(current_data->training, current_data->test);
+    e = new ExperimentBackend(current_data->training, current_data->test, params.label_flipping);
+
     for(auto depth = params.depths.begin(); depth != params.depths.end(); depth++) {
         if(params.test_all) {
             for(int i = 0; i < e->test_size(); i++) {
@@ -297,6 +304,7 @@ void ExperimentFrontend::performExperiments() {
         }
     }
     delete e;
+
     if(params.dataset != ExperimentDataEnum::USE_ARFF) {
         delete wrangler;
     } 

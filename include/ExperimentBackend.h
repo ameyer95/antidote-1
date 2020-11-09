@@ -21,8 +21,9 @@ public:
         std::set<int> possible_classifications;
         int ground_truth;
     };
+    bool use_label_flipping;
 
-    ExperimentBackend(const DataSet *training, const DataSet *test);
+    ExperimentBackend(const DataSet *training, const DataSet *test, bool label_flipping);
 
     int test_size() { return test->rows.size(); }
     int groundTruth(int test_index) const { return test->rows[test_index].y; }

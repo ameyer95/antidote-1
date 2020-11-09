@@ -32,6 +32,7 @@ private:
         float bin_thres; 
         bool use_abstract; // When false, use concrete semantics
         bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
+        bool label_flipping; // When true, use the label flipping data poisoning model
         std::vector<int> num_dropouts; // For when use_abstract == true
         std::optional<int> disjunct_bound; // Optionally, has_value only when with_disjuncts is true
         DisjunctsMergeMode merge_mode; // For when disjunct_bound.has_value()

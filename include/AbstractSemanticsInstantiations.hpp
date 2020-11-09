@@ -9,14 +9,21 @@
 
 #include "AbstractSemanticsTemplate.h"
 #include "BoxStateDomainDropoutInstantiation.h"
+#include "BoxStateDomainDropoutInstantiationLabels.h"
 #include "BoxDisjunctsDomainDropoutInstantiation.h"
+#include "BoxDisjunctsDomainDropoutInstantiationLabels.h"
+
 
 // Forward-declare the types to get code generation
 template class AbstractSemanticsTemplate<BoxDropoutDomain::AbstractionType>;
+template class AbstractSemanticsTemplate<BoxDropoutDomainLabels::AbstractionType>;
 template class AbstractSemanticsTemplate<BoxDisjunctsDomainDropoutInstantiation::AbstractionType>;
+template class AbstractSemanticsTemplate<BoxDisjunctsDomainDropoutInstantiationLabels::AbstractionType>;
 
 // Give them nicer names
 typedef AbstractSemanticsTemplate<BoxDropoutDomain::AbstractionType> BoxDropoutSemantics;
+typedef AbstractSemanticsTemplate<BoxDropoutDomainLabels::AbstractionType> BoxDropoutSemanticsLabels;
 typedef AbstractSemanticsTemplate<BoxDisjunctsDomainDropoutInstantiation::AbstractionType> BoxDisjunctsDropoutSemantics;
+typedef AbstractSemanticsTemplate<BoxDisjunctsDomainDropoutInstantiationLabels::AbstractionType> BoxDisjunctsDropoutSemanticsLabels;
 
 #endif

@@ -3,6 +3,7 @@
 #include "ASTNode.h"
 #include "ConcreteSemantics.h"
 #include "DropoutDomains.hpp"
+#include "DropoutDomainsLabels.hpp"
 #include "Feature.hpp"
 #include <algorithm>
 #include <cstdlib> // for random stuff
@@ -68,9 +69,10 @@ DataReferences* random_subset(const DataSet *training, int num_dropout) {
  * ExperimentBackend members
  */
 
-ExperimentBackend::ExperimentBackend(const DataSet *training, const DataSet *test) {
+ExperimentBackend::ExperimentBackend(const DataSet *training, const DataSet *test, bool label_flipping) {
     this->training = training;
     this->test = test;
+    this->use_label_flipping = label_flipping;
 }
 
 ExperimentBackend::Result<double> ExperimentBackend::run_concrete(int depth, int test_index) {
@@ -83,19 +85,37 @@ ExperimentBackend::Result<double> ExperimentBackend::run_concrete(int depth, int
 
 ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract(int depth, int test_index, int num_dropout) {
     ProgramNode *program = buildTree(depth);
-    DropoutDomains d;
-    BoxDropoutSemantics sem(&d.box_domain);
-    FeatureVector test_input = test->rows[test_index].x;
-    DataReferences training_references(training);
-    BoxDropoutDomain::AbstractionType initial_state = {
-        TrainingReferencesWithDropout(training_references, num_dropout),
-        PredicateAbstraction(1), // XXX any non-bot value, ideally top?
-        PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
-    };
-    auto final_state = sem.execute(test_input, initial_state, program);
-    auto ret = final_state.posterior_distribution_abstraction;
-    delete program;
-    return { ret, softMax(ret), groundTruth(test_index) };
+    if (this->use_label_flipping) {
+        DropoutDomainsLabels d;
+        BoxDropoutSemanticsLabels sem(&d.box_domain);
+        FeatureVector test_input = test->rows[test_index].x;
+        DataReferences training_references(training);
+        BoxDropoutDomainLabels::AbstractionType initial_state = {
+            TrainingReferencesWithDropoutLabels(training_references, num_dropout),
+            PredicateAbstractionLabels(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstractionLabels(1) // XXX any non-bot value, ideally top?
+        };
+        auto final_state = sem.execute(test_input, initial_state, program);
+        auto ret = final_state.posterior_distribution_abstraction;
+        delete program;
+        return { ret, softMax(ret), groundTruth(test_index) };
+    } else {
+        DropoutDomains d;
+        BoxDropoutSemantics sem(&d.box_domain);
+        FeatureVector test_input = test->rows[test_index].x;
+        DataReferences training_references(training);
+        BoxDropoutDomain::AbstractionType initial_state = {
+            TrainingReferencesWithDropout(training_references, num_dropout),
+            PredicateAbstraction(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
+        };
+        auto final_state = sem.execute(test_input, initial_state, program);
+        auto ret = final_state.posterior_distribution_abstraction;
+        delete program;
+        return { ret, softMax(ret), groundTruth(test_index) };
+    }
+
+
 }
 
 ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_disjuncts(int depth, int test_index, int num_dropout) {
