@@ -33,6 +33,15 @@ void UCI::setDetails(const UCINames &name) {
         case UCINames::MAMMOGRAPHY:
             details = &UCI_MAMMOGRAPHY_DETAILS;
             break;
+        case UCINames::ADULT_INCOME:
+            details = &UCI_ADULT_INCOME_DETAILS;
+            break;
+        case UCINames::GERMAN_LOAN:
+            details = &UCI_GERMAN_LOAN_DETAILS;
+            break;
+        case UCINames::COMPAS:
+            details = &UCI_COMPAS_DETAILS;
+            break;
     }
 }
 
@@ -62,6 +71,7 @@ void UCI::parseLine(CSVRow &csv_row, const std::string &comma_separated_line) {
     csv_row.x = vector<float>(0);
     for(int i = 0; i < details->num_cols; i++) {
         if(std::none_of(details->indices_to_ignore.cbegin(), details->indices_to_ignore.cend(), [i](int j){ return i == j; })) {
+            // ANNA TO DO - add something here to keep track of whether this label can be flipped 
             if(i == details->label_index) {
                 csv_row.y = items[i];
                 labels.insert(items[i]);

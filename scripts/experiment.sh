@@ -17,6 +17,7 @@ do
     NEXTFILE=$PATHTOFILE/$NEXT.jsonl
     # check if the prevous file exists and is non-empty,
     # i.e. check if the previous iteration actually caused us to run any experiments
+    echo "Path to file is "$PATHTOFILE" and prevFile is "$PREVFILE" and nextFile is "$NEXTFILE
     if [ -s $PREVFILE ]
     then
         ./next_step.sh $MEMLIMIT $PREVFILE $NEXTFILE $PATHTOFILE

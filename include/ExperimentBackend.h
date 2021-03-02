@@ -22,8 +22,11 @@ public:
         int ground_truth;
     };
     bool use_label_flipping;
+    bool use_data_addition;
+    int sensitive_feature;
+    float protected_value;
 
-    ExperimentBackend(const DataSet *training, const DataSet *test, bool label_flipping);
+    ExperimentBackend(const DataSet *training, const DataSet *test, bool label_flipping, bool data_addition, int sensitive_feature, float protected_value);
 
     int test_size() { return test->rows.size(); }
     int groundTruth(int test_index) const { return test->rows[test_index].y; }

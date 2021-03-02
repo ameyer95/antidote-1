@@ -29,16 +29,25 @@ public:
     struct DropoutCounts {
         std::vector<int> counts;
         int num_dropout;
+        int sensitive_feature;
+        float protected_value;
+    };
+
+    struct DropoutCountsWithProtected {
+        DropoutCounts dropout;
+        std::vector<int> protected_counts;
     };
 
     DataReferences training_references;
     int num_dropout;
+    int sensitive_feature;
+    float protected_value;
 
     TrainingReferencesWithDropoutLabels() {} // Constructed like this should be a bottom element
-    TrainingReferencesWithDropoutLabels(DataReferences training_references, int num_dropout);
+    TrainingReferencesWithDropoutLabels(DataReferences training_references, int num_dropout, int sensitive_feature, float protected_value);
 
     std::vector<int> baseCounts() const;
-    std::pair<DropoutCounts, DropoutCounts> splitCounts(const SymbolicPredicate &phi) const;
+    std::pair<DropoutCountsWithProtected, DropoutCountsWithProtected> splitCounts(const SymbolicPredicate &phi) const;
     TrainingReferencesWithDropoutLabels pureSetRestriction(std::list<int> pure_possible_classes) const;
     TrainingReferencesWithDropoutLabels filter(const SymbolicPredicate &phi, bool positive_flag) const; // Returns a new object
 };

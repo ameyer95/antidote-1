@@ -33,6 +33,10 @@ private:
         bool use_abstract; // When false, use concrete semantics
         bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
         bool label_flipping; // When true, use the label flipping data poisoning model
+        bool data_addition; // When true, use data addition data poisoning model
+        int sensitive_feature; // Index in the dataset of the sensitive feature (e.g., race or gender)
+        // TO DO ANNA - extend protected_value to be an array
+        float protected_value; // Integer of protected value for the sensitive feature
         std::vector<int> num_dropouts; // For when use_abstract == true
         std::optional<int> disjunct_bound; // Optionally, has_value only when with_disjuncts is true
         DisjunctsMergeMode merge_mode; // For when disjunct_bound.has_value()

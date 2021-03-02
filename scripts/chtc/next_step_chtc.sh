@@ -13,13 +13,16 @@ TEMPPATH=$4
 # if the PREVRUNS filename is of the form initcommands_*
 # and if so, simply returns the commands in that file to be run
 
+echo "MemLimit is "$MEMLIMIT
+echo "PrevRuns is "$PREVRUNS
+echo "OUTPUT FILE IS "$OUTPUTFILE
 echo "Temp path is "$TEMPPATH
 RESULTFILE=$TEMPPATH/output.tmp
 RESOURCEFILE=$TEMPPATH/resources.tmp
 RUNFILE=$TEMPPATH/runbatch.tmp
 
 function run_benchmark {
-    /usr/bin/time -f "%E %M" -o $RESOURCEFILE ./run_with_mem_limit.sh $MEMLIMIT $@ > $RESULTFILE
+    /usr/bin/time -f "%E %M" -o $RESOURCEFILE ./scripts/chtc/run_with_mem_limit.sh $MEMLIMIT $@ > $RESULTFILE
     if [ $? -eq 0 ]
     then
         RESULT=$(cat $RESULTFILE)
@@ -37,8 +40,8 @@ function run_benchmark {
     echo "{ \"command\" : \"$@\", \"normal_exit\" : $NORMALEXIT, \"result\" : $RESULT, \"time\" : \"$TIME\", \"memory\" : \"$MEMORY\" }" >> $OUTPUTFILE
     rm $RESULTFILE $RESOURCEFILE
 }
-
-python3 nextbatch.py $PREVRUNS > $RUNFILE
+echo "PREVRUNS IS "$PREVRUNS
+python3 scripts/chtc/nextbatch.py $PREVRUNS > $RUNFILE
 
 INDEX=1
 TOTAL=$(echo $(wc -l $RUNFILE) | awk '{print $1}')

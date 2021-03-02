@@ -1,0 +1,12 @@
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 1 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:03.57", "memory" : "3540" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 2 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.24", "memory" : "3580" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 3 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.61", "memory" : "3732" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 4 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.23", "memory" : "3664" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 5 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:01.28", "memory" : "3644" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 6 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.64", "memory" : "3624" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 1 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:04.64", "memory" : "3672" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 2 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.78", "memory" : "3600" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 3 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.20", "memory" : "3680" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 4 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.51", "memory" : "3552" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 5 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.47", "memory" : "3628" }
+{ "command" : "bin/main -f data mnist_1_7 -d 1 -t 6 -V 1 -l", "normal_exit" : false, "result" : null, "time" : "0:00.28", "memory" : "3712" }

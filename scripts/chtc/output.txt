@@ -1,0 +1,2 @@
+
+{ "depth" : 2, "test_index" : 0, "ground_truth" : "0", "posterior" : { "0" : [ 0.000000, 1.000000 ], "1" : [ 0.000000, 1.000000 ] }, "possible_classifications" : [ "0", "1" ] }

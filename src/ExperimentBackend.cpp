@@ -5,6 +5,7 @@
 #include "ConcreteSemantics.h"
 #include "DropoutDomains.hpp"
 #include "DropoutDomainsLabels.hpp"
+#include "DropoutDomainsAddition.hpp"
 #include "Feature.hpp"
 #include <algorithm>
 #include <cstdlib> // for random stuff
@@ -70,10 +71,13 @@ DataReferences* random_subset(const DataSet *training, int num_dropout) {
  * ExperimentBackend members
  */
 
-ExperimentBackend::ExperimentBackend(const DataSet *training, const DataSet *test, bool label_flipping) {
+ExperimentBackend::ExperimentBackend(const DataSet *training, const DataSet *test, bool label_flipping, bool data_addition, int sensitive_feature, float protected_value) {
     this->training = training;
     this->test = test;
     this->use_label_flipping = label_flipping;
+    this->use_data_addition = data_addition;
+    this->sensitive_feature = sensitive_feature;
+    this->protected_value = protected_value;
 }
 
 ExperimentBackend::Result<double> ExperimentBackend::run_concrete(int depth, int test_index) {
@@ -81,6 +85,7 @@ ExperimentBackend::Result<double> ExperimentBackend::run_concrete(int depth, int
     ConcreteSemantics sem;
     auto ret = sem.execute(test->rows[test_index].x, training, program);
     delete program;
+    // TO DO ANNA GERMAN LOAN- returning classification, might need to take weighted max of ret
     return { ret, softMax(ret), groundTruth(test_index) };
 }
 
@@ -92,9 +97,23 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract(int 
         FeatureVector test_input = test->rows[test_index].x;
         DataReferences training_references(training);
         BoxDropoutDomainLabels::AbstractionType initial_state = {
-            TrainingReferencesWithDropoutLabels(training_references, num_dropout),
+            TrainingReferencesWithDropoutLabels(training_references, num_dropout, this->sensitive_feature, this->protected_value),
             PredicateAbstractionLabels(1), // XXX any non-bot value, ideally top?
-            PosteriorDistributionAbstractionLabels(1) // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstractionLabels(1), // XXX any non-bot value, ideally top?
+        };
+        auto final_state = sem.execute(test_input, initial_state, program);
+        auto ret = final_state.posterior_distribution_abstraction;
+        delete program;
+        return { ret, softMax(ret), groundTruth(test_index) };
+    } else if (this->use_data_addition) {
+        DropoutDomainsAddition d;
+        BoxDropoutSemanticsAddition sem(&d.box_domain);
+        FeatureVector test_input = test->rows[test_index].x;
+        DataReferences training_references(training);
+        BoxDropoutDomainAddition::AbstractionType initial_state = {
+            TrainingReferencesWithDropoutAddition(training_references, num_dropout, this->sensitive_feature, this->protected_value),
+            PredicateAbstractionAddition(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstractionAddition(1), // XXX any non-bot value, ideally top?
         };
         auto final_state = sem.execute(test_input, initial_state, program);
         auto ret = final_state.posterior_distribution_abstraction;
@@ -127,11 +146,30 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_disj
         FeatureVector test_input = test->rows[test_index].x;
         DataReferences training_references(training);
         BoxDropoutDomainLabels::AbstractionType initial_box = {
-            TrainingReferencesWithDropoutLabels(training_references, num_dropout),
+            TrainingReferencesWithDropoutLabels(training_references, num_dropout, this->sensitive_feature, this->protected_value),
             PredicateAbstractionLabels(1), // XXX any non-bot value, ideally top?
             PosteriorDistributionAbstractionLabels(1) // XXX any non-bot value, ideally top?
         };
         BoxDisjunctsDomainDropoutInstantiationLabels::AbstractionType initial_state = {initial_box};
+        auto final_state = sem.execute(test_input, initial_state, program);
+        delete program;
+        std::vector<CategoricalDistribution<Interval<double>>> posteriors;
+        for(auto i = final_state.cbegin(); i != final_state.cend(); i++) {
+            posteriors.push_back(i->posterior_distribution_abstraction);
+        }
+        auto ret = d.D_domain.join(posteriors);
+        return { ret, softMax(ret), groundTruth(test_index) };
+    } else if (this->use_data_addition) {
+        DropoutDomainsAddition d;
+        BoxDisjunctsDropoutSemanticsAddition sem(&d.disjuncts_domain);
+        FeatureVector test_input = test->rows[test_index].x;
+        DataReferences training_references(training);
+        BoxDropoutDomainAddition::AbstractionType initial_box = {
+            TrainingReferencesWithDropoutAddition(training_references, num_dropout, this->sensitive_feature, this->protected_value),
+            PredicateAbstractionAddition(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstractionAddition(1) // XXX any non-bot value, ideally top?
+        };
+        BoxDisjunctsDomainDropoutInstantiationAddition::AbstractionType initial_state = {initial_box};
         auto final_state = sem.execute(test_input, initial_state, program);
         delete program;
         std::vector<CategoricalDistribution<Interval<double>>> posteriors;
@@ -172,11 +210,32 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_boun
         BoxDisjunctsDropoutSemanticsLabels sem(&d.bounded_disjuncts_domain);
         DataReferences training_references(training);
         BoxDropoutDomainLabels::AbstractionType initial_box = {
-            TrainingReferencesWithDropoutLabels(training_references, num_dropout),
+            TrainingReferencesWithDropoutLabels(training_references, num_dropout, this->sensitive_feature, this->protected_value),
             PredicateAbstractionLabels(1), // XXX any non-bot value, ideally top?
             PosteriorDistributionAbstractionLabels(1) // XXX any non-bot value, ideally top?
         };
         BoxDisjunctsDomainDropoutInstantiationLabels::AbstractionType initial_state = {initial_box};
+        auto final_state = sem.execute(test_input, initial_state, program);
+        delete program;
+        std::vector<CategoricalDistribution<Interval<double>>> posteriors;
+        for(auto i = final_state.cbegin(); i != final_state.cend(); i++) {
+            posteriors.push_back(i->posterior_distribution_abstraction);
+        }
+        auto ret = d.D_domain.join(posteriors);
+        return { ret, softMax(ret), groundTruth(test_index) };
+    } else if (this->use_data_addition) {
+        DropoutDomainsAddition d;
+        FeatureVector test_input = test->rows[test_index].x;
+
+        d.bounded_disjuncts_domain.setMergeDetails(disjunct_bound, merge_mode);
+        BoxDisjunctsDropoutSemanticsAddition sem(&d.bounded_disjuncts_domain);
+        DataReferences training_references(training);
+        BoxDropoutDomainAddition::AbstractionType initial_box = {
+            TrainingReferencesWithDropoutAddition(training_references, num_dropout, this->sensitive_feature, this->protected_value),
+            PredicateAbstractionAddition(1), // XXX any non-bot value, ideally top?
+            PosteriorDistributionAbstractionAddition(1) // XXX any non-bot value, ideally top?
+        };
+        BoxDisjunctsDomainDropoutInstantiationAddition::AbstractionType initial_state = {initial_box};
         auto final_state = sem.execute(test_input, initial_state, program);
         delete program;
         std::vector<CategoricalDistribution<Interval<double>>> posteriors;

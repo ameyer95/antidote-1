@@ -1,22 +1,18 @@
 #!/bin/bash
 
+# copied and modified next_step.sh
+
 # first argument is a memory limit (in MB, we convert to KB)
-# second argument is the file where we stored the previous results
+# second argument is the file with the list of commands to run
 # third argument is the file where we will write these results
+# fourth argument is the directory in which to store temp files (to avoid parallelized collisions)
 MEMLIMIT=$[$1*2**10]
-PREVRUNS=$2
+COMMANDSFILE=$2
 OUTPUTFILE=$3
 TEMPPATH=$4
 
-# Hack: to get iteratively running this script started,
-# the python script nextbatch.py checks
-# if the PREVRUNS filename is of the form initcommands_*
-# and if so, simply returns the commands in that file to be run
-
-echo "Temp path is "$TEMPPATH
 RESULTFILE=$TEMPPATH/output.tmp
 RESOURCEFILE=$TEMPPATH/resources.tmp
-RUNFILE=$TEMPPATH/runbatch.tmp
 
 function run_benchmark {
     /usr/bin/time -f "%E %M" -o $RESOURCEFILE ./run_with_mem_limit.sh $MEMLIMIT $@ > $RESULTFILE
@@ -38,15 +34,10 @@ function run_benchmark {
     rm $RESULTFILE $RESOURCEFILE
 }
 
-python3 nextbatch.py $PREVRUNS > $RUNFILE
-
 INDEX=1
-TOTAL=$(echo $(wc -l $RUNFILE) | awk '{print $1}')
-
+TOTAL=$(echo $(wc -l $COMMANDSFILE) | awk '{print $1}')
 while read C ; do
     echo $(date) running "("$INDEX/$TOTAL")" $C
     run_benchmark $C
     INDEX=$[$INDEX + 1]
-done < $RUNFILE
-
-rm $RUNFILE
+done < $COMMANDSFILE

@@ -85,7 +85,14 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.createArgument("verbose", "-v", 0, "", true);
     p.createArgument("random_test", "-r", 3, "Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed.", true);
     p.createArgument("binary", "-B", 1, "Transform dataset into binary form by threshold (only effective with arff datasets)", true);
-    p.createArgument("label_flipping","-l", 0, "Use the label-flipping data poisoning model", true);
+    p.createArgument("label_flipping", "-l", 0, "Use the label-flipping data poisoning model", true);
+    p.createArgument("data_addition", "-add", 0, "Use the data-addition data poisoning model", true);
+
+    // parameter 1 should be index in dataset of protected variable
+    // parameter 2 should be a list of protected values
+    // for now, assume we can flip protected-class labels from 0 to 1 (but can't flip anything else)
+    p.createArgument("lopsided_labels", "-s", 2, "Use the label-flipping data poisoning model but only allow us to flip protected class individuals from 0 to 1", true);
+    p.createArgument("lopsided_addition", "-sadd", 2, "Use the data addition data poisoning model but only allow us to add protected class individuals with label 1", true);
 
     p.requireAtLeastOne({"dataset", "dataset(arff)"});
     p.requireAtMostOne({"dataset", "dataset(arff)"});
@@ -93,6 +100,8 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.requireAtLeastOne({"test_all", "test_indices"});
     p.requireAtMostOne({"test_all", "test_indices"});
     p.requireAtMostOne({"use_abstract", "use_disjuncts", "random_test"});
+
+    p.requireAtMostOne({"label_flipping", "lopsided_labels", "data_addition", "lopsided_addition"});
 
     p.requireTokenInSet("disjunct_bound", 1, merge_options);
     p.requireTokenInSet("dataset", 1, dataset_options);
@@ -129,6 +138,15 @@ void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
         if (params.label_flipping) {
             message += "(with label fipping)";
         }
+
+        else if (params.data_addition) {
+            message += "(with data addition)";
+        }
+        
+        if (params.sensitive_feature) {
+            message += "(, lopsided on feature " + std::to_string(params.sensitive_feature) + ") ";
+        }
+
         message += "on test " + std::to_string(test_index);
         output(message);
         ExperimentBackend::Result<Interval<double>> ret;
@@ -237,6 +255,7 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
         } else if(p["dataset(arff)"].included) {
             params.arff_train = p["dataset(arff)"].tokens[0];
             params.arff_test = p["dataset(arff)"].tokens[1];
+            std::cout << "dataset: " << p["dataset"].tokens[0] << std::endl;
             params.dataset = ExperimentDataEnum::USE_ARFF; 
             if(p["label_index"].included) {
                 params.arff_label_ind = std::stoi(p["label_index"].tokens[0]); 
@@ -270,7 +289,20 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
             params.use_bin = false;
         }
 
-        params.label_flipping = p["label_flipping"].included;
+        params.label_flipping = p["label_flipping"].included || p["lopsided_labels"].included;
+        params.data_addition = p["data_addition"].included || p["lopsided_addition"].included;
+        
+        if (p["lopsided_labels"].included) {
+            params.sensitive_feature = std::stoi(p["lopsided_labels"].tokens[0]);
+            params.protected_value = std::stoi(p["lopsided_labels"].tokens[1]);
+        }
+        else if (p["lopsided_addition"].included) {
+            params.sensitive_feature = std::stoi(p["lopsided_addition"].tokens[0]);
+            params.protected_value = std::stoi(p["lopsided_addition"].tokens[1]);
+        }
+        else if (p["label_flipping"].included || p["data_addition"].included) {
+            params.sensitive_feature = -1;
+        }
         return true;
     } else {
         std::cout << p.message() << std::endl;
@@ -290,7 +322,7 @@ void ExperimentFrontend::performExperiments() {
                                             params.use_bin ? params.bin_thres : 0.0, 
                                             params.arff_label_ind); 
     }
-    e = new ExperimentBackend(current_data->training, current_data->test, params.label_flipping);
+    e = new ExperimentBackend(current_data->training, current_data->test, params.label_flipping, params.data_addition, params.sensitive_feature, params.protected_value);
 
     for(auto depth = params.depths.begin(); depth != params.depths.end(); depth++) {
         if(params.test_all) {

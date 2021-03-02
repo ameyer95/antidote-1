@@ -1,0 +1,150 @@
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)
+Token index 1 of -f must be one of cancer iris mammography mnist mnist_1_7 mnist_simple mnist_simple_1_7 retinopathy wine wine_2 yeast
+Usage Information:
+  -B[1]: Transform dataset into binary form by threshold (only effective with arff datasets) (optional)
+  -f[2]: Dataset information: (1) the path to the data folder and (2) the name from one of {cancer, iris, mammography, mnist, mnist_1_7, mnist_simple, mnist_simple_1_7, retinopathy, wine, wine_2, yeast} (optional)
+  -D[2]: Dataset information in arff format: (1) train set (2) test set (optional)
+  -d[1]: Space-separated list of depths of the tree to be built
+  -b[2]: When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from {greedy, optimal} (optional)
+  -l[0]: Use the label-flipping data poisoning model (optional)
+  -i[1]: Index of attribute to use as label (effective only for arff datasets) (optional)
+  -r[3]: Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed. (optional)
+  -T[0]: Run on each element in the test set (optional)
+  -t[1]: Space-separated list of test indices (optional)
+  -a[1]: Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n> (optional)
+  -V[1]: Like -a, but with disjuncts (optional)
+  -v[0]:  (optional)

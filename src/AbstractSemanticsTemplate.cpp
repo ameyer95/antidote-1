@@ -25,6 +25,7 @@ void AbstractSemanticsTemplate<A>::visit(const SequenceNode &node) {
 
 template <typename A>
 void AbstractSemanticsTemplate<A>::visit(const ITEImpurityNode &node) {
+
     std::vector<A> joins;
     A pass_to_then, pass_to_else, backup;
 
@@ -51,6 +52,7 @@ void AbstractSemanticsTemplate<A>::visit(const ITEImpurityNode &node) {
 
 template <typename A>
 void AbstractSemanticsTemplate<A>::visit(const ITENoPhiNode &node) {
+
     std::vector<A> joins;
     A pass_to_then, pass_to_else, backup;
 
@@ -73,6 +75,7 @@ void AbstractSemanticsTemplate<A>::visit(const ITENoPhiNode &node) {
     }
 
     current_state = state_domain->join(joins);
+
 }
 
 template <typename A>
@@ -119,11 +122,13 @@ void AbstractSemanticsTemplate<A>::visit(const ITEModelsNode &node) {
 
 template <typename A>
 void AbstractSemanticsTemplate<A>::visit(const FilterNode &node) {
+
     if(node.get_mode()) {
         current_state = state_domain->applyFilter(current_state);
     } else {
         current_state = state_domain->applyFilterNegated(current_state);
     }
+
 }
 
 template <typename A>

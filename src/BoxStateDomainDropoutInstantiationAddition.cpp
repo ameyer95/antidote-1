@@ -1,4 +1,4 @@
-#include "BoxStateDomainDropoutInstantiationLabels.h"
+#include "BoxStateDomainDropoutInstantiationAddition.h"
 #include "Feature.hpp"
 #include "information_math.h"
 #include "Interval.h"
@@ -8,13 +8,12 @@
 #include <set>
 #include <utility>
 #include <vector>
-#include <iostream>
 
 /**
  * TrainingReferencesWithDropout members
  */
 
-TrainingReferencesWithDropoutLabels::TrainingReferencesWithDropoutLabels(DataReferences training_references, int num_dropout, int sensitive_feature, float protected_value) {
+TrainingReferencesWithDropoutAddition::TrainingReferencesWithDropoutAddition(DataReferences training_references, int num_dropout, int sensitive_feature, float protected_value) {
     this->training_references = training_references;
     this->num_dropout = num_dropout;
     this->sensitive_feature = sensitive_feature;
@@ -22,7 +21,7 @@ TrainingReferencesWithDropoutLabels::TrainingReferencesWithDropoutLabels(DataRef
 
 }
 
-std::vector<int> TrainingReferencesWithDropoutLabels::baseCounts() const {
+std::vector<int> TrainingReferencesWithDropoutAddition::baseCounts() const {
     std::vector<int> counts(training_references.getNumCategories(), 0);
     for(unsigned int i = 0; i < training_references.size(); i++) {
         counts[training_references[i].y]++;
@@ -30,7 +29,7 @@ std::vector<int> TrainingReferencesWithDropoutLabels::baseCounts() const {
     return counts;
 }
 
-std::pair<TrainingReferencesWithDropoutLabels::DropoutCountsWithProtected, TrainingReferencesWithDropoutLabels::DropoutCountsWithProtected> TrainingReferencesWithDropoutLabels::splitCounts(const SymbolicPredicate &phi) const {
+std::pair<TrainingReferencesWithDropoutAddition::DropoutCountsWithProtected, TrainingReferencesWithDropoutAddition::DropoutCountsWithProtected> TrainingReferencesWithDropoutAddition::splitCounts(const SymbolicPredicate &phi) const {
     std::pair<DropoutCountsWithProtected, DropoutCountsWithProtected> ret;
     // Vector syntax: initialize a vector of length num categories to be all 0's
     ret.first.dropout.counts = std::vector<int>(training_references.getNumCategories(), 0);
@@ -63,7 +62,7 @@ std::pair<TrainingReferencesWithDropoutLabels::DropoutCountsWithProtected, Train
     return ret;
 }
 
-TrainingReferencesWithDropoutLabels TrainingReferencesWithDropoutLabels::pureSetRestriction(std::list<int> pure_possible_classes) const {
+TrainingReferencesWithDropoutAddition TrainingReferencesWithDropoutAddition::pureSetRestriction(std::list<int> pure_possible_classes) const {
     DataReferences training_copy = training_references;
     int num_removed = 0;
     for(unsigned int i = 0; i < training_copy.size(); i++) {
@@ -77,11 +76,11 @@ TrainingReferencesWithDropoutLabels TrainingReferencesWithDropoutLabels::pureSet
     }
     // We will only call this when it's guaranteed to be non-trivial,
     // so we need not check that num_removed <= num_dropout
-    return TrainingReferencesWithDropoutLabels(training_copy, num_dropout - num_removed, sensitive_feature, protected_value);
+    return TrainingReferencesWithDropoutAddition(training_copy, num_dropout - num_removed, sensitive_feature, protected_value);
 }
 
-TrainingReferencesWithDropoutLabels TrainingReferencesWithDropoutLabels::filter(const SymbolicPredicate &phi, bool positive_flag) const {
-    TrainingReferencesWithDropoutLabels ret(*this);
+TrainingReferencesWithDropoutAddition TrainingReferencesWithDropoutAddition::filter(const SymbolicPredicate &phi, bool positive_flag) const {
+    TrainingReferencesWithDropoutAddition ret(*this);
     bool remove;
     std::optional<bool> result;
     int num_maybes = 0;
@@ -101,10 +100,10 @@ TrainingReferencesWithDropoutLabels TrainingReferencesWithDropoutLabels::filter(
 }
 
 /**
- * TrainingSetDropoutDomainLabels members
+ * TrainingSetDropoutDomainAddition members
  */
 
-TrainingReferencesWithDropoutLabels TrainingSetDropoutDomainLabels::meetImpurityEqualsZero(const TrainingReferencesWithDropoutLabels &element) const {
+TrainingReferencesWithDropoutAddition TrainingSetDropoutDomainAddition::meetImpurityEqualsZero(const TrainingReferencesWithDropoutAddition &element) const {
     if(isBottomElement(element)) {
         return element;
     }
@@ -119,7 +118,7 @@ TrainingReferencesWithDropoutLabels TrainingSetDropoutDomainLabels::meetImpurity
 
     // If no pure class is possible, we return a bottom element
     if(pure_possible_classes.size() == 0) {
-        return TrainingReferencesWithDropoutLabels();
+        return TrainingReferencesWithDropoutAddition();
     }
     // If any number of classes are possible, our abstraction is too coarse
     // to do better than returning the restriction to just those classes,
@@ -131,16 +130,16 @@ TrainingReferencesWithDropoutLabels TrainingSetDropoutDomainLabels::meetImpurity
     }
 }
 
-TrainingReferencesWithDropoutLabels TrainingSetDropoutDomainLabels::meetImpurityNotEqualsZero(const TrainingReferencesWithDropoutLabels &element) const {
+TrainingReferencesWithDropoutAddition TrainingSetDropoutDomainAddition::meetImpurityNotEqualsZero(const TrainingReferencesWithDropoutAddition &element) const {
     // Our abstraction is not capable of expressing this precisely
     return element;
 }
 
-bool TrainingSetDropoutDomainLabels::isBottomElement(const TrainingReferencesWithDropoutLabels &element) const {
+bool TrainingSetDropoutDomainAddition::isBottomElement(const TrainingReferencesWithDropoutAddition &element) const {
     return element.training_references.size() == 0;
 }
 
-TrainingReferencesWithDropoutLabels TrainingSetDropoutDomainLabels::binary_join(const TrainingReferencesWithDropoutLabels &e1, const TrainingReferencesWithDropoutLabels &e2) const {
+TrainingReferencesWithDropoutAddition TrainingSetDropoutDomainAddition::binary_join(const TrainingReferencesWithDropoutAddition &e1, const TrainingReferencesWithDropoutAddition &e2) const {
     if(isBottomElement(e1)) {
         return e2;
     } else if(isBottomElement(e2)) {
@@ -149,26 +148,26 @@ TrainingReferencesWithDropoutLabels TrainingSetDropoutDomainLabels::binary_join(
     DataReferences d = DataReferences::set_union(e1.training_references, e2.training_references);
     int n1 = d.size() - e2.training_references.size() + e2.num_dropout; // Note |(T1 U T2) \ T1| = |T2 \ T1|
     int n2 = d.size() - e1.training_references.size() + e1.num_dropout;
-    return TrainingReferencesWithDropoutLabels(d, std::max(n1, n2), e1.sensitive_feature, e1.protected_value);
+    return TrainingReferencesWithDropoutAddition(d, std::max(n1, n2), e1.sensitive_feature, e1.protected_value);
 }
 
 /**
  * PredicateSetDomain members
  */
 
-PredicateAbstractionLabels PredicateSetDomainLabels::meetPhiIsBottom(const PredicateAbstractionLabels &element) const {
+PredicateAbstractionAddition PredicateSetDomainAddition::meetPhiIsBottom(const PredicateAbstractionAddition &element) const {
     bool contains_bottom = std::any_of(element.cbegin(), element.cend(),
             [](std::optional<SymbolicPredicate> phi){ return !phi.has_value(); });
     if(contains_bottom) {
         std::optional<SymbolicPredicate> bottom = {};
-        return PredicateAbstractionLabels({bottom}); // The vector of a single bottom element.
+        return PredicateAbstractionAddition({bottom}); // The vector of a single bottom element.
     } else {
-        return PredicateAbstractionLabels(); // The empty vector
+        return PredicateAbstractionAddition(); // The empty vector
     }
 }
 
-PredicateAbstractionLabels PredicateSetDomainLabels::meetPhiIsNotBottom(const PredicateAbstractionLabels &element) const {
-    PredicateAbstractionLabels phis(element); // Make a copy
+PredicateAbstractionAddition PredicateSetDomainAddition::meetPhiIsNotBottom(const PredicateAbstractionAddition &element) const {
+    PredicateAbstractionAddition phis(element); // Make a copy
     // Iterate over the copy and delete any bottom element
     for(auto i = phis.begin(); i != phis.end(); i++) {
         if(!i->has_value()) { // It should be an invariant of the code that this only happens once, but...
@@ -178,11 +177,11 @@ PredicateAbstractionLabels PredicateSetDomainLabels::meetPhiIsNotBottom(const Pr
     return phis;
 }
 
-PredicateAbstractionLabels PredicateSetDomainLabels::meetXModelsPhi(const PredicateAbstractionLabels &element, const FeatureVector &x) const {
+PredicateAbstractionAddition PredicateSetDomainAddition::meetXModelsPhi(const PredicateAbstractionAddition &element, const FeatureVector &x) const {
     if(isBottomElement(element)) {
         return element;
     }
-    PredicateAbstractionLabels phis;
+    PredicateAbstractionAddition phis;
     for(auto i = element.cbegin(); i != element.cend(); i++) {
         // The grammar should enforce that we always have i->has_value()
         std::optional<bool> result = i->value().evaluate(x);
@@ -194,11 +193,11 @@ PredicateAbstractionLabels PredicateSetDomainLabels::meetXModelsPhi(const Predic
     return phis;
 }
 
-PredicateAbstractionLabels PredicateSetDomainLabels::meetXNotModelsPhi(const PredicateAbstractionLabels &element, const FeatureVector &x) const {
+PredicateAbstractionAddition PredicateSetDomainAddition::meetXNotModelsPhi(const PredicateAbstractionAddition &element, const FeatureVector &x) const {
     if(isBottomElement(element)) {
         return element;
     }
-    PredicateAbstractionLabels phis;
+    PredicateAbstractionAddition phis;
     for(auto i = element.cbegin(); i != element.cend(); i++) {
         // The grammar should enforce that we always have i->has_value()
         std::optional<bool> result = i->value().evaluate(x);
@@ -210,18 +209,18 @@ PredicateAbstractionLabels PredicateSetDomainLabels::meetXNotModelsPhi(const Pre
     return phis;
 }
 
-bool PredicateSetDomainLabels::isBottomElement(const PredicateAbstractionLabels &element) const {
+bool PredicateSetDomainAddition::isBottomElement(const PredicateAbstractionAddition &element) const {
     return element.size() == 0;
 }
 
-PredicateAbstractionLabels PredicateSetDomainLabels::binary_join(const PredicateAbstractionLabels &e1, const PredicateAbstractionLabels &e2) const {
+PredicateAbstractionAddition PredicateSetDomainAddition::binary_join(const PredicateAbstractionAddition &e1, const PredicateAbstractionAddition &e2) const {
     if(isBottomElement(e1)) {
         return e2;
     } else if(isBottomElement(e2)) {
         return e1;
     }
     // TODO take advantage of algorithm's std::set_union
-    PredicateAbstractionLabels phis = e1; // Make a copy
+    PredicateAbstractionAddition phis = e1; // Make a copy
     for(auto i = e2.cbegin(); i != e2.cend(); i++) {
         if(std::none_of(phis.cbegin(), phis.cend(),
                     [&i](std::optional<SymbolicPredicate> j){ return *i == *j; })) {
@@ -235,20 +234,20 @@ PredicateAbstractionLabels PredicateSetDomainLabels::binary_join(const Predicate
  * PosteriorDistributionIntervalDomain members
  */
 
-bool PosteriorDistributionIntervalDomainLabels::isBottomElement(const PosteriorDistributionAbstractionLabels &element) const {
+bool PosteriorDistributionIntervalDomainAddition::isBottomElement(const PosteriorDistributionAbstractionAddition &element) const {
     // XXX a better check would be if the intervals for each category
     // actually admit some concretization that forms a probability distribution.
     return element.size() == 0; // This is just based off of the default empty constructor
 }
 
-PosteriorDistributionAbstractionLabels PosteriorDistributionIntervalDomainLabels::binary_join(const PosteriorDistributionAbstractionLabels &e1, const PosteriorDistributionAbstractionLabels &e2) const {
+PosteriorDistributionAbstractionAddition PosteriorDistributionIntervalDomainAddition::binary_join(const PosteriorDistributionAbstractionAddition &e1, const PosteriorDistributionAbstractionAddition &e2) const {
     if(isBottomElement(e1)) {
         return e2;
     } else if(isBottomElement(e2)) {
         return e1;
     }
     // XXX strong assumption (invariant?) that the two categorical dist's have the same size
-    PosteriorDistributionAbstractionLabels ret(e1.size());
+    PosteriorDistributionAbstractionAddition ret(e1.size());
     for(unsigned int i = 0; i < e1.size(); i++) {
         ret[i] = Interval<double>::join(e1[i], e2[i]);
     }
@@ -256,20 +255,20 @@ PosteriorDistributionAbstractionLabels PosteriorDistributionIntervalDomainLabels
 }
 
 /**
- * BoxDropoutDomainLabels members
+ * BoxDropoutDomainAddition members
  */
 
 // First two auxiliary methods
 
-inline bool couldBeEmpty(const TrainingReferencesWithDropoutLabels::DropoutCounts &counts) {
+inline bool couldBeEmpty(const TrainingReferencesWithDropoutAddition::DropoutCounts &counts) {
     return std::accumulate(counts.counts.begin(), counts.counts.end(), 0) <= counts.num_dropout;
 }
 
-inline bool mustBeEmpty(const TrainingReferencesWithDropoutLabels::DropoutCounts &counts) {
+inline bool mustBeEmpty(const TrainingReferencesWithDropoutAddition::DropoutCounts &counts) {
     return std::accumulate(counts.counts.begin(), counts.counts.end(), 0) == 0;
 }
 
-void BoxDropoutDomainLabels::computePredicatesAndScores(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropoutLabels &training_set_abstraction, int feature_index) const {
+void BoxDropoutDomainAddition::computePredicatesAndScores(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropoutAddition &training_set_abstraction, int feature_index) const {
     switch(training_set_abstraction.training_references.getFeatureTypes()[feature_index]) {
         
         // XXX need to make changes here if adding new feature types
@@ -282,21 +281,20 @@ void BoxDropoutDomainLabels::computePredicatesAndScores(std::list<ScoreEntry> &e
     }
 }
 
-void BoxDropoutDomainLabels::computeBooleanFeaturePredicateAndScore(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropoutLabels &training_set_abstraction, int feature_index) const {
+void BoxDropoutDomainAddition::computeBooleanFeaturePredicateAndScore(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropoutAddition &training_set_abstraction, int feature_index) const {
     SymbolicPredicate phi(feature_index);
     auto counts = training_set_abstraction.splitCounts(phi);
     if(!mustBeEmpty(counts.first.dropout) && !mustBeEmpty(counts.second.dropout)) {
         Interval<double> temp;
+        // TO DO ANNA - think about this; what does counting the protected group accomplish?
         if (training_set_abstraction.sensitive_feature > -1) {
-            temp = jointImpurityLabels(counts.first.dropout.counts,
+            temp = jointImpurityAdditionLop(counts.first.dropout.counts,
                                                 counts.first.dropout.num_dropout,
                                                 counts.second.dropout.counts,
-                                                counts.second.dropout.num_dropout,
-                                                counts.first.protected_counts,
-                                                counts.second.protected_counts);
+                                                counts.second.dropout.num_dropout);
         }
         else {
-            temp = jointImpurityLabels(counts.first.dropout.counts,
+            temp = jointImpurityAddition(counts.first.dropout.counts,
                                               counts.first.dropout.num_dropout,
                                               counts.second.dropout.counts,
                                               counts.second.dropout.num_dropout);
@@ -309,7 +307,7 @@ void BoxDropoutDomainLabels::computeBooleanFeaturePredicateAndScore(std::list<Sc
     }
 }
 
-void BoxDropoutDomainLabels::computeNumericFeaturePredicatesAndScores(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropoutLabels &training_set_abstraction, int feature_index) const {
+void BoxDropoutDomainAddition::computeNumericFeaturePredicatesAndScores(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropoutAddition &training_set_abstraction, int feature_index) const {
     // Largely copy-paste from concrete case
     std::vector<std::pair<float,int>> value_class_pairs(training_set_abstraction.training_references.size());
     std::vector<std::pair<float,bool>> protected_status_pairs(training_set_abstraction.training_references.size());
@@ -348,7 +346,7 @@ void BoxDropoutDomainLabels::computeNumericFeaturePredicatesAndScores(std::list<
                     { return p1.first < p2.first; } );
     }
     
-    std::pair<TrainingReferencesWithDropoutLabels::DropoutCountsWithProtected, TrainingReferencesWithDropoutLabels::DropoutCountsWithProtected> split_counts = {
+    std::pair<TrainingReferencesWithDropoutAddition::DropoutCountsWithProtected, TrainingReferencesWithDropoutAddition::DropoutCountsWithProtected> split_counts = {
             { {std::vector<int>(training_set_abstraction.training_references.getNumCategories(), 0), 0},
                std::vector<int>(training_set_abstraction.training_references.getNumCategories(), 0) },
             { {training_set_abstraction.baseCounts(), max_labels_to_flip}, 
@@ -382,15 +380,13 @@ void BoxDropoutDomainLabels::computeNumericFeaturePredicatesAndScores(std::list<
         SymbolicPredicate phi(feature_index, i->first, (i+1)->first);
         Interval<double> temp;
         if (training_set_abstraction.sensitive_feature > -1) {
-            temp = jointImpurityLabels(split_counts.first.dropout.counts,
+            temp = jointImpurityAdditionLop(split_counts.first.dropout.counts,
                                                 split_counts.first.dropout.num_dropout,
                                                 split_counts.second.dropout.counts,
-                                                split_counts.second.dropout.num_dropout,
-                                                split_counts.first.protected_counts,
-                                                split_counts.second.protected_counts);
+                                                split_counts.second.dropout.num_dropout);
         }
         else {
-            temp = jointImpurityLabels(split_counts.first.dropout.counts,
+            temp = jointImpurityAddition(split_counts.first.dropout.counts,
                                               split_counts.first.dropout.num_dropout,
                                               split_counts.second.dropout.counts,
                                               split_counts.second.dropout.num_dropout);
@@ -402,7 +398,7 @@ void BoxDropoutDomainLabels::computeNumericFeaturePredicatesAndScores(std::list<
     }
 }
 
-PredicateAbstractionLabels BoxDropoutDomainLabels::bestSplit(const TrainingReferencesWithDropoutLabels &training_set_abstraction) const {
+PredicateAbstractionAddition BoxDropoutDomainAddition::bestSplit(const TrainingReferencesWithDropoutAddition &training_set_abstraction) const {
     std::list<ScoreEntry> exists_nontrivial;
     std::list<const ScoreEntry *> forall_nontrivial; // Points to elements in exists_nontrivial
     for(int i = 0; i < training_set_abstraction.training_references.getFeatureTypes().size(); i++) {
@@ -410,7 +406,7 @@ PredicateAbstractionLabels BoxDropoutDomainLabels::bestSplit(const TrainingRefer
     }
 
     if(forall_nontrivial.size() == 0) {
-        PredicateAbstractionLabels ret(exists_nontrivial.size() + 1);
+        PredicateAbstractionAddition ret(exists_nontrivial.size() + 1);
         int index = 0;
         for(auto i = exists_nontrivial.cbegin(); i != exists_nontrivial.cend(); i++,index++) {
             ret[index] = i->first;
@@ -427,7 +423,7 @@ PredicateAbstractionLabels BoxDropoutDomainLabels::bestSplit(const TrainingRefer
             }
         }
         // Return any predicates in exists_nontrivial whose score could beat the threshold
-        PredicateAbstractionLabels ret;
+        PredicateAbstractionAddition ret;
         for(auto i = exists_nontrivial.cbegin(); i != exists_nontrivial.cend(); i++) {
             if(i->second.get_lower_bound() <= min_upper_bound) {
                 ret.push_back(i->first);
@@ -437,27 +433,27 @@ PredicateAbstractionLabels BoxDropoutDomainLabels::bestSplit(const TrainingRefer
     }
 }
 
-TrainingReferencesWithDropoutLabels BoxDropoutDomainLabels::filter(const TrainingReferencesWithDropoutLabels &training_set_abstraction, const PredicateAbstractionLabels &predicate_abstraction) const {
-    std::vector<TrainingReferencesWithDropoutLabels> joins;
+TrainingReferencesWithDropoutAddition BoxDropoutDomainAddition::filter(const TrainingReferencesWithDropoutAddition &training_set_abstraction, const PredicateAbstractionAddition &predicate_abstraction) const {
+    std::vector<TrainingReferencesWithDropoutAddition> joins;
     for(auto i = predicate_abstraction.cbegin(); i != predicate_abstraction.cend(); i++) {
         // The grammar should enforce that each i->has_value()
-        TrainingReferencesWithDropoutLabels temp = training_set_abstraction.filter(i->value(), true);
+        TrainingReferencesWithDropoutAddition temp = training_set_abstraction.filter(i->value(), true);
         joins.push_back(temp);
     }
     return training_set_domain->join(joins);
 }
 
-TrainingReferencesWithDropoutLabels BoxDropoutDomainLabels::filterNegated(const TrainingReferencesWithDropoutLabels &training_set_abstraction, const PredicateAbstractionLabels &predicate_abstraction) const {
+TrainingReferencesWithDropoutAddition BoxDropoutDomainAddition::filterNegated(const TrainingReferencesWithDropoutAddition &training_set_abstraction, const PredicateAbstractionAddition &predicate_abstraction) const {
     // XXX copy and pasted previous method with one change; refactor with common method
-    std::vector<TrainingReferencesWithDropoutLabels> joins;
+    std::vector<TrainingReferencesWithDropoutAddition> joins;
     for(auto i = predicate_abstraction.cbegin(); i != predicate_abstraction.cend(); i++) {
         // The grammar should enforce that each i->has_value()
-        TrainingReferencesWithDropoutLabels temp = training_set_abstraction.filter(i->value(), false);
+        TrainingReferencesWithDropoutAddition temp = training_set_abstraction.filter(i->value(), false);
         joins.push_back(temp);
     }
     return training_set_domain->join(joins);
 }
 
-PosteriorDistributionAbstractionLabels BoxDropoutDomainLabels::summary(const TrainingReferencesWithDropoutLabels &training_set_abstraction) const {
-    return estimateCategoricalLabels(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout);
+PosteriorDistributionAbstractionAddition BoxDropoutDomainAddition::summary(const TrainingReferencesWithDropoutAddition&training_set_abstraction) const {
+    return estimateCategoricalAddition(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout);
 }
