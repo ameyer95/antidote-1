@@ -6,6 +6,7 @@
 #include "StateDomainTemplate.hpp"
 #include <utility>
 #include <vector>
+#include <iostream>
 
 // We'll output some information about the number of disjuncts
 // when -DDEBUG is given as a g++ argument
@@ -121,7 +122,7 @@ typename BoxDisjunctsTypes<T,P,D>::Many BoxDisjunctsDomainTemplate<T,P,D>::filte
 
 template <typename T, typename P, typename D>
 bool BoxDisjunctsDomainTemplate<T,P,D>::isBottomElement(const typename Types::Many &element) const {
-    return element.size() == 0; // XXX could/should check that each disjunct is non-bot
+    return element.size() == 0; // XXX could/should check that each disjunct is non-bot TO DO ANNA?
 }
 
 template <typename T, typename P, typename D>

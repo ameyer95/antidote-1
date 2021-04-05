@@ -12,7 +12,7 @@
  * that the files look as expected.
  */
 
-enum class UCINames { IRIS, CANCER, WINE, YEAST, RETINOPATHY, MAMMOGRAPHY };
+enum class UCINames { IRIS, CANCER, WINE, YEAST, RETINOPATHY, MAMMOGRAPHY, ADULT_INCOME, GERMAN_LOAN, COMPAS, DRUG_CONSUMPTION };
 
 struct UCIDetails {
     std::string training_file_name;
@@ -29,7 +29,11 @@ const UCIDetails UCI_WINE_DETAILS = { "winequality80.data", "winequality20.data"
 const UCIDetails UCI_YEAST_DETAILS = { "yeast80.data", "yeast20.data", 10, 9, {0}, 1484 };
 const UCIDetails UCI_RETINOPATHY_DETAILS = { "retinopathy80.data", "retinopathy20.data", 20, 19, {}, 1151 };
 const UCIDetails UCI_MAMMOGRAPHY_DETAILS = { "mammographic_masses80.data", "mammographic_masses20.data", 6, 5, {}, 830 };
-
+const UCIDetails UCI_ADULT_INCOME_DETAILS = {"adult_income.data", "adult_income.test", 17, 14, {15,16}, 48842 };
+const UCIDetails UCI_GERMAN_LOAN_DETAILS = {"german80.data", "german20.data", 22, 21, {}, 1000};
+//const UCIDetails UCI_COMPAS_DETAILS = {"compas_train.data", "compas_test.data",12, 9, {8, 11}, 9380};
+const UCIDetails UCI_COMPAS_DETAILS = {"compas_fairml_train.data", "compas_fairml_test.data", 12, 0, {}, 6172};
+const UCIDetails UCI_DRUG_CONSUMPTION_DETAILS = {"drug_consumption33.data", "drug_consumption33.test", 13, 12, {}, 1885};
 struct CSVRow {
     std::vector<float> x;
     std::string y;

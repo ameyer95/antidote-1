@@ -13,6 +13,7 @@
 #include "Feature.hpp"
 #include <functional> // for std::hash
 #include <optional>
+#include <iostream>
 
 
 class SymbolicPredicate {
@@ -27,13 +28,18 @@ public:
     SymbolicPredicate(int feature_index); // Sets feature_type = FeatureType::BOOLEAN
     SymbolicPredicate(int feature_index, float threshold_lb, float threshold_ub); // Sets feature_Type = FeatureType::NUMERIC
 
-    std::optional<bool> evaluate(const FeatureVector &x) const; // Does not check bounds
+    // Takes the feature vector, and two bools (feature poisoning for satisfies, feature poisoning for doesn't satisfy)
+    // Returns true if unambigously satisfies, false if doesn't satisfy, and {} if satisfy depends on feature poisoning
+    std::optional<bool> evaluate(const FeatureVector &x, bool feature_poisoning, float feature_flip_amt) const; // Does not check bounds
 
     // Our abstract transformers would like to be able to hash these objects, etc
     bool operator ==(const SymbolicPredicate &right) const;
     size_t hash() const;
-};
 
+    unsigned int get_feature_index() const;
+    float get_lb() const;
+    float get_ub() const;
+};
 
 // And a wrapper for SymbolicPredicate::hash so we can conveniently use std::unordered_map
 // XXX hashing these may no longer be used
@@ -60,25 +66,54 @@ inline SymbolicPredicate::SymbolicPredicate(int feature_index, float threshold_l
     feature_type = FeatureType::NUMERIC;
 }
 
-inline std::optional<bool> SymbolicPredicate::evaluate(const FeatureVector &x) const {
-    // XXX does no check to ensure this->feature_type is consistent with x[feature_index]'s
+inline std::optional<bool> SymbolicPredicate::evaluate(const FeatureVector &x, bool feature_poisoning, float feature_flip_amt = 0) const {
+    // feature_poisoning is true if the feature poisoning index is the same value that phi considers
     switch(feature_type) {
         case FeatureType::BOOLEAN:
             return x[feature_index].getBooleanValue();
         case FeatureType::NUMERIC:
-            if(x[feature_index].getNumericValue() <= threshold_lb) {
-                return true;
-            } else if(x[feature_index].getNumericValue() < threshold_ub) {
-                return {};
+            // given range [lb, ub] the predicate is x<=B for some B in [lb,ub] (we just don't know exactly what B is)
+            // return true if x<=B, return false if x>B and return {} if we don't know
+            if (feature_poisoning) {
+                // In this case, we definitely include x in the filtering
+                if (x[feature_index].getNumericValue() <= (threshold_lb - feature_flip_amt)) {
+                    return true;
+                } else if (x[feature_index].getNumericValue() < threshold_ub + feature_flip_amt) {
+                    // Now, x is near the border: could go either way so we have to include it but also will need to increment num_dropout
+                    return {};
+                } else {
+                    return false;
+                }
             } else {
-                return false;
+                if(x[feature_index].getNumericValue() <= threshold_lb) {
+                    return true;
+                } else if(x[feature_index].getNumericValue() < threshold_ub) {
+                    // In theory this shouldn't happen: the ub is the lb of the next phi, defined to be the next value > lb
+                    return {}; // x in [lb,ub] means we don't know whether it'll be included
+                } else {
+                    return false;
+                }
             }
+            
         default:
             // XXX this shouldn't happen---it's here to suppress a warning.
             // If adding new FeatureTypes, make sure to add remaining cases.
             return false;
     }
 }
+
+inline unsigned int SymbolicPredicate::get_feature_index() const {
+    return this->feature_index;
+}
+
+inline float SymbolicPredicate::get_lb() const {
+    return this->threshold_lb;
+}
+
+inline float SymbolicPredicate::get_ub() const {
+    return this-> threshold_ub;
+}
+
 
 inline bool SymbolicPredicate::operator ==(const SymbolicPredicate &right) const {
     if(this->feature_index != right.feature_index) {

@@ -29,13 +29,23 @@ public:
     struct DropoutCounts {
         std::vector<int> counts;
         int num_dropout;
+        int num_add;
+        int num_labels_flip;
+        int num_features_flip;
+        int feature_flip_index;
+        float feature_flip_amt;
     };
 
     DataReferences training_references;
     int num_dropout;
+    int num_add;
+    int num_labels_flip;
+    int num_features_flip;
+    int feature_flip_index;
+    float feature_flip_amt;
 
     TrainingReferencesWithDropout() {} // Constructed like this should be a bottom element
-    TrainingReferencesWithDropout(DataReferences training_references, int num_dropout);
+    TrainingReferencesWithDropout(DataReferences training_references, int num_dropout, int num_add, int num_labels_flip, int num_features_flip, int feature_flip_index, float feature_flip_amt);
 
     std::vector<int> baseCounts() const;
     std::pair<DropoutCounts, DropoutCounts> splitCounts(const SymbolicPredicate &phi) const;
@@ -106,6 +116,15 @@ private:
             std::list<const ScoreEntry *> &forall_nontrivial,
             const TrainingReferencesWithDropout &training_set_abstraction,
             int feature_index ) const;
+    /*void updateSplitCountsDropout(
+        std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDropout::DropoutCounts> &split_counts
+    ) const;
+    void addPhiAndPushback(
+        SymbolicPredicate &phi,
+         std::list<ScoreEntry> &exists_nontrivial, 
+         std::list<const ScoreEntry *> &forall_nontrivial, 
+         std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDropout::DropoutCounts> &split_counts
+    ) const;*/
 
 public:
     using BoxStateDomainTemplate::BoxStateDomainTemplate; // Inherit the constructor

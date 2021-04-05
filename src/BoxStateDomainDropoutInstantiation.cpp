@@ -8,14 +8,21 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <list>
+#include <iostream>
 
 /**
  * TrainingReferencesWithDropout members
  */
 
-TrainingReferencesWithDropout::TrainingReferencesWithDropout(DataReferences training_references, int num_dropout) {
+TrainingReferencesWithDropout::TrainingReferencesWithDropout(DataReferences training_references, int num_dropout, int num_add, int num_labels_flip, int num_features_flip, int feature_flip_index, float feature_flip_amt) {
     this->training_references = training_references;
     this->num_dropout = num_dropout;
+    this->num_add = num_add;
+    this->num_labels_flip = num_labels_flip;
+    this->num_features_flip = num_features_flip;
+    this->feature_flip_index = feature_flip_index;
+    this->feature_flip_amt = feature_flip_amt;
 }
 
 std::vector<int> TrainingReferencesWithDropout::baseCounts() const {
@@ -27,25 +34,42 @@ std::vector<int> TrainingReferencesWithDropout::baseCounts() const {
 }
 
 std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDropout::DropoutCounts> TrainingReferencesWithDropout::splitCounts(const SymbolicPredicate &phi) const {
+    // If we are in this case, the feature type is boolean, therefore, we don't have to worry about feature poisoning uncertainty
     std::pair<DropoutCounts, DropoutCounts> ret;
     ret.first.counts = std::vector<int>(training_references.getNumCategories(), 0);
     ret.second.counts = std::vector<int>(training_references.getNumCategories(), 0);
     DropoutCounts *d_ptr;
+    int maybe_count = 0;
     for(unsigned int i = 0; i < training_references.size(); i++) {
-        std::optional<bool> result = phi.evaluate(training_references[i].x);
         int category = training_references[i].y;
-        // XXX it should be an invariant of the way predicates are selected
-        // that we always have result.has_value()
-        // but this could be done more safely
-        d_ptr = result.value() ? &(ret.second) : &(ret.first);
-        d_ptr->counts[category]++;
+        if (feature_flip_index == phi.get_feature_index()) {
+            // Boolean feature, no point in evaluating because we can't determine anything given feature poisoning.
+            // Increment both counts.
+            d_ptr = &(ret.second);
+            d_ptr->counts[category]++;
+            d_ptr = &(ret.first);
+            d_ptr->counts[category]++;
+        }
+        else {
+            std::optional<bool> result = phi.evaluate(training_references[i].x, false);
+            // Boolean feature always returns true or false from evaluate
+            d_ptr = result.value() ? &(ret.second) : &(ret.first);
+            d_ptr->counts[category]++;
+        }
     }
+
     // Ensure num_dropouts are well-defined XXX this is more complicated in the 3-valued case
     // except that it's not---again, there should be an invariant that we never fall into
     // maybe cases in this portion of the code
     std::vector<DropoutCounts*> iters = {&(ret.first), &(ret.second)};
     for(auto i = iters.begin(); i != iters.end(); i++) {
-        (*i)->num_dropout = std::min(num_dropout, std::accumulate((*i)->counts.cbegin(), (*i)->counts.cend(), 0));
+        int total_ct = std::accumulate((*i)->counts.cbegin(), (*i)->counts.cend(), 0);
+        (*i)->num_dropout = std::min(num_dropout, total_ct);
+        (*i)->num_labels_flip = std::min(num_labels_flip, total_ct);
+        (*i)->num_add = num_add;
+        (*i)->num_features_flip = std::min(num_features_flip, total_ct);
+        (*i)->feature_flip_index = feature_flip_index;
+        (*i)->feature_flip_amt = feature_flip_amt;
     }
     return ret;
 }
@@ -64,26 +88,47 @@ TrainingReferencesWithDropout TrainingReferencesWithDropout::pureSetRestriction(
     }
     // We will only call this when it's guaranteed to be non-trivial,
     // so we need not check that num_removed <= num_dropout
-    return TrainingReferencesWithDropout(training_copy, num_dropout - num_removed);
+    return TrainingReferencesWithDropout(training_copy, num_dropout - num_removed, num_add, num_labels_flip, num_features_flip, feature_flip_index, feature_flip_amt);
 }
 
 TrainingReferencesWithDropout TrainingReferencesWithDropout::filter(const SymbolicPredicate &phi, bool positive_flag) const {
+    // Note: I would expect to end up here only in the abstract (box) case, but we also end up here for -V via filterAndUnion
     TrainingReferencesWithDropout ret(*this);
     bool remove;
     std::optional<bool> result;
     int num_maybes = 0;
+    int feature_index = phi.get_feature_index();
     for(unsigned int i = 0; i < ret.training_references.size(); i++) {
-        result = phi.evaluate(ret.training_references[i].x);
-        if(!result.has_value()) {
-            num_maybes++;
+       if (ret.feature_flip_index == feature_index) {
+            result = phi.evaluate(ret.training_references[i].x, true, ret.feature_flip_amt);
+
+            // We return {} when x in [lb-1, ub+1] - we might include it, but might not
+            if (!result.has_value()) {
+                num_maybes++;
+            } else if (positive_flag != result.value()) {
+                ret.training_references.remove(i);
+                i--;
+            }
         }
-        remove = result.has_value() && (positive_flag != result.value());
-        if(remove) {
-            ret.training_references.remove(i);
-            i--;
+        else
+        {
+            result = phi.evaluate(ret.training_references[i].x, false, 0);
+            if (!result.has_value()) {
+                num_maybes++;
+            }
+            remove = result.has_value() && (positive_flag != result.value());
+            if (remove) {
+                ret.training_references.remove(i);
+                i--;
+            }
         }
+        
     }
+    // We don't know whether the 'maybe' points are in the dataset - so we might have to drop them,
+    // which is why we increase n. We don't have to increase # of labels of features to flip.
     ret.num_dropout = std::min(ret.num_dropout + num_maybes, (int)ret.training_references.size());
+    ret.num_labels_flip = std::min(ret.num_labels_flip, (int)ret.training_references.size());
+    ret.num_features_flip = std::min(ret.num_features_flip, (int)ret.training_references.size());
     return ret;
 }
 
@@ -91,6 +136,7 @@ TrainingReferencesWithDropout TrainingReferencesWithDropout::filter(const Symbol
  * TrainingSetDropoutDomain members
  */
 
+// What is happening here?? isBottomElement=training set is empty
 TrainingReferencesWithDropout TrainingSetDropoutDomain::meetImpurityEqualsZero(const TrainingReferencesWithDropout &element) const {
     if(isBottomElement(element)) {
         return element;
@@ -98,13 +144,14 @@ TrainingReferencesWithDropout TrainingSetDropoutDomain::meetImpurityEqualsZero(c
     std::vector<int> counts = element.baseCounts();
     std::list<int> pure_possible_classes(0);
     for(unsigned int i = 0; i < counts.size(); i++) {
-        // It's possible that all but the i-class elements could be removed
-        if(element.training_references.size() - counts[i] <= element.num_dropout) {
+        // It's possible that all but the i-class elements could be removed (??? fix this Anna?)
+        // We could drop or flip the label on all elements not in this class, i.e. it's possible that 100% of elements belong to this class
+        if(element.training_references.size() - counts[i] <= (element.num_dropout + element.num_labels_flip)) {
             pure_possible_classes.push_back(i);
         }
     }
 
-    // If no pure class is possible, we return a bottom element
+    // If no pure class is possible, we return a bottom element 
     if(pure_possible_classes.size() == 0) {
         return TrainingReferencesWithDropout();
     }
@@ -136,7 +183,10 @@ TrainingReferencesWithDropout TrainingSetDropoutDomain::binary_join(const Traini
     DataReferences d = DataReferences::set_union(e1.training_references, e2.training_references);
     int n1 = d.size() - e2.training_references.size() + e2.num_dropout; // Note |(T1 U T2) \ T1| = |T2 \ T1|
     int n2 = d.size() - e1.training_references.size() + e1.num_dropout;
-    return TrainingReferencesWithDropout(d, std::max(n1, n2));
+    int new_labels = std::max(e1.num_labels_flip, e2.num_labels_flip);
+    int new_add = std::max(e1.num_add, e2.num_add);
+    int new_flip = std::max(e1.num_features_flip, e2.num_features_flip);
+    return TrainingReferencesWithDropout(d, std::max(n1, n2), new_add ,new_labels, new_flip, e1.feature_flip_index, e1.feature_flip_amt);
 }
 
 /**
@@ -166,14 +216,16 @@ PredicateAbstraction PredicateSetDomain::meetPhiIsNotBottom(const PredicateAbstr
 }
 
 PredicateAbstraction PredicateSetDomain::meetXModelsPhi(const PredicateAbstraction &element, const FeatureVector &x) const {
+    // at this point we're not building the model, we're just trying to classify x. So, sometimes we don't know what branch x 
+    // goes down (if it's in (lb,ub), but this doesn't depend on feature poisoning
     if(isBottomElement(element)) {
         return element;
     }
     PredicateAbstraction phis;
     for(auto i = element.cbegin(); i != element.cend(); i++) {
         // The grammar should enforce that we always have i->has_value()
-        std::optional<bool> result = i->value().evaluate(x);
-        // With three-valued logic, we inlude "maybe" (!result.has_value())
+        std::optional<bool> result = i->value().evaluate(x, false);
+        // With three-valued logic, we include "maybe" (!result.has_value())
         if(!result.has_value() || result.value()) {
             phis.push_back(*i);
         }
@@ -188,8 +240,8 @@ PredicateAbstraction PredicateSetDomain::meetXNotModelsPhi(const PredicateAbstra
     PredicateAbstraction phis;
     for(auto i = element.cbegin(); i != element.cend(); i++) {
         // The grammar should enforce that we always have i->has_value()
-        std::optional<bool> result = i->value().evaluate(x);
-        // With three-valued logic, we inlude "maybe" (!result.has_value())
+        std::optional<bool> result = i->value().evaluate(x, false);
+        // With three-valued logic, we include "maybe" (!result.has_value())
         if(!result.has_value() || !result.value()) { // This is the only line that differs from meetXModelsPhi
             phis.push_back(*i);
         }
@@ -253,6 +305,9 @@ inline bool couldBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &cou
 }
 
 inline bool mustBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
+    if (counts.num_add > 0) {
+        return false;
+    }
     return std::accumulate(counts.counts.begin(), counts.counts.end(), 0) == 0;
 }
 
@@ -273,9 +328,9 @@ void BoxDropoutDomain::computeBooleanFeaturePredicateAndScore(std::list<ScoreEnt
     auto counts = training_set_abstraction.splitCounts(phi);
     if(!mustBeEmpty(counts.first) && !mustBeEmpty(counts.second)) {
         Interval<double> temp = jointImpurity(counts.first.counts,
-                                              counts.first.num_dropout,
+                                              counts.first.num_dropout, counts.first.num_add, counts.first.num_labels_flip, counts.first.num_features_flip,
                                               counts.second.counts,
-                                              counts.second.num_dropout);
+                                              counts.second.num_dropout, counts.second.num_add, counts.second.num_labels_flip, counts.second.num_features_flip);
         exists_nontrivial.push_back(std::make_pair(phi, temp));
         if(!couldBeEmpty(counts.first) && !couldBeEmpty(counts.second)) {
             forall_nontrivial.push_back(&exists_nontrivial.back());
@@ -284,8 +339,12 @@ void BoxDropoutDomain::computeBooleanFeaturePredicateAndScore(std::list<ScoreEnt
 }
 
 void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropout &training_set_abstraction, int feature_index) const {
-    // Largely copy-paste from concrete case
     std::vector<std::pair<float,int>> value_class_pairs(training_set_abstraction.training_references.size());
+    // Access the data, only looking at the feature that is relevant for this predicate
+    // TO DO ANNA ONE SIDED - also need to access t (for one-sided label-flipping, data addition, and feature poisoning)
+    //              restructure value_class_pairs to be an array?
+    
+    // TO DO - does this work with lb and ub? I don't get
     for(unsigned int j = 0; j < training_set_abstraction.training_references.size(); j++) {
         DataRow temp = training_set_abstraction.training_references[j];
         value_class_pairs[j].first = temp.x[feature_index].getNumericValue();
@@ -294,35 +353,200 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
     if(value_class_pairs.size() < 2) {
         return;
     }
+    
     std::sort(value_class_pairs.begin(), value_class_pairs.end(),
               [](const std::pair<float,int> &p1, const std::pair<float,int> &p2)
               { return p1.first < p2.first; } );
     std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDropout::DropoutCounts> split_counts = {
             { std::vector<int>(training_set_abstraction.training_references.getNumCategories(), 0), 0 },
-            { training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout } };
-    for(auto i = value_class_pairs.begin(); i + 1 != value_class_pairs.end(); i++) {
-        split_counts.first.counts[i->second]++;
-        if(split_counts.first.num_dropout < training_set_abstraction.num_dropout) {
-            split_counts.first.num_dropout++;
+            { training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout, training_set_abstraction.num_add, 
+                training_set_abstraction.num_labels_flip, training_set_abstraction.num_features_flip, 
+                training_set_abstraction.feature_flip_index, training_set_abstraction.feature_flip_amt } };
+    
+    split_counts.first.num_add = training_set_abstraction.num_add;
+
+    // iterating through training data elements    
+    if (feature_index == training_set_abstraction.feature_flip_index) {
+        std::list<SymbolicPredicate> phis_to_add = {};
+        float feat_flip_amt = training_set_abstraction.feature_flip_amt;
+        std::list<float> vals_of_phi = {};
+
+        for (auto i = value_class_pairs.begin(); i + 1 != value_class_pairs.end(); i++) {
+            // If value of this and same match, just continue to next one
+            if(i->first == (i+1)->first) {
+                continue;
+            }
+
+            vals_of_phi.push_back(i->first - feat_flip_amt);
+            vals_of_phi.push_back(i->first);
+            vals_of_phi.push_back(i->first + feat_flip_amt);
+
+            // this is a lil weird but I think keeping (i+1)->first makes sense because there's not a great alternative
+            // hmm, this could cause weirdness in the next section if i->first + 1 > (i+1)->first or similar for lower bound
+            phis_to_add.push_back(SymbolicPredicate(feature_index, i->first - feat_flip_amt, (i+1)->first));
+            phis_to_add.push_back(SymbolicPredicate(feature_index, i->first + feat_flip_amt, std::max((i+1)->first, i->first + feat_flip_amt)));
+
+            // Otherwise, add phi to list to (eventually) add
+            phis_to_add.push_back(SymbolicPredicate(feature_index, i->first, (i+1)->first));
         }
-        split_counts.second.counts[i->second]--;
-        int remaining = std::accumulate(split_counts.second.counts.cbegin(), split_counts.second.counts.cend(), 0);
-        if(remaining < split_counts.second.num_dropout) {
-            split_counts.second.num_dropout = remaining;
+
+        vals_of_phi.push_back(value_class_pairs.end()->first - feat_flip_amt);
+        vals_of_phi.push_back(value_class_pairs.end()->first);
+        vals_of_phi.push_back(value_class_pairs.end()->first + feat_flip_amt);
+
+        vals_of_phi.sort([](const float a, const float b) { return a < b; });
+
+        while (vals_of_phi.size() > 1) {
+            float val = vals_of_phi.front();
+            vals_of_phi.pop_front();
+            float val_next = vals_of_phi.front();
+            if (val == val_next) {
+                continue;
+            }
+
+            phis_to_add.push_back(SymbolicPredicate(feature_index, val, val_next));
         }
-        if(i->first == (i+1)->first) {
-            continue;
+
+        int start = 0;
+        int last_removed = 0;
+
+        int lb; int ub; int num_dropout_incr_first; int num_dropout_incr_second;
+
+        while (!phis_to_add.empty()) {
+            int two_less = 0;
+
+            SymbolicPredicate phi = phis_to_add.front();
+            phis_to_add.pop_front();
+            lb = phi.get_lb();
+            ub = phi.get_ub();
+
+            int num_dropout_iffy_first = 0; int num_dropout_iffy_second = 0;
+            int num_dropout_inclusive_first = 0; int num_dropout_inclusive_second = 0;
+
+            // Calculate the number in our iffy range [lb-1, lb+1)
+            for (int i = two_less; i< value_class_pairs.size(); i++) {
+                auto item = value_class_pairs[i];
+                // n will be the total number of superfluous elements
+                // for split_counts.first, all elements in (lb, lb+f] are potentially superfluous and up to f
+                // elements in (B-fa, B] are superfluous. Flipped for split_counts.second.
+                if (item.first < lb - feat_flip_amt) {
+                    two_less += 1; // we won't have to consider this index again, next phi lb will be higher
+                } else if (item.first < lb) {
+                    if (num_dropout_inclusive_first < training_set_abstraction.num_features_flip) {
+                        num_dropout_inclusive_first += 1;
+                    }
+                    num_dropout_iffy_second += 1;
+                }
+                else if (item.first < lb + feat_flip_amt) {
+                    if (num_dropout_inclusive_second < training_set_abstraction.num_features_flip) {
+                        num_dropout_inclusive_second += 1;
+                    }
+                    num_dropout_iffy_first += 1;
+                } else {
+                    break;
+                }
+            }
+            
+            num_dropout_incr_first = num_dropout_iffy_first + num_dropout_inclusive_first;
+            num_dropout_incr_second = num_dropout_iffy_second + num_dropout_inclusive_second;
+
+            // For anything in [start, lb+1), add to split_counts.first
+            for (int i=start; i<value_class_pairs.size(); i++) {
+                auto item = value_class_pairs[i];
+                if (item.first < lb + feat_flip_amt) {
+                    split_counts.first.counts[item.second]++;
+                    start += 1;
+                } else {
+                    break;
+                }
+            }
+
+            // For anything in [last_removed, lb-1), remove it from split_counts.second
+            for (int i=last_removed; i<start; i++) {
+                auto item = value_class_pairs[i];
+                if (item.first < lb - feat_flip_amt) {
+                    split_counts.second.counts[item.second]--;
+                    last_removed += 1;
+                } else {
+                    break;
+                }
+            }
+
+            // update n, l, and f
+            int remaining = std::accumulate(split_counts.first.counts.cbegin(), split_counts.first.counts.cend(), 0);
+            split_counts.first.num_dropout = std::min(remaining, training_set_abstraction.num_dropout + num_dropout_incr_first);
+            if (split_counts.first.num_labels_flip < training_set_abstraction.num_labels_flip) {
+                split_counts.first.num_labels_flip++;
+            }
+            if (split_counts.first.num_features_flip < training_set_abstraction.num_features_flip) {
+                split_counts.first.num_features_flip++;
+            }
+
+            remaining = std::accumulate(split_counts.second.counts.cbegin(), split_counts.second.counts.cend(), 0);
+            split_counts.second.num_dropout = std::min(remaining, training_set_abstraction.num_dropout + num_dropout_incr_second);
+            if (remaining < split_counts.second.num_labels_flip) {
+                split_counts.second.num_labels_flip = remaining;
+            }
+            if (remaining < split_counts.second.num_features_flip) {
+                split_counts.second.num_features_flip = remaining;
+            }
+
+            Interval<double> temp = jointImpurity(split_counts.first.counts,
+                                        split_counts.first.num_dropout, split_counts.first.num_add,
+                                        split_counts.first.num_labels_flip, split_counts.first.num_features_flip,
+                                        split_counts.second.counts,
+                                        split_counts.second.num_dropout, split_counts.second.num_add,
+                                        split_counts.second.num_labels_flip, split_counts.second.num_features_flip);
+            exists_nontrivial.push_back(std::make_pair(phi, temp));
+            if (!couldBeEmpty(split_counts.first) && !couldBeEmpty(split_counts.second)) {
+                forall_nontrivial.push_back(&exists_nontrivial.back());
+            }
         }
-        // At this point, the check for if we should include in exists_nontrivial would always pass.
-        // For each adjacent pair (l,u) store a symbolic predicate x<=[l,u)
-        SymbolicPredicate phi(feature_index, i->first, (i+1)->first);
-        Interval<double> temp = jointImpurity(split_counts.first.counts,
-                                              split_counts.first.num_dropout,
-                                              split_counts.second.counts,
-                                              split_counts.second.num_dropout);
-        exists_nontrivial.push_back(std::make_pair(phi, temp));
-        if(!couldBeEmpty(split_counts.first) && !couldBeEmpty(split_counts.second)) {
-            forall_nontrivial.push_back(&exists_nontrivial.back());
+    }
+    else {
+        for(auto i = value_class_pairs.begin(); i + 1 != value_class_pairs.end(); i++) {
+
+            split_counts.first.counts[i->second]++;
+            if(split_counts.first.num_dropout < training_set_abstraction.num_dropout) {
+                split_counts.first.num_dropout++;
+            }
+            if (split_counts.first.num_labels_flip < training_set_abstraction.num_labels_flip) {
+                split_counts.first.num_labels_flip++;
+            }
+
+            if (split_counts.first.num_features_flip < training_set_abstraction.num_features_flip) {
+                split_counts.second.num_features_flip++;
+            }
+
+            split_counts.second.counts[i->second]--;
+            int remaining = std::accumulate(split_counts.second.counts.cbegin(), split_counts.second.counts.cend(), 0);
+            if (remaining < split_counts.second.num_dropout) {
+                split_counts.second.num_dropout=remaining;
+            }
+            if (remaining < split_counts.second.num_labels_flip) {
+                split_counts.second.num_labels_flip = remaining;
+            }
+            if (remaining < split_counts.second.num_features_flip) {
+                split_counts.second.num_features_flip = remaining;
+            }
+
+            if(i->first == (i+1)->first) {
+                continue;
+            }
+
+            // At this point, the check for if we should include in exists_nontrivial would always pass.
+            // For each adjacent pair (l,u) store a symbolic predicate x<=[l,u)
+            SymbolicPredicate phi(feature_index, i->first, (i+1)->first);
+            Interval<double> temp = jointImpurity(split_counts.first.counts,
+                                        split_counts.first.num_dropout, split_counts.first.num_add,
+                                        split_counts.first.num_labels_flip, split_counts.first.num_features_flip,
+                                        split_counts.second.counts,
+                                        split_counts.second.num_dropout, split_counts.second.num_add,
+                                        split_counts.second.num_labels_flip, split_counts.second.num_features_flip);
+            exists_nontrivial.push_back(std::make_pair(phi, temp));
+            if (!couldBeEmpty(split_counts.first) && !couldBeEmpty(split_counts.second)) {
+                forall_nontrivial.push_back(&exists_nontrivial.back());
+            }
         }
     }
 }
@@ -363,6 +587,7 @@ PredicateAbstraction BoxDropoutDomain::bestSplit(const TrainingReferencesWithDro
 }
 
 TrainingReferencesWithDropout BoxDropoutDomain::filter(const TrainingReferencesWithDropout &training_set_abstraction, const PredicateAbstraction &predicate_abstraction) const {
+    // We only use filter in the abstract (box) case
     std::vector<TrainingReferencesWithDropout> joins;
     for(auto i = predicate_abstraction.cbegin(); i != predicate_abstraction.cend(); i++) {
         // The grammar should enforce that each i->has_value()
@@ -384,5 +609,5 @@ TrainingReferencesWithDropout BoxDropoutDomain::filterNegated(const TrainingRefe
 }
 
 PosteriorDistributionAbstraction BoxDropoutDomain::summary(const TrainingReferencesWithDropout &training_set_abstraction) const {
-    return estimateCategorical(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout);
+    return estimateCategorical(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout, training_set_abstraction.num_add, training_set_abstraction.num_labels_flip, training_set_abstraction.num_features_flip);
 }

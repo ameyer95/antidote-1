@@ -32,13 +32,22 @@ private:
         float bin_thres; 
         bool use_abstract; // When false, use concrete semantics
         bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
-        bool label_flipping; // When true, use the label flipping data poisoning model
-        std::vector<int> num_dropouts; // For when use_abstract == true
+        int num_dropout; // For when use_abstract == true
+        int num_add;
+        int num_labels_flip;
+        int num_features_flip;
+        int feature_flip_index;
+        float feature_flip_amt;
         std::optional<int> disjunct_bound; // Optionally, has_value only when with_disjuncts is true
         DisjunctsMergeMode merge_mode; // For when disjunct_bound.has_value()
         struct RandomTest {
             bool flag; // Whether to do a random test
             int num_dropout;
+            int num_add;
+            int num_labels_flip;
+            int num_features_flip;
+            int feature_flip_index;
+            float feature_flip_amt;
             int num_trials;
             unsigned int seed;
         } random_test;

@@ -76,16 +76,25 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.createArgument("depth", "-d", 1, "Space-separated list of depths of the tree to be built");
     p.createArgument("test_all", "-T", 0, "Run on each element in the test set", true);
     p.createArgument("test_indices", "-t", 1, "Space-separated list of test indices", true);
-    p.createArgument("dataset", "-f", 2, "Dataset information: (1) the path to the data folder and (2) the name from one of " + setToString(dataset_options), true);
+    p.createArgument("dataset", "-data", 2, "Dataset information: (1) the path to the data folder and (2) the name from one of " + setToString(dataset_options), true);
     p.createArgument("dataset(arff)", "-D", 2, "Dataset information in arff format: (1) train set (2) test set", true); 
     p.createArgument("label_index", "-i", 1, "Index of attribute to use as label (effective only for arff datasets)", true);
-    p.createArgument("use_abstract", "-a", 1, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
-    p.createArgument("use_disjuncts", "-V", 1, "Like -a, but with disjuncts", true);
+    p.createArgument("use_abstract", "-a", 0, "Use abstract semantics (not concrete); The passed value is a space-separated list of the n in <T,n>", true);
+    p.createArgument("use_disjuncts", "-V", 0, "Like -a, but with disjuncts", true);
     p.createArgument("disjunct_bound", "-b", 2, "When -V is used, (1) an integer bound on the number of disjuncts, and (2) specify the merging strategy from " + setToString(merge_options), true);
     p.createArgument("verbose", "-v", 0, "", true);
-    p.createArgument("random_test", "-r", 3, "Run concrete semantics on random samples from <T,n>. (1) the value of n, (2) the number of random samples, (3) the random seed.", true);
+    p.createArgument("random_test", "-r", 2, "Run concrete semantics on random samples from <T,n, l, m, f, i>. (1) # of random samples, (2) the random seed, (3) n, (4) m, (5) l, (6) f, (7) i", true);
     p.createArgument("binary", "-B", 1, "Transform dataset into binary form by threshold (only effective with arff datasets)", true);
-    p.createArgument("label_flipping","-l", 0, "Use the label-flipping data poisoning model", true);
+    p.createArgument("num_dropout", "-n", 1, "Number of potentially fake elements to drop", true);
+    p.createArgument("label_flipping", "-l", 1, "Number of labels to flip", true);
+    p.createArgument("missing_data", "-m", 1, "Number of missing elements to add", true);
+    p.createArgument("feature_flipping", "-f", 3, "(1) Number of features to perturb, (2) index of the feature we can perturb, (3) amount we can perturb feature by (1 for boolean features)", true);
+
+    // parameter 1 should be index in dataset of protected variable
+    // parameter 2 should be a list of protected values
+    // for now, assume we can flip protected-class labels from 0 to 1 (but can't flip anything else)
+    p.createArgument("lopsided_labels", "-s", 2, "Use the label-flipping data poisoning model but only allow us to flip protected class individuals from 0 to 1", true);
+    p.createArgument("lopsided_addition", "-sadd", 2, "Use the data addition data poisoning model but only allow us to add protected class individuals with label 1", true);
 
     p.requireAtLeastOne({"dataset", "dataset(arff)"});
     p.requireAtMostOne({"dataset", "dataset(arff)"});
@@ -117,32 +126,35 @@ void ExperimentFrontend::performSingleTest(int depth, int test_index) {
 }
 
 void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
-    for(auto n = params.num_dropouts.cbegin(); n != params.num_dropouts.cend(); n++) {
-        std::string message = "running a depth-" + std::to_string(depth) + " experiment using <T," + std::to_string(*n) + "> ";
-        if(params.with_disjuncts) {
-            if(params.disjunct_bound.has_value()) {
-                message += "(with disjuncts # <= " + std::to_string(params.disjunct_bound.value()) + ") ";
-            } else {
-                message += "(with disjuncts) ";
-            }
-        }
-        if (params.label_flipping) {
-            message += "(with label fipping)";
-        }
-        message += "on test " + std::to_string(test_index);
-        output(message);
-        ExperimentBackend::Result<Interval<double>> ret;
-        if(!params.with_disjuncts) {
-            ret = e->run_abstract(depth, test_index, *n);
+    std::string message = "running a depth-" + std::to_string(depth) + " experiment ";
+    if(params.with_disjuncts) {
+        if(params.disjunct_bound.has_value()) {
+            message += "(with disjuncts # <= " + std::to_string(params.disjunct_bound.value()) + ") ";
         } else {
-            if(params.disjunct_bound.has_value()) {
-                ret = e->run_abstract_bounded_disjuncts(depth, test_index, *n, params.disjunct_bound.value(), params.merge_mode);
-            } else {
-                ret = e->run_abstract_disjuncts(depth, test_index, *n);
-            }
-        } 
-        output(output_to_json(depth, test_index, ret), true);  
+            message += "(with disjuncts) ";
+        }
     }
+
+    message += "with n=" + std::to_string(params.num_dropout) + ", m=" + std::to_string(params.num_add) + ", l=" + 
+        std::to_string(params.num_labels_flip) + ", and f=" + std::to_string(params.num_features_flip);
+
+    if (params.feature_flip_index > -1) {
+        message += " (on feature " + std::to_string(params.feature_flip_index) + " by " + std::to_string(params.feature_flip_amt) + "). ";
+    }
+
+    message += "on test " + std::to_string(test_index);
+    output(message);
+    ExperimentBackend::Result<Interval<double>> ret;
+    if(!params.with_disjuncts) {
+        ret = e->run_abstract(depth, test_index, params.num_dropout, params.num_add, params.num_labels_flip, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt);
+    } else {
+        if(params.disjunct_bound.has_value()) {
+            ret = e->run_abstract_bounded_disjuncts(depth, test_index, params.num_dropout, params.num_add, params.num_labels_flip, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt, params.disjunct_bound.value(), params.merge_mode);
+        } else {
+            ret = e->run_abstract_disjuncts(depth, test_index, params.num_dropout, params.num_add, params.num_labels_flip, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt);
+        }
+    }
+    output(output_to_json(depth, test_index, ret), true);  
 }
 
 std::string ExperimentFrontend::output_to_json(int depth, int test_index, const std::map<int,int> &result) {
@@ -237,6 +249,7 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
         } else if(p["dataset(arff)"].included) {
             params.arff_train = p["dataset(arff)"].tokens[0];
             params.arff_test = p["dataset(arff)"].tokens[1];
+            std::cout << "dataset: " << p["dataset"].tokens[0] << std::endl;
             params.dataset = ExperimentDataEnum::USE_ARFF; 
             if(p["label_index"].included) {
                 params.arff_label_ind = std::stoi(p["label_index"].tokens[0]); 
@@ -246,15 +259,41 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
         }
         params.random_test.flag = p["random_test"].included;
         params.use_abstract = p["use_abstract"].included || p["use_disjuncts"].included;
+
+        if (p["num_dropout"].included) {
+            params.num_dropout = std::stoi(p["num_dropout"].tokens[0]);
+        } else {
+            params.num_dropout = 0;
+        }
+
+        if (p["label_flipping"].included) {
+            params.num_labels_flip = std::stoi(p["label_flipping"].tokens[0]);
+        } else {
+            params.num_labels_flip = 0;
+        }
+
+        if (p["missing_data"].included) {
+            params.num_add = std::stoi(p["missing_data"].tokens[0]);
+        } else {
+            params.num_add = 0;
+        }
+
+        if (p["feature_flipping"].included) {
+            params.num_features_flip = std::stoi(p["feature_flipping"].tokens[0]);
+            params.feature_flip_index = std::stoi(p["feature_flipping"].tokens[1]);
+            params.feature_flip_amt = std::stoi(p["feature_flipping"].tokens[2]);
+        } else {
+            params.num_features_flip = 0;
+            params.feature_flip_index = -1;
+            params.feature_flip_amt = 0;
+        }
+
         if(p["random_test"].included) {
-            params.random_test.num_dropout = std::stoi(p["random_test"].tokens[0]);
-            params.random_test.num_trials = std::stoi(p["random_test"].tokens[1]);
-            params.random_test.seed = std::stoi(p["random_test"].tokens[2]);
+            params.random_test.num_trials = std::stoi(p["random_test"].tokens[0]);
+            params.random_test.seed = std::stoi(p["random_test"].tokens[1]);
         } else if(p["use_abstract"].included) {
-            vectorizeIntStringSplit(params.num_dropouts, p["use_abstract"].tokens[0]);
             params.with_disjuncts = false;
         } else if(p["use_disjuncts"].included) {
-            vectorizeIntStringSplit(params.num_dropouts, p["use_disjuncts"].tokens[0]);
             params.with_disjuncts = true;
             if(p["disjunct_bound"].included) {
                 params.disjunct_bound = std::stoi(p["disjunct_bound"].tokens[0]);
@@ -270,7 +309,6 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
             params.use_bin = false;
         }
 
-        params.label_flipping = p["label_flipping"].included;
         return true;
     } else {
         std::cout << p.message() << std::endl;
@@ -290,7 +328,7 @@ void ExperimentFrontend::performExperiments() {
                                             params.use_bin ? params.bin_thres : 0.0, 
                                             params.arff_label_ind); 
     }
-    e = new ExperimentBackend(current_data->training, current_data->test, params.label_flipping);
+    e = new ExperimentBackend(current_data->training, current_data->test);
 
     for(auto depth = params.depths.begin(); depth != params.depths.end(); depth++) {
         if(params.test_all) {

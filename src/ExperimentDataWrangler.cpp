@@ -179,6 +179,18 @@ void ExperimentDataWrangler::loadData(const ExperimentDataEnum &dataset) {
         case ExperimentDataEnum::USE_ARFF:
             // will be handled by arff parser
             break; 
+        case ExperimentDataEnum::ADULT_INCOME:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::ADULT_INCOME)));
+            break;
+        case ExperimentDataEnum::GERMAN_LOAN:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::GERMAN_LOAN)));
+            break;
+        case ExperimentDataEnum::COMPAS:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::COMPAS)));
+            break;
+        case ExperimentDataEnum::DRUG_CONSUMPTION:
+            cache.insert(std::make_pair(dataset, loadUCI(UCINames::DRUG_CONSUMPTION)));
+            break;
     }
 }
 
@@ -213,11 +225,13 @@ ExperimentData* ExperimentDataWrangler::loadUCI(const UCINames &dataset) {
         static_cast<int>(raw_uci.getLabels().size()),
         std::vector<DataRow>(raw_uci.getTrainingData().size())
     };
+
     DataSet *uci_test = new DataSet {
         FeatureVectorHeader(raw_uci.getTestData()[0].x.size(), FeatureType::NUMERIC),
         static_cast<int>(raw_uci.getLabels().size()),
         std::vector<DataRow>(raw_uci.getTestData().size())
     };
+
 
     std::map<std::string, int> label_map;
     std::vector<std::string> labels;

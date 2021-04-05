@@ -29,6 +29,10 @@ enum class ExperimentDataEnum {
     UCI_RETINOPATHY,
     UCI_MAMMOGRAPHY,
     USE_ARFF,
+    ADULT_INCOME,
+    GERMAN_LOAN,
+    COMPAS,
+    DRUG_CONSUMPTION,
 };
 
 std::string to_string(const ExperimentDataEnum &e);
