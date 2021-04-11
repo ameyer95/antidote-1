@@ -15,11 +15,13 @@
  * TrainingReferencesWithDropout members
  */
 
-TrainingReferencesWithDropout::TrainingReferencesWithDropout(DataReferences training_references, int num_dropout, int num_add, int num_labels_flip, int num_features_flip, int feature_flip_index, float feature_flip_amt) {
+TrainingReferencesWithDropout::TrainingReferencesWithDropout(DataReferences training_references, int num_dropout, int num_add, std::pair<int, int> add_sens_info, int num_labels_flip, std::pair<int, int> label_sens_info, int num_features_flip, int feature_flip_index, float feature_flip_amt) {
     this->training_references = training_references;
     this->num_dropout = num_dropout;
     this->num_add = num_add;
+    this->add_sens_info = add_sens_info;
     this->num_labels_flip = num_labels_flip;
+    this->label_sens_info = label_sens_info;
     this->num_features_flip = num_features_flip;
     this->feature_flip_index = feature_flip_index;
     this->feature_flip_amt = feature_flip_amt;
@@ -65,8 +67,11 @@ std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDr
     for(auto i = iters.begin(); i != iters.end(); i++) {
         int total_ct = std::accumulate((*i)->counts.cbegin(), (*i)->counts.cend(), 0);
         (*i)->num_dropout = std::min(num_dropout, total_ct);
+        // TO DO ANNA - correct for one-sided cases for extra precision. Not needed for soundness.
         (*i)->num_labels_flip = std::min(num_labels_flip, total_ct);
+        (*i)->label_sens_info = label_sens_info;
         (*i)->num_add = num_add;
+        (*i)->add_sens_info = add_sens_info;
         (*i)->num_features_flip = std::min(num_features_flip, total_ct);
         (*i)->feature_flip_index = feature_flip_index;
         (*i)->feature_flip_amt = feature_flip_amt;
@@ -88,7 +93,7 @@ TrainingReferencesWithDropout TrainingReferencesWithDropout::pureSetRestriction(
     }
     // We will only call this when it's guaranteed to be non-trivial,
     // so we need not check that num_removed <= num_dropout
-    return TrainingReferencesWithDropout(training_copy, num_dropout - num_removed, num_add, num_labels_flip, num_features_flip, feature_flip_index, feature_flip_amt);
+    return TrainingReferencesWithDropout(training_copy, num_dropout - num_removed, num_add, add_sens_info, num_labels_flip, label_sens_info, num_features_flip, feature_flip_index, feature_flip_amt);
 }
 
 TrainingReferencesWithDropout TrainingReferencesWithDropout::filter(const SymbolicPredicate &phi, bool positive_flag) const {
@@ -143,10 +148,12 @@ TrainingReferencesWithDropout TrainingSetDropoutDomain::meetImpurityEqualsZero(c
     }
     std::vector<int> counts = element.baseCounts();
     std::list<int> pure_possible_classes(0);
+    // TO DO ANNA adjust for one-sided for additional precision, not needed for soundness
     for(unsigned int i = 0; i < counts.size(); i++) {
         // It's possible that all but the i-class elements could be removed (??? fix this Anna?)
         // We could drop or flip the label on all elements not in this class, i.e. it's possible that 100% of elements belong to this class
         if(element.training_references.size() - counts[i] <= (element.num_dropout + element.num_labels_flip)) {
+            // TO DO ONE-sided: this is nly true if the remaining counts have correct one-sided feature val
             pure_possible_classes.push_back(i);
         }
     }
@@ -186,7 +193,7 @@ TrainingReferencesWithDropout TrainingSetDropoutDomain::binary_join(const Traini
     int new_labels = std::max(e1.num_labels_flip, e2.num_labels_flip);
     int new_add = std::max(e1.num_add, e2.num_add);
     int new_flip = std::max(e1.num_features_flip, e2.num_features_flip);
-    return TrainingReferencesWithDropout(d, std::max(n1, n2), new_add ,new_labels, new_flip, e1.feature_flip_index, e1.feature_flip_amt);
+    return TrainingReferencesWithDropout(d, std::max(n1, n2), new_add, e1.add_sens_info, new_labels, e1.label_sens_info,  new_flip, e1.feature_flip_index, e1.feature_flip_amt);
 }
 
 /**
@@ -301,6 +308,8 @@ PosteriorDistributionAbstraction PosteriorDistributionIntervalDomain::binary_joi
 // First two auxiliary methods
 
 inline bool couldBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
+    // TO DO ANNA - question, for feature manipulation is this different? Because we could manipulate the feature of elements to move them to other branch?
+    // would also mean mustBeEmpty is always false when we can change feat. that phi looks at
     return std::accumulate(counts.counts.begin(), counts.counts.end(), 0) <= counts.num_dropout;
 }
 
@@ -325,12 +334,16 @@ void BoxDropoutDomain::computePredicatesAndScores(std::list<ScoreEntry> &exists_
 
 void BoxDropoutDomain::computeBooleanFeaturePredicateAndScore(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropout &training_set_abstraction, int feature_index) const {
     SymbolicPredicate phi(feature_index);
+    // TO DO ANNA adjust for one-sided 
+    // leaving for now because all of our features are numeric, this would be helpful for precision but it is not necessary for soundness
     auto counts = training_set_abstraction.splitCounts(phi);
+    // TO DO  - update num_labels_flip here because Joint Impurity expects it to be one-sided up to date
     if(!mustBeEmpty(counts.first) && !mustBeEmpty(counts.second)) {
         Interval<double> temp = jointImpurity(counts.first.counts,
                                               counts.first.num_dropout, counts.first.num_add, counts.first.num_labels_flip, counts.first.num_features_flip,
                                               counts.second.counts,
-                                              counts.second.num_dropout, counts.second.num_add, counts.second.num_labels_flip, counts.second.num_features_flip);
+                                              counts.second.num_dropout, counts.second.num_add, counts.second.num_labels_flip, counts.second.num_features_flip,
+                                              training_set_abstraction.label_sens_info, training_set_abstraction.add_sens_info);
         exists_nontrivial.push_back(std::make_pair(phi, temp));
         if(!couldBeEmpty(counts.first) && !couldBeEmpty(counts.second)) {
             forall_nontrivial.push_back(&exists_nontrivial.back());
@@ -339,31 +352,38 @@ void BoxDropoutDomain::computeBooleanFeaturePredicateAndScore(std::list<ScoreEnt
 }
 
 void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropout &training_set_abstraction, int feature_index) const {
-    std::vector<std::pair<float,int>> value_class_pairs(training_set_abstraction.training_references.size());
-    // Access the data, only looking at the feature that is relevant for this predicate
-    // TO DO ANNA ONE SIDED - also need to access t (for one-sided label-flipping, data addition, and feature poisoning)
-    //              restructure value_class_pairs to be an array?
-    
-    // TO DO - does this work with lb and ub? I don't get
+    // 0 is value of item that phi looks at, 1 is label, 2 is value of label-flipping target, 3 is value of adding target
+    std::vector<std::tuple<float,int, int, int>> value_class_pairs(training_set_abstraction.training_references.size());
+
+    // Access the data, only looking at the feature that is relevant for this predicate and for one-sided data poisoning
     for(unsigned int j = 0; j < training_set_abstraction.training_references.size(); j++) {
         DataRow temp = training_set_abstraction.training_references[j];
-        value_class_pairs[j].first = temp.x[feature_index].getNumericValue();
-        value_class_pairs[j].second = temp.y;
+       std:: get<0>(value_class_pairs[j]) = temp.x[feature_index].getNumericValue();
+       std::get<1>(value_class_pairs[j]) = temp.y;
+        if (training_set_abstraction.label_sens_info.first > -1) {
+            std::get<2>(value_class_pairs[j]) = temp.x[training_set_abstraction.label_sens_info.first].getNumericValue();
+        }
+        if (training_set_abstraction.add_sens_info.first > -1) {
+            std::get<3>(value_class_pairs[j]) = temp.x[training_set_abstraction.add_sens_info.first].getNumericValue();
+        }
     }
     if(value_class_pairs.size() < 2) {
         return;
     }
     
     std::sort(value_class_pairs.begin(), value_class_pairs.end(),
-              [](const std::pair<float,int> &p1, const std::pair<float,int> &p2)
-              { return p1.first < p2.first; } );
+              [](const std::tuple<float,int, int, int> &p1, const std::tuple<float,int, int, int> &p2)
+              { return std::get<0>(p1) < std::get<0>(p2); } );
     std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDropout::DropoutCounts> split_counts = {
             { std::vector<int>(training_set_abstraction.training_references.getNumCategories(), 0), 0 },
-            { training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout, training_set_abstraction.num_add, 
-                training_set_abstraction.num_labels_flip, training_set_abstraction.num_features_flip, 
-                training_set_abstraction.feature_flip_index, training_set_abstraction.feature_flip_amt } };
+            { training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout, training_set_abstraction.num_add,
+                training_set_abstraction.add_sens_info, training_set_abstraction.num_labels_flip, training_set_abstraction.label_sens_info,
+                training_set_abstraction.num_features_flip, training_set_abstraction.feature_flip_index, training_set_abstraction.feature_flip_amt } };
     
     split_counts.first.num_add = training_set_abstraction.num_add;
+
+    int num_label_first = 0;
+    int num_label_second = 0;
 
     // iterating through training data elements    
     if (feature_index == training_set_abstraction.feature_flip_index) {
@@ -372,27 +392,32 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
         std::list<float> vals_of_phi = {};
 
         for (auto i = value_class_pairs.begin(); i + 1 != value_class_pairs.end(); i++) {
+            if (training_set_abstraction.label_sens_info.first > -1) {
+                if (std::get<2>(*i) == training_set_abstraction.label_sens_info.second) {
+                    num_label_second += 1;
+                }
+            }
             // If value of this and same match, just continue to next one
-            if(i->first == (i+1)->first) {
+            if(std::get<0>(*i) == std::get<0>(*(i+1))) {
                 continue;
             }
 
-            vals_of_phi.push_back(i->first - feat_flip_amt);
-            vals_of_phi.push_back(i->first);
-            vals_of_phi.push_back(i->first + feat_flip_amt);
+            vals_of_phi.push_back(std::get<0>(*i) - feat_flip_amt);
+            vals_of_phi.push_back(std::get<0>(*i));
+            vals_of_phi.push_back(std::get<0>(*i) + feat_flip_amt);
 
             // this is a lil weird but I think keeping (i+1)->first makes sense because there's not a great alternative
             // hmm, this could cause weirdness in the next section if i->first + 1 > (i+1)->first or similar for lower bound
-            phis_to_add.push_back(SymbolicPredicate(feature_index, i->first - feat_flip_amt, (i+1)->first));
-            phis_to_add.push_back(SymbolicPredicate(feature_index, i->first + feat_flip_amt, std::max((i+1)->first, i->first + feat_flip_amt)));
+            phis_to_add.push_back(SymbolicPredicate(feature_index, std::get<0>(*i) - feat_flip_amt, std::get<0>(*(i+1))));
+            phis_to_add.push_back(SymbolicPredicate(feature_index, std::get<0>(*i) + feat_flip_amt, std::max(std::get<0>(*(i+1)), std::get<0>(*i) + feat_flip_amt)));
 
             // Otherwise, add phi to list to (eventually) add
-            phis_to_add.push_back(SymbolicPredicate(feature_index, i->first, (i+1)->first));
+            phis_to_add.push_back(SymbolicPredicate(feature_index, std::get<0>(*i), std::get<0>(*(i+1))));
         }
 
-        vals_of_phi.push_back(value_class_pairs.end()->first - feat_flip_amt);
-        vals_of_phi.push_back(value_class_pairs.end()->first);
-        vals_of_phi.push_back(value_class_pairs.end()->first + feat_flip_amt);
+        vals_of_phi.push_back(std::get<0>(*(value_class_pairs.end())) - feat_flip_amt);
+        vals_of_phi.push_back(std::get<0>(*(value_class_pairs.end())));
+        vals_of_phi.push_back(std::get<0>(*(value_class_pairs.end())) + feat_flip_amt);
 
         vals_of_phi.sort([](const float a, const float b) { return a < b; });
 
@@ -429,15 +454,15 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
                 // n will be the total number of superfluous elements
                 // for split_counts.first, all elements in (lb, lb+f] are potentially superfluous and up to f
                 // elements in (B-fa, B] are superfluous. Flipped for split_counts.second.
-                if (item.first < lb - feat_flip_amt) {
+                if (std::get<0>(item) < lb - feat_flip_amt) {
                     two_less += 1; // we won't have to consider this index again, next phi lb will be higher
-                } else if (item.first < lb) {
+                } else if (std::get<0>(item) < lb) {
                     if (num_dropout_inclusive_first < training_set_abstraction.num_features_flip) {
                         num_dropout_inclusive_first += 1;
                     }
                     num_dropout_iffy_second += 1;
                 }
-                else if (item.first < lb + feat_flip_amt) {
+                else if (std::get<0>(item) < lb + feat_flip_amt) {
                     if (num_dropout_inclusive_second < training_set_abstraction.num_features_flip) {
                         num_dropout_inclusive_second += 1;
                     }
@@ -453,9 +478,15 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
             // For anything in [start, lb+1), add to split_counts.first
             for (int i=start; i<value_class_pairs.size(); i++) {
                 auto item = value_class_pairs[i];
-                if (item.first < lb + feat_flip_amt) {
-                    split_counts.first.counts[item.second]++;
+                if (std::get<0>(item) < lb + feat_flip_amt) {
+                    split_counts.first.counts[std::get<1>(item)]++;
                     start += 1;
+
+                    if (training_set_abstraction.label_sens_info.first > -1) {
+                        if (std::get<2>(item) == training_set_abstraction.label_sens_info.second) {
+                            num_label_first += 1;
+                        }
+                    }
                 } else {
                     break;
                 }
@@ -464,29 +495,43 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
             // For anything in [last_removed, lb-1), remove it from split_counts.second
             for (int i=last_removed; i<start; i++) {
                 auto item = value_class_pairs[i];
-                if (item.first < lb - feat_flip_amt) {
-                    split_counts.second.counts[item.second]--;
+                if (std::get<0>(item) < lb - feat_flip_amt) {
+                    split_counts.second.counts[std::get<1>(item)]--;
                     last_removed += 1;
+
+                    if (training_set_abstraction.label_sens_info.first > -1) {
+                        if (std::get<2>(item) == training_set_abstraction.label_sens_info.second) {
+                            num_label_second -= 1;
+                        }
+                    }
                 } else {
                     break;
                 }
             }
 
             // update n, l, and f
+            // TO DO ANNA - special one-sided addition case: if phi looks at feature, should set to 0 on one branch
+            // ^ would add more precision, but not needed for soundness so I'm leaving for now - hard to mesh = with phi's <
             int remaining = std::accumulate(split_counts.first.counts.cbegin(), split_counts.first.counts.cend(), 0);
             split_counts.first.num_dropout = std::min(remaining, training_set_abstraction.num_dropout + num_dropout_incr_first);
-            if (split_counts.first.num_labels_flip < training_set_abstraction.num_labels_flip) {
+            if ((training_set_abstraction.label_sens_info.first > -1) && (split_counts.first.num_labels_flip < num_label_first) && (split_counts.first.num_labels_flip < training_set_abstraction.num_labels_flip)) {
+                split_counts.first.num_labels_flip++;
+            } else if (split_counts.first.num_labels_flip < training_set_abstraction.num_labels_flip) {
                 split_counts.first.num_labels_flip++;
             }
+
             if (split_counts.first.num_features_flip < training_set_abstraction.num_features_flip) {
                 split_counts.first.num_features_flip++;
             }
 
             remaining = std::accumulate(split_counts.second.counts.cbegin(), split_counts.second.counts.cend(), 0);
             split_counts.second.num_dropout = std::min(remaining, training_set_abstraction.num_dropout + num_dropout_incr_second);
-            if (remaining < split_counts.second.num_labels_flip) {
+            if ((training_set_abstraction.label_sens_info.first > -1 ) && (num_label_second < split_counts.second.num_labels_flip)) {
+                split_counts.second.num_labels_flip = num_label_second;
+            } else if (remaining < split_counts.second.num_labels_flip) {
                 split_counts.second.num_labels_flip = remaining;
             }
+
             if (remaining < split_counts.second.num_features_flip) {
                 split_counts.second.num_features_flip = remaining;
             }
@@ -496,7 +541,8 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
                                         split_counts.first.num_labels_flip, split_counts.first.num_features_flip,
                                         split_counts.second.counts,
                                         split_counts.second.num_dropout, split_counts.second.num_add,
-                                        split_counts.second.num_labels_flip, split_counts.second.num_features_flip);
+                                        split_counts.second.num_labels_flip, split_counts.second.num_features_flip,
+                                        training_set_abstraction.label_sens_info, training_set_abstraction.add_sens_info);
             exists_nontrivial.push_back(std::make_pair(phi, temp));
             if (!couldBeEmpty(split_counts.first) && !couldBeEmpty(split_counts.second)) {
                 forall_nontrivial.push_back(&exists_nontrivial.back());
@@ -504,13 +550,29 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
         }
     }
     else {
+        if (training_set_abstraction.label_sens_info.first > -1) {
+            for (auto i = value_class_pairs.begin(); i != value_class_pairs.end(); i++) {
+                if (std::get<2>(*i) == training_set_abstraction.label_sens_info.second) {
+                    num_label_second += 1;
+                }
+            }
+        }
+        
         for(auto i = value_class_pairs.begin(); i + 1 != value_class_pairs.end(); i++) {
 
-            split_counts.first.counts[i->second]++;
+            split_counts.first.counts[std::get<1>(*i)]++;
+            if ((training_set_abstraction.label_sens_info.first > -1) && (std::get<2>(*i) == training_set_abstraction.label_sens_info.second) ) {
+                num_label_first += 1;
+                num_label_second -= 1;
+            }
+
             if(split_counts.first.num_dropout < training_set_abstraction.num_dropout) {
                 split_counts.first.num_dropout++;
             }
-            if (split_counts.first.num_labels_flip < training_set_abstraction.num_labels_flip) {
+
+            if ((training_set_abstraction.label_sens_info.first > -1) && (split_counts.first.num_labels_flip < num_label_first) && (split_counts.first.num_labels_flip < training_set_abstraction.num_labels_flip)) {
+                split_counts.first.num_labels_flip++;
+            } else if (split_counts.first.num_labels_flip < training_set_abstraction.num_labels_flip) {
                 split_counts.first.num_labels_flip++;
             }
 
@@ -518,31 +580,35 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
                 split_counts.second.num_features_flip++;
             }
 
-            split_counts.second.counts[i->second]--;
+            split_counts.second.counts[std::get<1>(*i)]--;
             int remaining = std::accumulate(split_counts.second.counts.cbegin(), split_counts.second.counts.cend(), 0);
             if (remaining < split_counts.second.num_dropout) {
                 split_counts.second.num_dropout=remaining;
             }
-            if (remaining < split_counts.second.num_labels_flip) {
+            if ((training_set_abstraction.label_sens_info.first > -1) && (num_label_second < split_counts.second.num_labels_flip)) {
+                split_counts.second.num_labels_flip = num_label_second;
+            } else if (remaining < split_counts.second.num_labels_flip) {
                 split_counts.second.num_labels_flip = remaining;
             }
+
             if (remaining < split_counts.second.num_features_flip) {
                 split_counts.second.num_features_flip = remaining;
             }
 
-            if(i->first == (i+1)->first) {
+            if(std::get<0>(*i) == std::get<0>(*(i+1))) {
                 continue;
             }
 
             // At this point, the check for if we should include in exists_nontrivial would always pass.
             // For each adjacent pair (l,u) store a symbolic predicate x<=[l,u)
-            SymbolicPredicate phi(feature_index, i->first, (i+1)->first);
+            SymbolicPredicate phi(feature_index, std::get<0>(*i), std::get<0>(*(i+1)));
             Interval<double> temp = jointImpurity(split_counts.first.counts,
                                         split_counts.first.num_dropout, split_counts.first.num_add,
                                         split_counts.first.num_labels_flip, split_counts.first.num_features_flip,
                                         split_counts.second.counts,
                                         split_counts.second.num_dropout, split_counts.second.num_add,
-                                        split_counts.second.num_labels_flip, split_counts.second.num_features_flip);
+                                        split_counts.second.num_labels_flip, split_counts.second.num_features_flip,
+                                        training_set_abstraction.label_sens_info, training_set_abstraction.add_sens_info);
             exists_nontrivial.push_back(std::make_pair(phi, temp));
             if (!couldBeEmpty(split_counts.first) && !couldBeEmpty(split_counts.second)) {
                 forall_nontrivial.push_back(&exists_nontrivial.back());
@@ -609,5 +675,7 @@ TrainingReferencesWithDropout BoxDropoutDomain::filterNegated(const TrainingRefe
 }
 
 PosteriorDistributionAbstraction BoxDropoutDomain::summary(const TrainingReferencesWithDropout &training_set_abstraction) const {
-    return estimateCategorical(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout, training_set_abstraction.num_add, training_set_abstraction.num_labels_flip, training_set_abstraction.num_features_flip);
+    return estimateCategorical(training_set_abstraction.baseCounts(), training_set_abstraction.num_dropout, training_set_abstraction.num_add,
+                            training_set_abstraction.num_labels_flip, training_set_abstraction.num_features_flip, 
+                            training_set_abstraction.label_sens_info, training_set_abstraction.add_sens_info);
 }

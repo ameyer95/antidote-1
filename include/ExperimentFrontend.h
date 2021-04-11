@@ -34,7 +34,9 @@ private:
         bool with_disjuncts; // When true, use_abstract must also be true, and this says to do the more precise domain
         int num_dropout; // For when use_abstract == true
         int num_add;
+        std::pair<int, int> add_sens_info;
         int num_labels_flip;
+        std::pair<int, int>  label_sens_info;
         int num_features_flip;
         int feature_flip_index;
         float feature_flip_amt;
@@ -44,7 +46,9 @@ private:
             bool flag; // Whether to do a random test
             int num_dropout;
             int num_add;
+            std::pair<int, int> add_sens_info;
             int num_labels_flip;
+            std::pair<int, int>  label_sens_info;
             int num_features_flip;
             int feature_flip_index;
             float feature_flip_amt;

@@ -83,16 +83,16 @@ ExperimentBackend::Result<double> ExperimentBackend::run_concrete(int depth, int
     return { ret, softMax(ret), groundTruth(test_index) };
 }
 
-ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract(int depth, int test_index, int num_dropout, 
-                                                                            int num_add, int num_labels_flip, int num_features_flip, 
-                                                                            int feature_flip_index, float feature_flip_amt) {
+ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract(int depth, int test_index, int num_dropout, int num_add, 
+                                                                            std::pair<int, int> add_sens_info, int num_labels_flip, std::pair<int, int> label_sens_info,
+                                                                            int num_features_flip, int feature_flip_index, float feature_flip_amt) {
     ProgramNode *program = buildTree(depth);
     DropoutDomains d;
     BoxDropoutSemantics sem(&d.box_domain);
     FeatureVector test_input = test->rows[test_index].x;
     DataReferences training_references(training);
     BoxDropoutDomain::AbstractionType initial_state = {
-        TrainingReferencesWithDropout(training_references, num_dropout, num_add, num_labels_flip, num_features_flip, feature_flip_index, feature_flip_amt),
+        TrainingReferencesWithDropout(training_references, num_dropout, num_add, add_sens_info, num_labels_flip, label_sens_info, num_features_flip, feature_flip_index, feature_flip_amt),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
         PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
     };
@@ -104,9 +104,9 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract(int 
 
 }
 
-ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_disjuncts(int depth, int test_index, int num_dropout, 
-                                                                                int num_add, int num_labels_flip, int num_features_flip, 
-                                                                                int feature_flip_index, float feature_flip_amt) {
+ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_disjuncts(int depth, int test_index, int num_dropout, int num_add, 
+                                                                            std::pair<int, int> add_sens_info, int num_labels_flip, std::pair<int, int> label_sens_info,
+                                                                            int num_features_flip, int feature_flip_index, float feature_flip_amt) {
     ProgramNode *program = buildTree(depth);
 
     DropoutDomains d;
@@ -114,7 +114,7 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_disj
     FeatureVector test_input = test->rows[test_index].x;
     DataReferences training_references(training);
     BoxDropoutDomain::AbstractionType initial_box = {
-        TrainingReferencesWithDropout(training_references, num_dropout, num_add, num_labels_flip, num_features_flip, feature_flip_index, feature_flip_amt),
+        TrainingReferencesWithDropout(training_references, num_dropout, num_add, add_sens_info, num_labels_flip, label_sens_info, num_features_flip, feature_flip_index, feature_flip_amt),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
         PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
     };
@@ -129,9 +129,9 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_disj
     return { ret, softMax(ret), groundTruth(test_index) };
 }
 
-ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, 
-                                                                                            int num_add, int num_labels_flip, int num_features_flip, int feature_flip_index,
-                                                                                            float feature_flip_amt, int disjunct_bound, const DisjunctsMergeMode &merge_mode) {
+ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_bounded_disjuncts(int depth, int test_index, int num_dropout, int num_add, 
+                                                                            std::pair<int, int> add_sens_info, int num_labels_flip, std::pair<int, int> label_sens_info,
+                                                                            int num_features_flip, int feature_flip_index, float feature_flip_amt, int disjunct_bound, const DisjunctsMergeMode &merge_mode) {
     ProgramNode *program = buildTree(depth);
     DropoutDomains d;
     FeatureVector test_input = test->rows[test_index].x;
@@ -140,7 +140,7 @@ ExperimentBackend::Result<Interval<double>> ExperimentBackend::run_abstract_boun
     BoxDisjunctsDropoutSemantics sem(&d.bounded_disjuncts_domain);
     DataReferences training_references(training);
     BoxDropoutDomain::AbstractionType initial_box = {
-        TrainingReferencesWithDropout(training_references, num_dropout, num_add, num_labels_flip, num_features_flip, feature_flip_index, feature_flip_amt),
+        TrainingReferencesWithDropout(training_references, num_dropout, num_add, add_sens_info, num_labels_flip, label_sens_info, num_features_flip, feature_flip_index, feature_flip_amt),
         PredicateAbstraction(1), // XXX any non-bot value, ideally top?
         PosteriorDistributionAbstraction(1) // XXX any non-bot value, ideally top?
     };

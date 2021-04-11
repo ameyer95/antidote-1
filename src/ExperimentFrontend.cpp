@@ -89,6 +89,8 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.createArgument("label_flipping", "-l", 1, "Number of labels to flip", true);
     p.createArgument("missing_data", "-m", 1, "Number of missing elements to add", true);
     p.createArgument("feature_flipping", "-f", 3, "(1) Number of features to perturb, (2) index of the feature we can perturb, (3) amount we can perturb feature by (1 for boolean features)", true);
+    p.createArgument("label_flipping_one", "-l1", 3, "One-sided label flipping, first argument is number of labels to flip, second is the index of target feature, and third is value of target feature", true);
+    p.createArgument("missing_data_one", "-m1", 3, "One-sided missing data, first argument is number of missing data points, second is index of target feature, third is protected value of target feature", true);
 
     // parameter 1 should be index in dataset of protected variable
     // parameter 2 should be a list of protected values
@@ -102,6 +104,9 @@ void ExperimentFrontend::createCommandLineArguments() {
     p.requireAtLeastOne({"test_all", "test_indices"});
     p.requireAtMostOne({"test_all", "test_indices"});
     p.requireAtMostOne({"use_abstract", "use_disjuncts", "random_test"});
+
+    p.requireAtMostOne({"label_flipping", "label_flipping_one"});
+    p.requireAtMostOne({"missing_data", "missing_data_one"});
 
     p.requireTokenInSet("disjunct_bound", 1, merge_options);
     p.requireTokenInSet("dataset", 1, dataset_options);
@@ -146,12 +151,12 @@ void ExperimentFrontend::performAbstractTests(int depth, int test_index) {
     output(message);
     ExperimentBackend::Result<Interval<double>> ret;
     if(!params.with_disjuncts) {
-        ret = e->run_abstract(depth, test_index, params.num_dropout, params.num_add, params.num_labels_flip, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt);
+        ret = e->run_abstract(depth, test_index, params.num_dropout, params.num_add, params.add_sens_info, params.num_labels_flip, params.label_sens_info, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt);
     } else {
         if(params.disjunct_bound.has_value()) {
-            ret = e->run_abstract_bounded_disjuncts(depth, test_index, params.num_dropout, params.num_add, params.num_labels_flip, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt, params.disjunct_bound.value(), params.merge_mode);
+            ret = e->run_abstract_bounded_disjuncts(depth, test_index, params.num_dropout, params.num_add, params.add_sens_info, params.num_labels_flip, params.label_sens_info, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt, params.disjunct_bound.value(), params.merge_mode);
         } else {
-            ret = e->run_abstract_disjuncts(depth, test_index, params.num_dropout, params.num_add, params.num_labels_flip, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt);
+            ret = e->run_abstract_disjuncts(depth, test_index, params.num_dropout, params.num_add, params.add_sens_info, params.num_labels_flip, params.label_sens_info, params.num_features_flip, params.feature_flip_index, params.feature_flip_amt);
         }
     }
     output(output_to_json(depth, test_index, ret), true);  
@@ -268,14 +273,26 @@ bool ExperimentFrontend::processCommandLineArguments(int argc, char ** const &ar
 
         if (p["label_flipping"].included) {
             params.num_labels_flip = std::stoi(p["label_flipping"].tokens[0]);
-        } else {
+            params.label_sens_info.first = -1;
+        } else if (p["label_flipping_one"].included) {
+            params.num_labels_flip = std::stoi(p["label_flipping_one"].tokens[0]);
+            params.label_sens_info.first = std::stoi(p["label_flipping_one"].tokens[1]);
+            params.label_sens_info.second = std::stoi(p["label_flipping_one"].tokens[2]);
+         } else {
             params.num_labels_flip = 0;
+            params.label_sens_info.first = -1;
         }
 
         if (p["missing_data"].included) {
             params.num_add = std::stoi(p["missing_data"].tokens[0]);
+            params.add_sens_info.first = -1;
+        } else if (p["missing_data_one"].included) {
+            params.num_add = std::stoi(p["missing_data_one"].tokens[0]);
+            params.add_sens_info.first = std::stoi(p["missing_data_one"].tokens[1]);
+            params.add_sens_info.second = std::stoi(p["missing_data_one"].tokens[2]);
         } else {
             params.num_add = 0;
+            params.add_sens_info.first = -1;
         }
 
         if (p["feature_flipping"].included) {

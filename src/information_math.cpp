@@ -5,13 +5,17 @@
 #include <numeric> // for std::accumulate (easy summations)
 #include <utility>
 #include <vector>
+#include <iostream>
 using namespace std;
 
+double estimateBernoulli0(const BinarySamples &counts) {
+    return (double)counts.num_zeros / (counts.num_zeros + counts.num_ones);
+}
 double estimateBernoulli(const BinarySamples &counts) {
     return (double)counts.num_ones / (counts.num_zeros + counts.num_ones);
 }
 
-Interval<double> estimateBernoulli(const BinarySamples &counts, int num_dropout, int num_add, int num_labels_flip, int num_features_flip) {
+Interval<double> estimateBernoulli(const BinarySamples &counts, int num_dropout, int num_add, int num_labels_flip, int num_features_flip, std::pair<int, int> label_sens_info, std::pair<int, int> add_sens_info) {
     // When num_dropout >= num_zeros + num_ones, anything is possible.
     // In the == case, this is because we assume estimating from an empty set is undefined behavior.
     if(counts.num_zeros + counts.num_ones <= num_dropout) {
@@ -27,11 +31,23 @@ Interval<double> estimateBernoulli(const BinarySamples &counts, int num_dropout,
     // or when maximally many 0s are removed.
     // (This is more precise than the obvious count-interval division)
     BinarySamples minimizer, maximizer;
-    minimizer.num_zeros = min(counts.num_zeros + num_labels_flip + num_add, counts.num_zeros + counts.num_ones + num_add);
-    minimizer.num_ones = max(0, counts.num_ones - num_dropout - num_labels_flip);
-    maximizer.num_zeros = max(0, counts.num_zeros - num_dropout - num_labels_flip);
     maximizer.num_ones = min(counts.num_ones + num_labels_flip + num_add, counts.num_zeros + counts.num_ones + num_add);
-
+    maximizer.num_zeros = max(0, counts.num_zeros - num_dropout - num_labels_flip);
+    
+    if (label_sens_info.first > -1) {
+        minimizer.num_ones = max(0, counts.num_ones - num_dropout);
+        if (add_sens_info.first > -1) {
+            minimizer.num_zeros = counts.num_zeros; // can't increase # of zeros
+        } else {
+            minimizer.num_zeros = counts.num_zeros + num_add; // can't flip any labels from 0 to 1
+        }
+    } else if (add_sens_info.first > -1) {
+        minimizer.num_ones = max(0, counts.num_ones - num_dropout - num_labels_flip);
+        minimizer.num_zeros = min(counts.num_zeros + num_labels_flip, counts.num_zeros + counts.num_ones); // Can't add label 0
+    } else {
+        minimizer.num_ones = max(0, counts.num_ones - num_dropout - num_labels_flip);
+        minimizer.num_zeros = min(counts.num_zeros + num_labels_flip + num_add, counts.num_zeros + counts.num_ones + num_add);
+    }
     return Interval<double>(estimateBernoulli(minimizer), estimateBernoulli(maximizer));
 }
 
@@ -40,8 +56,8 @@ double impurity(const BinarySamples &counts) {
     return p * (1-p) / 2; // Gini impurity
 }
 
-Interval<double> impurity(const BinarySamples &counts, int num_dropout, int num_add, int num_labels_flip, int num_features_flip) {
-    Interval<double> p = estimateBernoulli(counts, num_dropout, num_add, num_labels_flip, num_features_flip);
+Interval<double> impurity(const BinarySamples &counts, int num_dropout, int num_add, int num_labels_flip, int num_features_flip, std::pair<int, int> label_sens_info, std::pair<int, int> add_sens_info) {
+    Interval<double> p = estimateBernoulli(counts, num_dropout, num_add, num_labels_flip, num_features_flip, label_sens_info, add_sens_info);
     return p * (Interval<double>(1) - p) * Interval<double>(2);
 }
 
@@ -51,13 +67,14 @@ double jointImpurity(const BinarySamples &counts1, const BinarySamples &counts2)
 }
 
 Interval<double> jointImpurity(const BinarySamples &counts1, int num_dropout1, int num_add1, int num_labels_flip1, int num_features_flip1,
-                             const BinarySamples &counts2, int num_dropout2, int num_add2, int num_labels_flip2, int num_features_flip2) {
+                             const BinarySamples &counts2, int num_dropout2, int num_add2, int num_labels_flip2, int num_features_flip2, 
+                             std::pair<int, int> label_sens_info, std::pair<int, int> add_sens_info) {
     int total1 = counts1.num_zeros + counts1.num_ones;
     int total2 = counts2.num_zeros + counts2.num_ones;
     Interval<double> size1(total1 - num_dropout1, total1 + num_add1);
     Interval<double> size2(total2 - num_dropout2, total2 + num_add2);
-    return size1 * impurity(counts1, num_dropout1, num_add1, num_labels_flip1, num_features_flip2) + 
-            size2 * impurity(counts2, num_dropout2, num_add2, num_labels_flip2, num_features_flip2);
+    return size1 * impurity(counts1, num_dropout1, num_add1, num_labels_flip1, num_features_flip2, label_sens_info, add_sens_info) + 
+            size2 * impurity(counts2, num_dropout2, num_add2, num_labels_flip2, num_features_flip2, label_sens_info, add_sens_info);
 }
 
 CategoricalDistribution<double> estimateCategorical(const std::vector<int> &counts) {
@@ -84,7 +101,7 @@ double jointImpurity(const vector<int> &counts1, const vector<int> &counts2) {
     return total1 * impurity(counts1) + total2 * impurity(counts2);
 }
 
-CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<int> &counts, int num_dropout, int num_add, int num_labels_flip, int num_features_flip) {
+CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<int> &counts, int num_dropout, int num_add, int num_labels_flip, int num_features_flip, std::pair<int, int> label_sens_info, std::pair<int, int> add_sens_info) {
     int count_total = accumulate(counts.cbegin(), counts.cend(), 0);
     // When num_dropout >= count_total, anything is possible.
     // In the == case, this is because we assume estimating from an empty set is undefined behavior.
@@ -101,23 +118,37 @@ CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<
     // Since this is effectively computing an average of a collection of 0s and 1s,
     // extremal behavior occurs either when maximally many 1s are removed
     // or when maximally many 0s are removed.
-    // (This is more precise than the obvious count-interval division)
-
-    for(unsigned int i = 0; i < ret.size(); i++) {
-        int count_not_y = count_total - counts[i];
-        BinarySamples minimizer, maximizer;
-        maximizer.num_ones = min(counts[i] + num_labels_flip + num_add, count_total + num_add);
-        maximizer.num_zeros = max(0, count_not_y - num_dropout - num_labels_flip);
-        minimizer.num_ones = max(0, counts[i] - num_dropout - num_labels_flip);
-        minimizer.num_zeros = min(count_not_y + num_labels_flip + num_add, count_total + num_add);
-        ret[i] = Interval<double>(estimateBernoulli(minimizer), estimateBernoulli(maximizer));
+    // (This is more precise than the obvious count-interval division)    
+    int count0 = counts[0];
+    int count1 = counts[1];
+    BinarySamples minimizer, maximizer;
+    maximizer.num_ones = min(count1 + num_labels_flip + num_add, count_total + num_add);
+    maximizer.num_zeros = max(0, count0 - num_dropout - num_labels_flip);
+    if (label_sens_info.first > -1) {
+        minimizer.num_ones = max(0, count1 - num_dropout);
+        if (add_sens_info.first > -1) {
+            minimizer.num_zeros = count0; // can't increase # of zeros
+        } else {
+            minimizer.num_zeros = count0 + num_add; // can't flip any labels from 0 to 1
+        }
+    } else if (add_sens_info.first > -1) {
+        minimizer.num_ones = max(0, count1 - num_dropout - num_labels_flip);
+        minimizer.num_zeros = min(count0 + num_labels_flip, count_total); // Can't add label 0
+    } else {
+        minimizer.num_ones = max(0, count1 - num_dropout - num_labels_flip);
+        minimizer.num_zeros = min(count0 + num_labels_flip + num_add, count_total + num_add);
     }
+
+    // question - flip role of min and max in 0 line to have [smaller, larger]?
+    ret[0] = Interval<double>(estimateBernoulli0(maximizer), estimateBernoulli0(minimizer));
+    ret[1] = Interval<double>(estimateBernoulli(minimizer), estimateBernoulli(maximizer));
+    
     return ret; 
 }
 
-Interval<double> impurity(const std::vector<int> &counts, int num_dropout, int num_add, int num_labels_flip, int num_features_flip) {
+Interval<double> impurity(const std::vector<int> &counts, int num_dropout, int num_add, int num_labels_flip, int num_features_flip, std::pair<int, int> label_sens_info, std::pair<int, int> add_sens_info) {
     // TODO can be more precise
-    CategoricalDistribution<Interval<double>> p = estimateCategorical(counts, num_dropout, num_add, num_labels_flip, num_features_flip);
+    CategoricalDistribution<Interval<double>> p = estimateCategorical(counts, num_dropout, num_add, num_labels_flip, num_features_flip, label_sens_info, add_sens_info);
     Interval<double> total(0);
     for(auto i = p.cbegin(); i != p.cend(); i++) {
         total = total + (*i * (Interval<double>(1) - *i));
@@ -126,11 +157,13 @@ Interval<double> impurity(const std::vector<int> &counts, int num_dropout, int n
 }
 
 Interval<double> jointImpurity(const std::vector<int> &counts1, int num_dropout1, int num_add1, int num_labels_flip1, int num_features_flip1,
-                              const std::vector<int> &counts2, int num_dropout2, int num_add2, int num_labels_flip2, int num_features_flip2) {
+                              const std::vector<int> &counts2, int num_dropout2, int num_add2, int num_labels_flip2, int num_features_flip2, 
+                              std::pair<int, int> label_sens_info, std::pair<int, int> add_sens_info) {
+    // In the one-sided case, num_labels_flip is accurate
     int total1 = accumulate(counts1.cbegin(), counts1.cend(), 0);
     int total2 = accumulate(counts2.cbegin(), counts2.cend(), 0);
     Interval<double> size1(total1 - num_dropout1, total1 + num_add1);
     Interval<double> size2(total2 - num_dropout2, total2 + num_add2);
-    return size1 * impurity(counts1, num_dropout1, num_add1, num_labels_flip1, num_features_flip2) + 
-            size2 * impurity(counts2, num_dropout2, num_add2, num_labels_flip2, num_features_flip2);
+    return size1 * impurity(counts1, num_dropout1, num_add1, num_labels_flip1, num_features_flip2, label_sens_info, add_sens_info) + 
+            size2 * impurity(counts2, num_dropout2, num_add2, num_labels_flip2, num_features_flip2, label_sens_info, add_sens_info);
 }

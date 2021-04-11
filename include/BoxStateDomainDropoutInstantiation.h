@@ -30,7 +30,9 @@ public:
         std::vector<int> counts;
         int num_dropout;
         int num_add;
+        std::pair<int, int> add_sens_info;
         int num_labels_flip;
+        std::pair<int, int> label_sens_info;
         int num_features_flip;
         int feature_flip_index;
         float feature_flip_amt;
@@ -39,13 +41,15 @@ public:
     DataReferences training_references;
     int num_dropout;
     int num_add;
+    std::pair<int, int> add_sens_info;
     int num_labels_flip;
+    std::pair<int, int> label_sens_info;
     int num_features_flip;
     int feature_flip_index;
     float feature_flip_amt;
 
     TrainingReferencesWithDropout() {} // Constructed like this should be a bottom element
-    TrainingReferencesWithDropout(DataReferences training_references, int num_dropout, int num_add, int num_labels_flip, int num_features_flip, int feature_flip_index, float feature_flip_amt);
+    TrainingReferencesWithDropout(DataReferences training_references, int num_dropout, int num_add, std::pair<int, int> add_sens_info, int num_labels_flip, std::pair<int, int> label_sens_info, int num_features_flip, int feature_flip_index, float feature_flip_amt);
 
     std::vector<int> baseCounts() const;
     std::pair<DropoutCounts, DropoutCounts> splitCounts(const SymbolicPredicate &phi) const;
