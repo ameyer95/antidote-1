@@ -32,7 +32,7 @@ const UCIDetails UCI_MAMMOGRAPHY_DETAILS = { "mammographic_masses80.data", "mamm
 const UCIDetails UCI_ADULT_INCOME_DETAILS = {"adult_income.data", "adult_income.test", 17, 14, {15,16}, 48842 };
 const UCIDetails UCI_GERMAN_LOAN_DETAILS = {"german80.data", "german20.data", 22, 21, {}, 1000};
 //const UCIDetails UCI_COMPAS_DETAILS = {"compas_train.data", "compas_test.data",12, 9, {8, 11}, 9380};
-const UCIDetails UCI_COMPAS_DETAILS = {"compas_fairml_train.data", "compas_fairml_test.data", 12, 0, {}, 6172};
+const UCIDetails UCI_COMPAS_DETAILS = {"compas_fairml_train.data", "compas_fairml_test.data", 12, 0, {2}, 6172};
 const UCIDetails UCI_DRUG_CONSUMPTION_DETAILS = {"drug_consumption33.data", "drug_consumption33.test", 13, 12, {}, 1885};
 struct CSVRow {
     std::vector<float> x;
