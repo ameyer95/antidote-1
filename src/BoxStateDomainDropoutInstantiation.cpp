@@ -380,7 +380,10 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
                 training_set_abstraction.add_sens_info, training_set_abstraction.num_labels_flip, training_set_abstraction.label_sens_info,
                 training_set_abstraction.num_features_flip, training_set_abstraction.feature_flip_index, training_set_abstraction.feature_flip_amt } };
     
-    split_counts.first.num_add = training_set_abstraction.num_add;
+    //std::pair<std::vector<int>, std::vector<int>> split_counts_targeted = {
+      //  {std::vector<int>(training_set_abstraction.training_references.getNumCategories(), 0)},
+      //  {std::vector<int>(training_set_abstraction.training_referenes.getNumCategories(), 0)}
+    //};
 
     int num_label_first = 0;
     int num_label_second = 0;

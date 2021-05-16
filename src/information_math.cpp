@@ -36,7 +36,7 @@ Interval<double> estimateBernoulli(const BinarySamples &counts, int num_dropout,
     if (label_sens_info.first > -1) {
         minimizer.num_ones = max(0, counts.num_ones - num_dropout);
         if (add_sens_info.first > -1) {
-            minimizer.num_zeros = counts.num_zeros; // can't increase # of zeros
+            minimizer.num_zeros = counts.num_zeros; //COMPAS: can't increase # of zeros
         } else {
             minimizer.num_zeros = counts.num_zeros + num_add; // can't flip any labels from 0 to 1
         }
@@ -119,14 +119,20 @@ CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<
     int count0 = counts[0];
     int count1 = counts[1];
     BinarySamples minimizer, maximizer;
-    maximizer.num_ones = min(count1 + num_labels_flip + num_add, count0 + count1 + num_add);
-    maximizer.num_zeros = max(0, count0 - num_dropout - num_labels_flip);
+    //maximizer.num_ones = min(count1 + num_labels_flip + num_add, count0 + count1 + num_add); // AI can flip from 0 to 1
+    //maximizer.num_zeros = max(0, count0 - num_dropout - num_labels_flip); // AI can flip from 0 to 1
+    minimizer.num_ones = max(0, count1 - num_dropout - num_labels_flip); // COMPAS can flip from 1 to 0
+    minimizer.num_zeros = min(count0 + num_labels_flip + num_add, count0 + count1 + num_add); // COMPAS can flip from 1 to 0
+
     if (label_sens_info.first > -1) {
-        minimizer.num_ones = max(0, count1 - num_dropout);
+       // minimizer.num_ones = max(0, count1 - num_dropout); // AI can't decrease num ones via label-flipping
+        maximizer.num_ones = min(count1 + num_add, count0 + count1 + num_add); // COMPAS can't increase num ones
         if (add_sens_info.first > -1) {
+            // This needs to be tailored to specific adding rules, right now, not set up for anything in particular
             minimizer.num_zeros = count0; // can't increase # of zeros
         } else {
-            minimizer.num_zeros = count0 + num_add; // can't flip any labels from 0 to 1
+            // minimizer.num_zeros = count0 + num_add; // AI: can't flip any labels from 1 to 0
+            maximizer.num_zeros = max(0, count0 - num_dropout); // COMPAS can't decrease 0's by flipping any to 1's
         }
     } else if (add_sens_info.first > -1) {
         minimizer.num_ones = max(0, count1 - num_dropout - num_labels_flip);
@@ -134,6 +140,8 @@ CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<
     } else {
         minimizer.num_ones = max(0, count1 - num_dropout - num_labels_flip);
         minimizer.num_zeros = min(count0 + num_labels_flip + num_add, count0 + count1 + num_add);
+        maximizer.num_ones = min(count1 + num_labels_flip + num_add, count0 + count1 + num_add);
+        maximizer.num_zeros = max(0, count0 - num_dropout - num_labels_flip); 
     }
 
     // question - flip role of min and max in 0 line to have [smaller, larger]?
@@ -141,10 +149,14 @@ CategoricalDistribution<Interval<double>> estimateCategorical(const std::vector<
     ret[1] = Interval<double>(estimateBernoulli(minimizer), estimateBernoulli(maximizer));
 
     if (ret[0].get_upper_bound() < ret[0].get_lower_bound()) {
-        std::cout << "PROBLEM INTERVAL IS BACKWARDS" << std::endl;
+        std::cout << "PROBLEM INTERVAL IS BACKWARDS (0)" << std::endl;
+        std::cout << "count0: " << std::to_string(count0) << ", count1: " << std::to_string(count1) << std::endl;
+        std::cout << "max.num0: " << std::to_string(maximizer.num_zeros) << ", max.num1: " << std::to_string(maximizer.num_ones) << ", min.num0: " << std::to_string(minimizer.num_zeros) << ", min.num1: " << std::to_string(minimizer.num_ones) << std::endl;
     }
     if (ret[1].get_upper_bound() < ret[1].get_lower_bound()) {
-        std::cout << "PROBLEM INTERVAL IS BACKWARDS" << std::endl;
+        std::cout << "PROBLEM INTERVAL IS BACKWARDS (1)" << std::endl;
+        std::cout << "count0: " << std::to_string(count0) << ", count1: " << std::to_string(count1) << std::endl;
+
     }
     
     return ret; 
@@ -166,6 +178,7 @@ Interval<double> jointImpurity(const std::vector<int> &counts1, int num_dropout1
     // In the one-sided case, num_labels_flip is accurate
     int total1 = accumulate(counts1.cbegin(), counts1.cend(), 0);
     int total2 = accumulate(counts2.cbegin(), counts2.cend(), 0);
+
     // TO DO ANNA more nuanced for one-sided
     Interval<double> size1(total1 - num_dropout1, total1 + num_add1);
     Interval<double> size2(total2 - num_dropout2, total2 + num_add2);
