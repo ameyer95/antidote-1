@@ -1,9 +1,8 @@
-# AntIDoTe
+# AntIDoTe-P
 
 Using **A**bstract **I**nterpretation to reason about
 **D**ecision-**T**ree learning's robustness to
-training-set-**poisoning** attacks.
-Source is still under active development.
+training-set bias, **P**rogrammable version.
 
 ## Build Instructions
 
