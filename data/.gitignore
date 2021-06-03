@@ -3,7 +3,6 @@
 
 # UCI files
 *.names
-*.data
 *.csv
 *.arff
 
