@@ -41,7 +41,10 @@ E.g.,
 represents a test sample that is robust and that is assigned class 0 with a probability between 0.74 and 0.84.
 
 ### Running multiple tests
+To run the same test on multiple test samples (e.g., testing robustness at 0.5% label flipping on all test data), use scripts/experiment.sh, which takes command-line arguments of dataset, depth, l, m, n, start, and number to run.
+For example, `./scripts/experiment.sh compas 1 8 0 0 0 100 >> test.json` will test robustness against 8 label-flips of the first 100 elements of the COMPAS dataset, and then save the results in a file called test.json. Running this particular test should take fewer than 5 seconds, but testing additional test samples, a higher poisoning threshold, or more time-intensive datasets will take longer. If in doubt, run a single test first to get a sense of the expected time!
 
+To analyze the results of the json file, use scripts/analyze-single-json.py, which takes two parameters: filename, and mnist (1 if running MNIST, 0 for any other dataset). For example, to see the certifiably-robust percentage of the above command, we would run `python3 scripts/analyze-single-json.py scripts/test.json 0`. In this case, the output is 48%. 
 
 ### Running targeted tests
 Antidote-P is currently hard-coded to run targeted tests on any predicate that includes `label=positive`. (E.g., on the COMPAS dataset for race=Black and label=positive.) To change this to use label=positive (e.g., to replicate the Adult Income experiments on gender=Female and label=negative), there are several lines that need to be (un)commented in src/information_math.cpp/estimateCategorical. They all have inline-comments starting with "AI" or "COMPAS". 
