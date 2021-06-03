@@ -10,3 +10,6 @@ scratch/
 
 # vscode temporary files 
 .vscode/
+
+# ipynb checkpoints
+.ipynb_checkpoints
