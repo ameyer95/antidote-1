@@ -70,11 +70,11 @@ void UCI::parseLine(CSVRow &csv_row, const std::string &comma_separated_line) {
     while(getline(iss, item, ',')) {
         items.push_back(item);
     }
-    // XXX assuming that items.size() is consistent with details->num_cols
+    //  assuming that items.size() is consistent with details->num_cols
     csv_row.x = vector<float>(0);
     for(int i = 0; i < details->num_cols; i++) {
         if(std::none_of(details->indices_to_ignore.cbegin(), details->indices_to_ignore.cend(), [i](int j){ return i == j; })) {
-            // ANNA TO DO - add something here to keep track of whether this label can be flipped 
+            //  for better precision, add something here to keep track of whether this label can be flipped 
             if(i == details->label_index) {
                 csv_row.y = items[i];
                 labels.insert(items[i]);

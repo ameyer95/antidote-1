@@ -70,7 +70,7 @@ Interval<double> jointImpurity(const BinarySamples &counts1, int num_dropout1, i
                              std::pair<int, int> label_sens_info, std::pair<int, int> add_sens_info) {
     int total1 = counts1.num_zeros + counts1.num_ones;
     int total2 = counts2.num_zeros + counts2.num_ones;
-    // TO DO ANNA ONE-SIDED THIS IS WRONG (or at least, not precise)
+    // ONE-SIDED this can be more precise
     Interval<double> size1(total1 - num_dropout1, total1 + num_add1);
     Interval<double> size2(total2 - num_dropout2, total2 + num_add2);
     return size1 * impurity(counts1, num_dropout1, num_add1, num_labels_flip1, num_features_flip2, label_sens_info, add_sens_info) + 
@@ -179,7 +179,7 @@ Interval<double> jointImpurity(const std::vector<int> &counts1, int num_dropout1
     int total1 = accumulate(counts1.cbegin(), counts1.cend(), 0);
     int total2 = accumulate(counts2.cbegin(), counts2.cend(), 0);
 
-    // TO DO ANNA more nuanced for one-sided
+    // one-sided can be more precise
     Interval<double> size1(total1 - num_dropout1, total1 + num_add1);
     Interval<double> size2(total2 - num_dropout2, total2 + num_add2);
     Interval<double> imp = impurity(counts1, num_dropout1, num_add1, num_labels_flip1, num_features_flip2, label_sens_info, add_sens_info);

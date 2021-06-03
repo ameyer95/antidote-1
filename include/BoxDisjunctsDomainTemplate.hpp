@@ -122,7 +122,7 @@ typename BoxDisjunctsTypes<T,P,D>::Many BoxDisjunctsDomainTemplate<T,P,D>::filte
 
 template <typename T, typename P, typename D>
 bool BoxDisjunctsDomainTemplate<T,P,D>::isBottomElement(const typename Types::Many &element) const {
-    return element.size() == 0; // XXX could/should check that each disjunct is non-bot TO DO ANNA?
+    return element.size() == 0; // XXX could/should check that each disjunct is non-bot 
 }
 
 template <typename T, typename P, typename D>

@@ -67,7 +67,7 @@ std::pair<TrainingReferencesWithDropout::DropoutCounts, TrainingReferencesWithDr
     for(auto i = iters.begin(); i != iters.end(); i++) {
         int total_ct = std::accumulate((*i)->counts.cbegin(), (*i)->counts.cend(), 0);
         (*i)->num_dropout = std::min(num_dropout, total_ct);
-        // TO DO ANNA - correct for one-sided cases for extra precision. Not needed for soundness.
+        // correct for one-sided cases for extra precision. Not needed for soundness.
         (*i)->num_labels_flip = std::min(num_labels_flip, total_ct);
         (*i)->label_sens_info = label_sens_info;
         (*i)->num_add = num_add;
@@ -148,9 +148,9 @@ TrainingReferencesWithDropout TrainingSetDropoutDomain::meetImpurityEqualsZero(c
     }
     std::vector<int> counts = element.baseCounts();
     std::list<int> pure_possible_classes(0);
-    // TO DO ANNA adjust for one-sided for additional precision, not needed for soundness
+    // could adjust for one-sided for additional precision, not needed for soundness
     for(unsigned int i = 0; i < counts.size(); i++) {
-        // It's possible that all but the i-class elements could be removed (??? fix this Anna?)
+        // It's possible that all but the i-class elements could be removed (??? what does this comment mean?)
         // We could drop or flip the label on all elements not in this class, i.e. it's possible that 100% of elements belong to this class
         if(element.training_references.size() - counts[i] <= (element.num_dropout + element.num_labels_flip)) {
             // TO DO ONE-sided: this is nly true if the remaining counts have correct one-sided feature val
@@ -308,7 +308,7 @@ PosteriorDistributionAbstraction PosteriorDistributionIntervalDomain::binary_joi
 // First two auxiliary methods
 
 inline bool couldBeEmpty(const TrainingReferencesWithDropout::DropoutCounts &counts) {
-    // TO DO ANNA - question, for feature manipulation is this different? Because we could manipulate the feature of elements to move them to other branch?
+    // question, for feature manipulation is this different? Because we could manipulate the feature of elements to move them to other branch?
     // would also mean mustBeEmpty is always false when we can change feat. that phi looks at
     return std::accumulate(counts.counts.begin(), counts.counts.end(), 0) <= counts.num_dropout;
 }
@@ -334,8 +334,7 @@ void BoxDropoutDomain::computePredicatesAndScores(std::list<ScoreEntry> &exists_
 
 void BoxDropoutDomain::computeBooleanFeaturePredicateAndScore(std::list<ScoreEntry> &exists_nontrivial, std::list<const ScoreEntry *> &forall_nontrivial, const TrainingReferencesWithDropout &training_set_abstraction, int feature_index) const {
     SymbolicPredicate phi(feature_index);
-    // TO DO ANNA adjust for one-sided 
-    // leaving for now because all of our features are numeric, this would be helpful for precision but it is not necessary for soundness
+    // all of our features are numeric, so not applicable, but could improve precision here (not necessary for soundness)
     auto counts = training_set_abstraction.splitCounts(phi);
     // TO DO  - update num_labels_flip here because Joint Impurity expects it to be one-sided up to date
     if(!mustBeEmpty(counts.first) && !mustBeEmpty(counts.second)) {
@@ -513,7 +512,7 @@ void BoxDropoutDomain::computeNumericFeaturePredicatesAndScores(std::list<ScoreE
             }
 
             // update n, l, and f
-            // TO DO ANNA - special one-sided addition case: if phi looks at feature, should set to 0 on one branch
+            // need to do - special one-sided addition case: if phi looks at feature, should set to 0 on one branch
             // ^ would add more precision, but not needed for soundness so I'm leaving for now - hard to mesh = with phi's <
             int remaining = std::accumulate(split_counts.first.counts.cbegin(), split_counts.first.counts.cend(), 0);
             split_counts.first.num_dropout = std::min(remaining, training_set_abstraction.num_dropout + num_dropout_incr_first);
