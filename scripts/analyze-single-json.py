@@ -7,12 +7,12 @@ def load_data(file):
     if file[-4:] == "json":
         try:
             result = pd.read_json(file, lines=True)
-            data = data.append(result, ignore_index=True)
+            #data = data.append(result, ignore_index=True)
         except ValueError as e:
             pass
     else:
         print("File type must be json and must contain the directory path")
-    return data
+    return result
 
 def get_certified_pct(data):
     ''' Returns three values: (1) the percent of data that was certified AND correct,
@@ -53,14 +53,16 @@ def get_certified_pct_mnist(data):
     return correct/count, certified/count, indices
 
 def main():
-    filename = sys.argv[0]
-    mnist = sys.argv[1]
-    if mnist:
-        cert_correct, cert, indices = get_certified_pct_mnist(filename)
-    else:
-        cert_correct, cert, indices = get_certified_pct(filename)
+    filename = sys.argv[1]
+    mnist = int(sys.argv[2])
+    data = load_data(filename)
 
-    print(cert)
+    if mnist:
+        cert_correct, cert, indices = get_certified_pct_mnist(data)
+    else:
+        cert_correct, cert, indices = get_certified_pct(data)
+
+    print(cert*100,"% of test samples are certifiably robust")
 
 if __name__ == "__main__":
     main()
