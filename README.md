@@ -53,8 +53,12 @@ To run a targeted label-flipping test, replace the `-l` flag with `-l1` and prov
 
 Targeted missing data can be performed in the same way, with the flag `m1`. The implementation does not support targeted fake data yet.
  
-## Extending to other datasets
+## Data
 
+### How was the data preprocessed?
+Details about preprocessing is available in Jupyter notebooks in the scripts/ folder. Preprocessing mainly consisted of converting string-based categorical variables to integers. (There is no file for MNIST, as we do not perform preprocessing on that data.)
+
+### Extending to other datasets
 To use Antidote-P on other datasets, there are two options:
 1. Update CommonEnums.h, CommonEnums.cpp, UCI.h, UCI.cpp, and ExperimentDataWrangler.cpp with the new dataset name and details. (Search the code for adult_income to find all places to update.) In UCI.h, you specify the name of the training data, test data,  the number of columns, the column-index of the label, any indices to ignore when creating the decision tree, and the total number of data (test+train). 
 2. Use the ARFF format, place the data in the `data` folder, and pass in USE_ARFF as the dataset name (see https://www.cs.waikato.ac.nz/ml/weka/arff.html for a specification of this format). When using this option, there are some additional assumptions of the input data, mainly to support data labeling and boolean attributes: 
