@@ -13,13 +13,15 @@ Specifically, we wrote and ran the code on a machine that uses 18.04 LTS.
 
 To run the experiments that use the [MNIST dataset](http://yann.lecun.com/exdb/mnist/),
 the dataset must first be downloaded (and unzipped).
-This is scripted: run `data/fetch-mnist.sh`.
+This is scripted: run `data/fetch-mnist.sh`. The data used for other experiments in our paper
+(namely, COMPAS, Adult Income, and Drug Consumption) are in the Data folder (each dataset has a 
+train and a test file).
 
 Unit tests (the [test/](test/) directory) can be built and run using `make test`.
 Testing uses the open source [Catch2](https://github.com/catchorg/Catch2) framework
 whose license permits including its source in this repository
 (as the single&mdash;but rather large&mdash;header file [test/catch2/](test/catch2/)catch.hpp).
-Testing is currently very incomplete.
+Testing is currently *very* incomplete.
 
 ## Running tests
 
@@ -34,7 +36,7 @@ To test the ninth test sample of Drug Consumption with up to 4 missing data poin
 `bin/main -data data drug_consumption -t 9 -d 1 -V -m 4 -n 4`
 
 ### Interpreting the output
-The output is a JSON string containing information about the classifications. `Posterior` indicates the probability that the test sample belongs to each class (in terms of the paper, this output is pr^a). `Possible_classifications` will be a single value if the best-posterior class does not overlap with the posterior for any other class (in the binary case, if the two intervals do not overlap). When there is a single possible classification, the test sample is certifiably robust. Otherwise, there will be multiple possible classificaitons, which indicates that we cannot prove whether or not the test sample is robust.
+The output is a JSON string containing information about the classifications. `Posterior` indicates the probability that the test sample belongs to each class (in terms of the paper, this output is $pr^a$). `Possible_classifications` will be a single value if the best-posterior class does not overlap with the posterior for any other class (in the binary case, if the two intervals do not overlap). When there is a single possible classification, the test sample is certifiably robust. Otherwise, there will be multiple possible classificaitons, which indicates that we cannot prove whether or not the test sample is robust.
 
 E.g., 
 `{ "depth" : 1, "test_index" : 0, "ground_truth" : "0", "posterior" : { "1" : [ 0.160338, 0.260532 ], "0" : [ 0.739468, 0.839662 ] }, "possible_classifications" : [ "0" ] }`
@@ -49,14 +51,20 @@ To analyze the results of the json file, use scripts/analyze-single-json.py, whi
 ### Running targeted tests
 Antidote-P is currently hard-coded to run targeted tests on any predicate that includes `label=positive`. (E.g., on the COMPAS dataset for race=Black and label=positive.) To change this to use label=positive (e.g., to replicate the Adult Income experiments on gender=Female and label=negative), there are several lines that need to be (un)commented in src/information_math.cpp/estimateCategorical. They all have inline-comments starting with "AI" or "COMPAS". 
 
-To run a targeted label-flipping test, replace the `-l` flag with `-l1` and provide three arguments: l (the max. number of labels to flip), index (the column index of the sensitive attribute, e.g., race), and value (the target value of the sensitive attribute, e.g., Black). For example, in the COMPAS dataset `African_American` has column index 5 and a value of 1 if True, so we would run `bin/main -data data compas -t 0 -d 1 -V -l1 10 5 1` to test the robustness of COMPAS test sample 0 under ten label-flips of samples with race=Black and label=positive.
+For Adult Income, index 8 is race, which has been preprocessed to be binary with white=0 and non-white=1, and index 9 is sex with 0=male and 1=female. For COMPAS, index 5 is the one-hot encoded columns for Race=African-American, index 10 is sex with 1=Female and 0=Male.
+
+To run a targeted label-flipping test, replace the `-l` flag with `-l1` and provide three arguments: l (the max. number of labels to flip), index (the column index of the sensitive attribute, e.g., race), and value (the target value of the sensitive attribute, e.g., Black). For example, to test the robustness of COMPAS test sample 0 under ten label-flips with the predicate g := (race=Black and label=1), we would execute 
+
+`bin/main -data data compas -t 0 -d 1 -V -l1 10 5 1` 
 
 Targeted missing data can be performed in the same way, with the flag `m1`. The implementation does not support targeted fake data yet.
  
 ## Data
 
 ### How was the data preprocessed?
-Details about preprocessing is available in Jupyter notebooks in the scripts/ folder. Preprocessing mainly consisted of converting string-based categorical variables to integers. (There is no file for MNIST, as we do not perform preprocessing on that data.)
+Details about preprocessing is available in Jupyter notebooks in the scripts/ folder. (With the exception of MNIST -- all preprocessing for this file happens in src/ExperimentDataWrangler.cpp.) Preprocessing mainly consisted of converting string-based categorical variables to integers. 
+
+We used standard train/test splits when they were available, otherwise, we used our own custom splits. The data (processed and divided into train and test sets) is available in the Data folder.
 
 ### Extending to other datasets
 To use Antidote-P on other datasets, there are two options:
@@ -65,4 +73,6 @@ To use Antidote-P on other datasets, there are two options:
 ** If no `-i` argument (`label_index`) is specified, the first nominal data will be treated as label, while others are ignored 
 ** If `-i` argument is used, the parser will look for the attribute specified as label, and treat other binary nominal values as booleans, ignoring others.
 
+## Questions?
+Please let me know if you have questions or would appreciate a walkthrough of the code. I will do my best to respond & help!
  
